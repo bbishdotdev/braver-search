@@ -5,7 +5,7 @@ A Safari extension that automatically redirects searches to Brave Search, provid
 > **Disclaimer**: Braver Search is an independent Safari extension and is not affiliated with, endorsed by, or connected to Brave Software Inc. This is a third-party tool created to enhance the user experience of [Brave Search](https://search.brave.com) within Safari, which is a trademark of Brave Software Inc.
 
 [![Buy Me A Coffee](https://img.shields.io/badge/Buy%20Me%20A%20Coffee-Support-yellow.svg?style=flat&logo=buy-me-a-coffee)](https://www.buymeacoffee.com/brendenbishop)
-[![App Store](https://img.shields.io/badge/Download%20on%20the-App%20Store-blue.svg?style=flat&logo=app-store&logoColor=white)](https://apps.apple.com/app/idYOUR_APP_ID)
+[![App Store](https://img.shields.io/badge/Download%20on%20the-App%20Store-blue.svg?style=flat&logo=app-store&logoColor=white)](https://apps.apple.com/us/app/braver-search/id6740840706)
 ![Platform](https://img.shields.io/badge/platform-iOS%20%7C%20macOS-lightgrey.svg?style=flat)
 ![License](https://img.shields.io/badge/license-MIT%20with%20Commons%20Clause-green.svg?style=flat)
 
@@ -25,7 +25,7 @@ Learn more about Brave Search:
 
 ## Support the Project
 - [![Buy Me A Coffee](https://img.shields.io/badge/Buy%20Me%20A%20Coffee-Support-yellow.svg?style=flat&logo=buy-me-a-coffee)](https://www.buymeacoffee.com/brendenbishop)
-- [![App Store](https://img.shields.io/badge/Download%20on%20the-App%20Store-blue.svg?style=flat&logo=app-store&logoColor=white)](https://apps.apple.com/app/idYOUR_APP_ID)
+- [![App Store](https://img.shields.io/badge/Download%20on%20the-App%20Store-blue.svg?style=flat&logo=app-store&logoColor=white)](https://apps.apple.com/us/app/braver-search/id6740840706)
 - ⭐ Star this repository
 - 🐛 Report bugs and contribute fixes
 
