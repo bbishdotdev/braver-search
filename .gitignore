@@ -140,3 +140,6 @@ logs
 *.log 
 Braver Search/Braver Search.xcodeproj/project.pbxproj
 *.pbxproj
+
+# windsurf rules
+.windsurfrules
