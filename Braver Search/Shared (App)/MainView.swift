@@ -23,12 +23,29 @@ struct MainView: View {
                 }
                 
                 Section {
-                    Link("Open Safari Extensions Preferences", destination: URL(string: "safari-extensions://")!)
-                        .foregroundColor(.blue)
+                    NavigationLink(destination: InstallationGuideView()) {
+                        Text("1. Open the Settings app on your iPhone and tap on Apps\n2. Search for or scroll down and tap Safari\n3. Scroll down and tap...")
+                            .font(.footnote)
+                    }
                 } header: {
-                    Text("Safari Settings")
+                    Text("How to Install")
                 } footer: {
-                    Text("Make sure to enable Braver Search in Safari's extension settings")
+                    Text("Tap to view the full installation guide with screenshots.")
+                }
+
+                Section {
+                    Link("Have an issue?", destination: URL(string: "https://github.com/btbishop93/braver-search")!).padding(.vertical, 10)
+                    Link(destination: URL(string: "https://buymeacoffee.com/brendenbishop")!) {
+                        Image("BmcButton")
+                            .resizable()
+                            .scaledToFit()
+                            .frame(height: 50)
+                            .padding(.vertical, 5)
+                    }
+                } header: {
+                    Text("Help & Support")
+                } footer: {
+                    Text("Feel free to donate to help support the app. (optional)")
                 }
                 
                 Section {

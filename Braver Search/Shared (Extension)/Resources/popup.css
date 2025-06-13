@@ -1,218 +1,190 @@
 :root {
-    color-scheme: light dark;
-    --text-color: #333;
-    --bg-color: #f5f5f5;
-    --active-color: #34c759;
-    --button-bg: #ffffff;
-    --button-bg-active: #007AFF;
-    --button-text: #333;
-    --button-text-active: #fff;
-    --description-color: #666;
-    --toggle-bg: #e9e9ea;
-    --toggle-active: var(--active-color);
+  color-scheme: light dark;
+  --text-color: #333;
+  --bg-color: #f5f5f5;
+  --active-color: #34c759;
+  --button-bg: #ffffff;
+  --button-bg-active: #007aff;
+  --button-text: #333;
+  --button-text-active: #fff;
+  --description-color: #666;
+  --toggle-bg: #e9e9ea;
+  --toggle-active: var(--active-color);
 }
 
 html {
-    width: 100%;
-    height: 100%;
+  width: 100%;
+  height: 100%;
 }
 
 body {
-    width: 100%;
-    height: 100%;
-    margin: 0;
-    padding: 0;
-    display: flex;
-    align-items: start;
-    justify-content: center;
-    font-family: system-ui;
-    background-color: var(--bg-color);
-    color: var(--text-color);
-    max-height: inherit;
-    font-size: 1em;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  align-items: start;
+  justify-content: center;
+  font-family: system-ui;
+  background-color: var(--bg-color);
+  color: var(--text-color);
+  max-height: inherit;
+  font-size: 1em;
 }
 
 .container {
-    width: 280px;
-    padding: 16px 16px 0 16px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 8px;
-    box-sizing: border-box;
-    justify-content: center;
+  width: 280px;
+  padding: 16px 16px 0 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  box-sizing: border-box;
+  justify-content: center;
 }
 
 h2 {
-    margin: 0;
-    font-size: 1.2em;
-    text-align: center;
+  margin: 0;
+  font-size: 1.2em;
+  text-align: center;
 }
 
 .toggle-container {
-    margin-top: 8px;
-    width: 100%;
-    display: flex;
-    justify-content: center;
-    padding: 4px 0;
+  margin-top: 8px;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  padding: 4px 0;
 }
 
 .toggle {
-    position: relative;
-    display: inline-block;
-    width: 60px;
-    height: 32px;
+  position: relative;
+  display: inline-block;
+  width: 60px;
+  height: 32px;
 }
 
 .toggle input {
-    opacity: 0;
-    width: 0;
-    height: 0;
+  opacity: 0;
+  width: 0;
+  height: 0;
 }
 
 .slider {
-    position: absolute;
-    cursor: pointer;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background-color: var(--toggle-bg);
-    transition: .2s;
-    border-radius: 32px;
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: var(--toggle-bg);
+  transition: 0.2s;
+  border-radius: 32px;
 }
 
 .slider:before {
-    position: absolute;
-    content: "";
-    height: 24px;
-    width: 24px;
-    left: 6px;
-    bottom: 4px;
-    background-color: white;
-    transition: .2s;
-    border-radius: 50%;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  position: absolute;
+  content: "";
+  height: 24px;
+  width: 24px;
+  left: 6px;
+  bottom: 4px;
+  background-color: white;
+  transition: 0.2s;
+  border-radius: 50%;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 input:checked + .slider {
-    background-color: var(--toggle-active);
+  background-color: var(--toggle-active);
 }
 
 input:checked + .slider:before {
-    transform: translateX(24px);
+  transform: translateX(24px);
 }
 
 .status {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-top: 2px;
-    font-size: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 2px;
+  font-size: 16px;
 }
 
 .status-dot {
-    width: 12px;
-    height: 12px;
-    border-radius: 50%;
-    background-color: #ccc;
-    transition: background-color 0.2s ease;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background-color: #ccc;
+  transition: background-color 0.2s ease;
 }
 
 .status-dot.active {
-    background-color: var(--active-color);
+  background-color: var(--active-color);
 }
 
 .status-text {
-    font-size: 18px;
-    color: var(--description-color);
-    transition: color 0.2s ease;
+  font-size: 18px;
+  color: var(--description-color);
+  transition: color 0.2s ease;
 }
 
 .status-text.active {
-    color: var(--active-color);
+  color: var(--active-color);
 }
 
 .description {
-    margin: 8px 0;
-    font-size: 14px;
-    text-align: center;
-    color: var(--description-color);
-    line-height: 1.3;
+  margin: 8px 0;
+  font-size: 14px;
+  text-align: center;
+  color: var(--description-color);
+  line-height: 1.3;
 }
 
 .disclaimer {
-    margin: 4px 0;
-    font-size: 12px;
-    text-align: center;
-    color: var(--description-color);
-    opacity: 0.8;
+  margin: 4px 0;
+  font-size: 12px;
+  text-align: center;
+  color: var(--description-color);
+  opacity: 0.8;
 }
 
 .disclaimer a {
-    color: var(--button-bg-active);
-    text-decoration: none;
+  color: var(--button-bg-active);
+  text-decoration: none;
 }
 
 .disclaimer a:hover {
-    text-decoration: underline;
+  text-decoration: underline;
 }
 
 .disclaimer.pb {
-    margin-bottom: 16px;
+  margin-bottom: 16px;
 }
 
 @media (prefers-color-scheme: dark) {
-    :root {
-        --text-color: #fff;
-        --bg-color: #2c2c2c;
-        --active-color: #30d158;
-        --button-bg: #3c3c3c;
-        --button-text: #fff;
-        --description-color: #999;
-        --toggle-bg: #636366;
-    }
+  :root {
+    --text-color: #fff;
+    --bg-color: #2c2c2c;
+    --active-color: #30d158;
+    --button-bg: #3c3c3c;
+    --button-text: #fff;
+    --description-color: #999;
+    --toggle-bg: #636366;
+  }
 }
 
 .section {
-    padding: 16px 16px 0 16px;
+  padding: 16px 16px 0 16px;
 }
 
-.github-button {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    background-color: var(--button-bg);
-    color: var(--button-text);
-    padding: 12px 12px;
-    border-radius: 8px;
-    text-decoration: none;
-    width: 100%;
-    max-width: 220px;
-    transition: all 0.2s ease;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    position: relative;
-    margin: 8px 0 24px 0;
+.bmc-button {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
 }
 
-.github-button:hover {
-    background-color: var(--button-bg-active);
-    color: var(--button-text-active);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
-    transform: translateY(-1px);
-}
-
-.github-button img {
-    width: 22px;
-    height: 22px;
-    position: absolute;
-    left: 20px;
-}
-
-.github-button span {
-    font-size: 15px;
-    font-weight: 500;
-    flex: 1;
-    text-align: center;
-    margin-left: 12px;
+.bmc-button img {
+  width: 180px;
+  height: 80px;
 }
