@@ -219,6 +219,37 @@ describe('Background Script', () => {
             );
         });
 
+        it('should skip one redirect after a Brave bang search in the same tab', async () => {
+            await navigationListener({
+                tabId: 42,
+                url: 'https://search.brave.com/search?q=cats%20!g'
+            });
+
+            await navigationListener({
+                tabId: 42,
+                url: 'https://google.com/search?q=cats'
+            });
+
+            expect(browser.tabs.update).not.toHaveBeenCalled();
+        });
+
+        it('should still redirect supported searches without a Brave bang', async () => {
+            await navigationListener({
+                tabId: 42,
+                url: 'https://search.brave.com/search?q=cats'
+            });
+
+            await navigationListener({
+                tabId: 42,
+                url: 'https://google.com/search?q=cats'
+            });
+
+            expect(browser.tabs.update).toHaveBeenCalledWith(
+                42,
+                { url: 'https://search.brave.com/search?q=cats' }
+            );
+        });
+
         it('should track enabled state changes from storage updates', () => {
             storageChangeListener(
                 {
