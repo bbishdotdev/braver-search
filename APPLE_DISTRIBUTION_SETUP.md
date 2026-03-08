@@ -1,150 +1,208 @@
 # Apple Distribution Setup Guide
 
-This guide walks through the complete setup process for distributing iOS and macOS apps to the App Store, including code signing and CI/CD configuration.
+This guide matches the current GitHub Actions workflows in this repository.
 
-## Prerequisites
-- Apple Developer Program membership
-- Access to App Store Connect
-- Access to Apple Developer portal
-- Xcode installed locally for testing
-- GitHub repository for your project
+Use it when you need to:
+- refresh expired Apple certificates
+- regenerate provisioning profiles
+- rotate the App Store Connect API key
+- update GitHub Actions secrets for TestFlight / App Store deployment
 
-## 1. App Store Connect API Key Setup
-1. Go to App Store Connect > Users and Access > Keys
-2. Click the "+" button to generate a new API Key
-3. Give it a name (e.g., "CI/CD Key")
-4. Save the API Key ID (visible in the list)
-5. Download the .p8 file (you can only download this once)
-6. Note the Issuer ID (visible in the Keys page)
+## Current CI Secret Names
 
-## 2. Distribution Certificate Setup
-1. Open Keychain Access on your Mac
-2. Go to Keychain Access > Certificate Assistant > Request a Certificate From a Certificate Authority
-3. Fill out the form:
-   - Enter your email and name
-   - Select "Saved to disk"
-   - Leave CA Email Address empty
-4. Save the Certificate Signing Request (CSR) file
-5. Go to Apple Developer portal > Certificates
-6. Click "+" to create a new certificate
-7. Select "Apple Distribution" (this works for both iOS and macOS)
-8. Upload your CSR file
-9. Download and install the certificate
-10. In Keychain Access, find the installed certificate under "My Certificates"
-11. Export the certificate (with private key) as .p12:
-    - Right-click the certificate
-    - Choose Export
-    - Save as .p12 file
-    - Set a temporary password
-12. Extract the private key for GitHub:
-    ```bash
-    cd ~/Downloads
-    openssl pkcs12 -in distribution.p12 -nodes -nocerts -legacy -out private_key.pem -passin pass:YOUR_PASSWORD
-    ```
+These are the secrets the current deployment workflow reads:
 
-## 3. Provisioning Profiles Setup
-For a universal Safari extension app, you need four provisioning profiles:
+- `APPLE_API_KEY_ID`
+- `APPLE_API_KEY_ISSUER_ID`
+- `APPLE_API_PRIVATE_KEY`
+- `APPLE_TEAM_ID`
+- `CERTIFICATE_PASSWORD`
+- `DISTRIBUTION_CERTIFICATE_BASE64`
+- `MAC_INSTALLER_CERTIFICATE_BASE64`
+- `IOS_APP_PROFILE_BASE64`
+- `IOS_EXT_PROFILE_BASE64`
+- `MACOS_APP_PROFILE_BASE64`
+- `MACOS_EXT_PROFILE_BASE64`
 
-### iOS Profiles
-1. Go to Apple Developer portal > Profiles
-2. Click "+" to create new profile
-3. Select "App Store" under iOS
-4. Select your main app bundle ID
-5. Select your Distribution certificate
-6. Name it "Braver Search iOS App Store"
-7. Download the profile as `Braver_Search_iOS_App_Store.mobileprovision`
-8. Repeat for extension with extension bundle ID, naming it "Braver Search iOS Extension App Store" and saving as `Braver_Search_iOS_Extension_App_Store.mobileprovision`
+## 1. App Store Connect API Key
 
-### macOS Profiles
-1. Go to Apple Developer portal > Profiles
-2. Click "+" to create new profile
-3. Select "Mac App Store" (not Mac Catalyst)
-4. Select your main app bundle ID
-5. Select your Distribution certificate
-6. Name it "Braver Search macOS App Store"
-7. Download the profile as `Braver_Search_macOS_App_Store.provisionprofile`
-8. Repeat for extension with extension bundle ID, naming it "Braver Search macOS Extension App Store" and saving as `Braver_Search_macOS_Extension_App_Store.provisionprofile`
+This key is used for upload/authentication with App Store Connect.
 
-## 4. GitHub Secrets Setup
-Add these secrets to your GitHub repository (Settings > Secrets and variables > Actions):
+1. Go to App Store Connect -> Users and Access -> Keys.
+2. If your existing CI key is still active, you can keep using it.
+3. Otherwise create a new key.
+4. Download the `.p8` file. Apple only lets you download it once.
+5. Copy these values into GitHub Actions secrets:
+   - `APPLE_API_KEY_ID`: the key ID
+   - `APPLE_API_KEY_ISSUER_ID`: the issuer ID
+   - `APPLE_API_PRIVATE_KEY`: the full contents of the `.p8` file, including BEGIN/END lines
+
+## 2. Apple Distribution Certificate
+
+This is the signing certificate used for App Store iOS and macOS app builds.
+
+1. Open Keychain Access.
+2. Go to Keychain Access -> Certificate Assistant -> Request a Certificate From a Certificate Authority.
+3. Create a CSR and save it to disk.
+4. Go to Apple Developer -> Certificates.
+5. Create a new certificate of type `Apple Distribution`.
+6. Upload the CSR.
+7. Download and install the resulting certificate.
+8. In Keychain Access, find it under `My Certificates`.
+9. Export it as a `.p12` file with a password.
+10. Put that password into GitHub as `CERTIFICATE_PASSWORD`.
+11. Base64-encode the `.p12` and store it as `DISTRIBUTION_CERTIFICATE_BASE64`.
+
+Command:
+
+```bash
+base64 -i distribution.p12 | pbcopy
+```
+
+## 3. Mac Installer Distribution Certificate
+
+This is used for the macOS packaging/export path in CI.
+
+1. Go to Apple Developer -> Certificates.
+2. Create a new certificate of type `Mac Installer Distribution`.
+3. Download and install it.
+4. Export it from Keychain Access as a `.p12` file.
+5. Use the same export password or a new one, but make sure `CERTIFICATE_PASSWORD` matches the `.p12` files you upload.
+6. Base64-encode the `.p12` and store it as `MAC_INSTALLER_CERTIFICATE_BASE64`.
+
+Command:
+
+```bash
+base64 -i mac_installer_distribution.p12 | pbcopy
+```
+
+## 4. Provisioning Profiles
+
+Generate four distribution profiles using the current distribution certificate.
+
+### iOS App Profile
+
+1. Go to Apple Developer -> Profiles.
+2. Create a new profile of type `App Store`.
+3. Select bundle ID `xyz.bsquared.Braver-Search`.
+4. Select the current `Apple Distribution` certificate.
+5. Name it exactly:
+   - `Braver Search iOS App Store`
+6. Download it.
+7. Base64-encode it into:
+   - `IOS_APP_PROFILE_BASE64`
+
+Command:
+
+```bash
+base64 -i Braver_Search_iOS_App_Store.mobileprovision | pbcopy
+```
+
+### iOS Extension Profile
+
+1. Create a new profile of type `App Store`.
+2. Select bundle ID `xyz.bsquared.Braver-Search.Extension`.
+3. Select the current `Apple Distribution` certificate.
+4. Name it exactly:
+   - `Braver Search iOS Extension App Store`
+5. Download it.
+6. Base64-encode it into:
+   - `IOS_EXT_PROFILE_BASE64`
+
+Command:
+
+```bash
+base64 -i Braver_Search_iOS_Extension_App_Store.mobileprovision | pbcopy
+```
+
+### macOS App Profile
+
+1. Create a new profile of type `Mac App Store`.
+2. Select bundle ID `xyz.bsquared.Braver-Search`.
+3. Select the current `Apple Distribution` certificate.
+4. Name it exactly:
+   - `Braver Search macOS App Store`
+5. Download it.
+6. Base64-encode it into:
+   - `MACOS_APP_PROFILE_BASE64`
+
+Command:
+
+```bash
+base64 -i Braver_Search_macOS_App_Store.provisionprofile | pbcopy
+```
+
+### macOS Extension Profile
+
+1. Create a new profile of type `Mac App Store`.
+2. Select bundle ID `xyz.bsquared.Braver-Search.Extension`.
+3. Select the current `Apple Distribution` certificate.
+4. Name it exactly:
+   - `Braver Search macOS Extension App Store`
+5. Download it.
+6. Base64-encode it into:
+   - `MACOS_EXT_PROFILE_BASE64`
+
+Command:
+
+```bash
+base64 -i Braver_Search_macOS_Extension_App_Store.provisionprofile | pbcopy
+```
+
+## 5. Team ID
+
+Set:
+
+- `APPLE_TEAM_ID`
+
+You can find it in:
+- Apple Developer -> Membership
+- or App Store Connect -> Users and Access
+
+## 6. GitHub Actions Update Checklist
+
+After rotating credentials, update these repository secrets in GitHub:
 
 1. `APPLE_API_KEY_ID`
-   - Value: Key ID from App Store Connect
-   - Found in: App Store Connect > Users and Access > Keys
-
 2. `APPLE_API_KEY_ISSUER_ID`
-   - Value: Issuer ID from App Store Connect
-   - Found in: App Store Connect > Users and Access > Keys
-
 3. `APPLE_API_PRIVATE_KEY`
-   - Value: Content of the downloaded .p8 file
-   - Include the BEGIN and END markers
+4. `APPLE_TEAM_ID`
+5. `CERTIFICATE_PASSWORD`
+6. `DISTRIBUTION_CERTIFICATE_BASE64`
+7. `MAC_INSTALLER_CERTIFICATE_BASE64`
+8. `IOS_APP_PROFILE_BASE64`
+9. `IOS_EXT_PROFILE_BASE64`
+10. `MACOS_APP_PROFILE_BASE64`
+11. `MACOS_EXT_PROFILE_BASE64`
 
-4. `APPLE_CERTIFICATE_PRIVATE_KEY`
-   - Value: Content of private_key.pem including BEGIN and END markers
-   - Generated from the distribution certificate
+## 7. Common Failure Modes
 
-5. `APPLE_TEAM_ID`
-   - Value: Your Team ID
-   - Found in: Apple Developer portal > Membership
-   - Or: App Store Connect > Users and Access (top right)
+- `No available devices matched the request`
+  - CI is targeting a simulator/runtime that is not installed on the runner.
+  - The current test workflow now selects an available simulator dynamically.
 
-6. `IOS_APP_PROFILE_BASE64`
-   - Value: Base64 encoded iOS app provisioning profile
-   - Generate with: `base64 -i Braver_Search_iOS_App_Store.mobileprovision | pbcopy`
+- `Profile doesn't include signing certificate`
+  - Regenerate the provisioning profile using the current distribution certificate.
 
-7. `IOS_EXT_PROFILE_BASE64`
-   - Value: Base64 encoded iOS extension provisioning profile
-   - Generate with: `base64 -i Braver_Search_iOS_Extension_App_Store.mobileprovision | pbcopy`
+- `No signing certificate "Apple Distribution" found`
+  - The uploaded `DISTRIBUTION_CERTIFICATE_BASE64` is wrong, expired, or the password in `CERTIFICATE_PASSWORD` does not match.
 
-8. `MACOS_APP_PROFILE_BASE64`
-   - Value: Base64 encoded macOS app provisioning profile
-   - Generate with: `base64 -i Braver_Search_macOS_App_Store.provisionprofile | pbcopy`
+- `Authentication failed with App Store Connect`
+  - Recheck `APPLE_API_KEY_ID`, `APPLE_API_KEY_ISSUER_ID`, and `APPLE_API_PRIVATE_KEY`.
 
-9. `MACOS_EXT_PROFILE_BASE64`
-   - Value: Base64 encoded macOS extension provisioning profile
-   - Generate with: `base64 -i Braver_Search_macOS_Extension_App_Store.provisionprofile | pbcopy`
+- `Bundle identifier mismatch`
+  - The bundle IDs in the provisioning profiles must match:
+    - `xyz.bsquared.Braver-Search`
+    - `xyz.bsquared.Braver-Search.Extension`
 
-## 5. GitHub Actions Workflow
-The deployment workflow uses direct xcodebuild commands to build and deploy the apps. The workflow:
+## 8. Recommended Order If Everything Is Old
 
-1. Sets up the build environment:
-   - Configures Xcode
-   - Creates a temporary keychain
-   - Installs the distribution certificate
-   - Installs provisioning profiles
-   - Sets up App Store Connect API access
+If your CI setup is more than a year old, refresh in this order:
 
-2. Builds the iOS app:
-   - Archives the app using xcodebuild
-   - Creates an exportOptions.plist
-   - Exports the IPA file
-
-3. Builds the macOS app:
-   - Archives the app using xcodebuild
-   - Creates an exportOptions.plist
-   - Exports the APP file
-
-4. Uploads both builds to TestFlight using altool
-
-## Security Notes
-- Never commit certificates, private keys, or provisioning profiles to version control
-- Delete downloaded certificates and keys after adding to GitHub Secrets
-- Keep the .p8 file from App Store Connect in a secure location
-- GitHub Secrets are encrypted and can only be used by GitHub Actions
-- Use environment variables for sensitive values in CI/CD
-
-## Common Issues
-- Make sure bundle IDs match exactly between Xcode and provisioning profiles
-- Distribution certificate should be "Apple Distribution" (universal), not platform-specific
-- Provisioning profiles need to be regenerated if the certificate expires
-- Mac Catalyst is different from native macOS - use the correct profile type
-- Check GitHub Actions logs for detailed error messages
-- Verify all required secrets are set in GitHub repository settings
-
-## Next Steps
-1. Test the workflow by pushing to main or manual trigger
-2. Monitor the GitHub Actions execution
-3. Check TestFlight for successful uploads
-4. Set up automated version incrementing
-5. Configure notification for build status 
+1. App Store Connect API key
+2. Apple Distribution certificate
+3. Mac Installer Distribution certificate
+4. All four provisioning profiles
+5. GitHub Actions secrets
+6. Trigger the test workflow
+7. Trigger the deployment workflow
