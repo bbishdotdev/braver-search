@@ -37,6 +37,13 @@ struct MainView: View {
                             os_log(.debug, "Braver Search: Toggle changed to %{public}@", String(describing: newValue))
                             userDefaults.set(newValue, forKey: "enabled")
                             userDefaults.synchronize()
+                            IOSAppAnalytics.track(
+                                "redirect_setting_changed",
+                                properties: [
+                                    "enabled": newValue,
+                                    "surface": "ios_app",
+                                ]
+                            )
                         }
                 } header: {
                     Text("Settings")

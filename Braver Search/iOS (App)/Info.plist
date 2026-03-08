@@ -20,6 +20,10 @@
     <string>$(CURRENT_PROJECT_VERSION)</string>
     <key>ITSAppUsesNonExemptEncryption</key>
     <false/>
+    <key>POSTHOG_API_KEY</key>
+    <string>$(POSTHOG_API_KEY)</string>
+    <key>POSTHOG_HOST</key>
+    <string>$(POSTHOG_HOST)</string>
     <key>LSRequiresIPhoneOS</key>
     <true/>
     <key>UIApplicationSceneManifest</key>
@@ -55,4 +59,4 @@
         <string>UIInterfaceOrientationLandscapeRight</string>
     </array>
 </dict>
-</plist> 
+</plist>

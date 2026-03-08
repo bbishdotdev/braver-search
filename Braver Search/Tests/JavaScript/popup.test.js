@@ -73,8 +73,9 @@ describe('Popup Script', () => {
             expect(browser.storage.local.set).toHaveBeenCalledWith({ enabled: true });
             expect(statusDot.classList.contains('active')).toBe(true);
             expect(statusText.textContent).toBe('Enabled');
+            expect(browser.runtime.sendNativeMessage).not.toHaveBeenCalled();
         });
-        
+
         it('should handle storage errors', async () => {
             browser.storage.local.set.mockRejectedValue(new Error('Storage error'));
             
@@ -85,6 +86,7 @@ describe('Popup Script', () => {
             
             expect(toggleButton.checked).toBe(false);
             expect(statusText.textContent).toBe('Disabled');
+            expect(browser.runtime.sendNativeMessage).not.toHaveBeenCalled();
         });
     });
-}); 
+});

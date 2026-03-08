@@ -1,13 +1,19 @@
 describe('Background Script', () => {
     let navigationListener;
+    let storageChangeListener;
     
     beforeEach(() => {
         // Reset the navigation listener
         navigationListener = null;
+        storageChangeListener = null;
         
         // Set up the listener capture
         browser.webNavigation.onBeforeNavigate.addListener.mockImplementation(fn => {
             navigationListener = fn;
+            return fn;
+        });
+        browser.storage.onChanged.addListener.mockImplementation(fn => {
+            storageChangeListener = fn;
             return fn;
         });
         
@@ -18,6 +24,7 @@ describe('Background Script', () => {
         
         // Verify setup
         expect(navigationListener).toBeTruthy();
+        expect(storageChangeListener).toBeTruthy();
     });
     
     describe('isRedirectEnabled', () => {
@@ -29,11 +36,21 @@ describe('Background Script', () => {
             await navigationListener({
                 url: 'https://google.com/search?q=test'
             });
+            await new Promise(resolve => setTimeout(resolve, 0));
             
             // Verify
             expect(browser.tabs.update).toHaveBeenCalledWith(
                 undefined,
                 { url: 'https://search.brave.com/search?q=test' }
+            );
+            expect(browser.runtime.sendNativeMessage).toHaveBeenCalledWith(
+                {
+                    type: 'trackEvent',
+                    event: 'search_redirected',
+                    properties: {
+                        surface: 'background_redirect'
+                    }
+                }
             );
         });
         
@@ -180,11 +197,49 @@ describe('Background Script', () => {
             await navigationListener({
                 url: 'https://google.com/search?q=test search'
             });
+            await new Promise(resolve => setTimeout(resolve, 0));
             
             expect(browser.tabs.update).toHaveBeenCalledWith(
                 undefined,
                 { url: 'https://search.brave.com/search?q=test%20search' }
             );
         });
+
+        it('should not block redirects when analytics fails', async () => {
+            browser.runtime.sendNativeMessage.mockRejectedValueOnce(new Error('analytics unavailable'));
+
+            await navigationListener({
+                url: 'https://google.com/search?q=test'
+            });
+            await new Promise(resolve => setTimeout(resolve, 0));
+
+            expect(browser.tabs.update).toHaveBeenCalledWith(
+                undefined,
+                { url: 'https://search.brave.com/search?q=test' }
+            );
+        });
+
+        it('should track enabled state changes from storage updates', () => {
+            storageChangeListener(
+                {
+                    enabled: {
+                        oldValue: false,
+                        newValue: true
+                    }
+                },
+                'local'
+            );
+
+            expect(browser.runtime.sendNativeMessage).toHaveBeenCalledWith(
+                {
+                    type: 'trackEvent',
+                    event: 'redirect_setting_changed',
+                    properties: {
+                        enabled: true,
+                        surface: 'extension_storage'
+                    }
+                }
+            );
+        });
     });
-}); 
+});

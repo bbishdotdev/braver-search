@@ -1,0 +1,5 @@
+FORWARD_SLASH = /
+POSTHOG_API_KEY =
+POSTHOG_HOST = https:$(FORWARD_SLASH)$(FORWARD_SLASH)us.i.posthog.com
+
+#include? "AnalyticsSecrets.xcconfig"

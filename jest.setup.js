@@ -8,7 +8,15 @@ beforeEach(() => {
 
 // Mock browser.storage API
 global.browser = {
+    runtime: {
+        sendNativeMessage: jest.fn(() => Promise.resolve({}))
+    },
     storage: {
+        onChanged: {
+            addListener: jest.fn(),
+            removeListener: jest.fn(),
+            hasListener: jest.fn()
+        },
         local: {
             get: jest.fn(() => Promise.resolve({})),
             set: jest.fn(() => Promise.resolve())

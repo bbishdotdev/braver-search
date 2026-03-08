@@ -45,6 +45,47 @@ async function isRedirectEnabled() {
     }
 }
 
+function trackEvent(event, properties = {}) {
+    if (!browser.runtime?.sendNativeMessage) {
+        console.error("Braver Search: Native messaging unavailable for analytics", { event });
+        return;
+    }
+
+    const payload = {
+        type: 'trackEvent',
+        event,
+        properties
+    };
+
+    return browser.runtime.sendNativeMessage(payload)
+        .then(response => {
+            console.log("Braver Search: Analytics event queued", { event, response });
+            return response;
+        })
+        .catch(error => {
+            console.error("Braver Search: Analytics event failed", error);
+        });
+}
+
+browser.storage.onChanged?.addListener((changes, areaName) => {
+    if (areaName !== 'local' || !changes.enabled) {
+        return;
+    }
+
+    const oldValue = changes.enabled.oldValue;
+    const newValue = changes.enabled.newValue;
+
+    if (oldValue === newValue || typeof newValue === 'undefined') {
+        return;
+    }
+
+    console.log("Braver Search: Enabled state changed", { oldValue, newValue });
+    trackEvent('redirect_setting_changed', {
+        enabled: Boolean(newValue),
+        surface: 'extension_storage'
+    });
+});
+
 browser.webNavigation.onBeforeNavigate.addListener(async (details) => {
     console.log("Braver Search: Navigation detected", { 
         details,
@@ -121,9 +162,15 @@ browser.webNavigation.onBeforeNavigate.addListener(async (details) => {
                 const searchUrl = "https://search.brave.com/search?q=";
                 const redirectUrl = searchUrl + encodeURIComponent(searchQuery);
                 console.log("Braver Search: Attempting redirect to", redirectUrl);
+
+                trackEvent('search_redirected', {
+                    surface: 'background_redirect'
+                });
                 
                 browser.tabs.update(details.tabId, { url: redirectUrl })
-                    .then(() => console.log("Braver Search: Redirect successful"))
+                    .then(() => {
+                        console.log("Braver Search: Redirect successful");
+                    })
                     .catch(error => console.error("Braver Search: Redirect failed", error));
             } else {
                 console.log("Braver Search: No search query found in URL");
