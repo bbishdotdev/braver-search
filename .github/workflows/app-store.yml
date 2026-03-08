@@ -73,7 +73,7 @@ jobs:
       - name: Set up Xcode
         uses: maxim-lobanov/setup-xcode@v1
         with:
-          xcode-version: '16.1'
+          xcode-version: latest-stable
 
       - name: Import Certificate
         env:
@@ -179,7 +179,7 @@ jobs:
             -scheme "Braver Search (iOS)" \
             -configuration Release \
             -archivePath build/ios/BraverSearch.xcarchive \
-            -destination 'platform=iOS Simulator,name=iPhone 16,OS=18.1' \
+            -destination 'generic/platform=iOS' \
             -allowProvisioningUpdates \
             DEVELOPMENT_TEAM="$APPLE_TEAM_ID" \
             CODE_SIGN_STYLE=Manual \
