@@ -10,6 +10,16 @@ import os.log
 import Foundation
 import Security
 
+private let extensionDebugLogging = false
+
+private func debugLog(_ message: String) {
+    guard extensionDebugLogging else {
+        return
+    }
+
+    NSLog("%@", message)
+}
+
 struct Message {
     let type: String
     let enabled: Bool?
@@ -36,6 +46,12 @@ enum ExtensionAnalytics {
     private static let postHogAPIKeyInfoKey = "POSTHOG_API_KEY"
     private static let postHogHostInfoKey = "POSTHOG_HOST"
     private static let defaultPostHogHost = "https://us.i.posthog.com"
+    private static let cacheLock = NSLock()
+    private static var cachedDefaults: UserDefaults?
+    private static var cachedAnonymousID: String?
+    private static var cachedAPIKey: String?
+    private static var cachedAPIKeyResolved = false
+    private static var cachedHost: String?
     private static let session: URLSession = {
         let configuration = URLSessionConfiguration.ephemeral
         configuration.requestCachePolicy = .reloadIgnoringLocalCacheData
@@ -48,12 +64,23 @@ enum ExtensionAnalytics {
     }()
 
     static func sharedDefaults() -> UserDefaults {
-        if let appGroupIdentifier = resolvedAppGroupIdentifier(),
-           let defaults = UserDefaults(suiteName: appGroupIdentifier) {
-            return defaults
+        if let cachedDefaults = withLock({ cachedDefaults }) {
+            return cachedDefaults
         }
 
-        return UserDefaults(suiteName: baseGroupIdentifier)!
+        let resolvedDefaults: UserDefaults
+        if let appGroupIdentifier = resolvedAppGroupIdentifier(),
+           let defaults = UserDefaults(suiteName: appGroupIdentifier) {
+            resolvedDefaults = defaults
+        } else {
+            resolvedDefaults = UserDefaults(suiteName: baseGroupIdentifier)!
+        }
+
+        withLock {
+            cachedDefaults = resolvedDefaults
+        }
+
+        return resolvedDefaults
     }
 
     private static func resolvedAppGroupIdentifier() -> String? {
@@ -84,8 +111,7 @@ enum ExtensionAnalytics {
             ]
         }
 
-        let anonymousID = defaults.string(forKey: anonymousIDKey) ?? UUID().uuidString
-        defaults.set(anonymousID, forKey: anonymousIDKey)
+        let anonymousID = configuredAnonymousID(defaults: defaults)
 
         guard let url = URL(string: "\(host)/capture/") else {
             return [
@@ -137,7 +163,7 @@ enum ExtensionAnalytics {
             }
 
             let statusCode = (response as? HTTPURLResponse)?.statusCode ?? -1
-            NSLog("Braver Search: PostHog request completed for %@ with status %ld", event, statusCode)
+            debugLog("Braver Search: PostHog request completed for \(event) with status \(statusCode)")
         }.resume()
 
         return [
@@ -148,7 +174,18 @@ enum ExtensionAnalytics {
     }
 
     private static func configuredAPIKey(defaults: UserDefaults, bundle: Bundle = .main) -> String? {
+        let cachedValue = withLock { () -> (Bool, String?) in
+            (cachedAPIKeyResolved, cachedAPIKey)
+        }
+        if cachedValue.0 {
+            return cachedValue.1
+        }
+
         if let apiKey = defaults.string(forKey: postHogAPIKeyKey), !apiKey.isEmpty {
+            withLock {
+                cachedAPIKey = apiKey
+                cachedAPIKeyResolved = true
+            }
             return apiKey
         }
 
@@ -157,14 +194,29 @@ enum ExtensionAnalytics {
 
         if let apiKey, !apiKey.isEmpty {
             defaults.set(apiKey, forKey: postHogAPIKeyKey)
+            withLock {
+                cachedAPIKey = apiKey
+                cachedAPIKeyResolved = true
+            }
             return apiKey
         }
 
+        withLock {
+            cachedAPIKey = nil
+            cachedAPIKeyResolved = true
+        }
         return nil
     }
 
     private static func configuredHost(defaults: UserDefaults, bundle: Bundle = .main) -> String {
+        if let cachedHost = withLock({ cachedHost }) {
+            return cachedHost
+        }
+
         if let host = defaults.string(forKey: postHogHostKey), !host.isEmpty {
+            withLock {
+                cachedHost = host
+            }
             return host
         }
 
@@ -173,14 +225,36 @@ enum ExtensionAnalytics {
 
         let resolvedHost = (host?.isEmpty == false) ? host! : defaultPostHogHost
         defaults.set(resolvedHost, forKey: postHogHostKey)
+        withLock {
+            cachedHost = resolvedHost
+        }
         return resolvedHost
+    }
+
+    private static func configuredAnonymousID(defaults: UserDefaults) -> String {
+        if let cachedAnonymousID = withLock({ cachedAnonymousID }) {
+            return cachedAnonymousID
+        }
+
+        let anonymousID = defaults.string(forKey: anonymousIDKey) ?? UUID().uuidString
+        defaults.set(anonymousID, forKey: anonymousIDKey)
+        withLock {
+            cachedAnonymousID = anonymousID
+        }
+        return anonymousID
+    }
+
+    private static func withLock<T>(_ body: () -> T) -> T {
+        cacheLock.lock()
+        defer { cacheLock.unlock() }
+        return body()
     }
 }
 
 @available(macOS 11.0, iOS 15.0, *)
 class SafariWebExtensionHandler: NSObject, NSExtensionRequestHandling {
     func beginRequest(with context: NSExtensionContext) {
-        NSLog("Braver Search: Begin request")
+        debugLog("Braver Search: Begin request")
         
         let userDefaults = ExtensionAnalytics.sharedDefaults()
         var currentEnabled = userDefaults.bool(forKey: "enabled")
@@ -190,16 +264,16 @@ class SafariWebExtensionHandler: NSObject, NSExtensionRequestHandling {
            let userInfo = item.userInfo {
             let rawMessage = userInfo[SFExtensionMessageKey]
 
-            NSLog("Braver Search: Received message: %@", String(describing: rawMessage))
+            debugLog("Braver Search: Received message: \(String(describing: rawMessage))")
 
             if let dictionary = rawMessage as? [String: Any],
                let message = Message(dictionary: dictionary) {
-                NSLog("Braver Search: Message type: %@", message.type)
+                debugLog("Braver Search: Message type: \(message.type)")
                 
                 switch message.type {
                 case "setState":
                     if let newState = message.enabled {
-                        NSLog("Braver Search: Setting new state: %@", String(describing: newState))
+                        debugLog("Braver Search: Setting new state: \(newState)")
                         userDefaults.set(newState, forKey: "enabled")
                         userDefaults.synchronize()
                         currentEnabled = newState
@@ -231,7 +305,7 @@ class SafariWebExtensionHandler: NSObject, NSExtensionRequestHandling {
                         return
                     }
                 case "getState":
-                    NSLog("Braver Search: Getting current state")
+                    debugLog("Braver Search: Getting current state")
                     let settings = Settings(
                         enabled: currentEnabled,
                         searchUrl: "https://search.brave.com/search?q="
@@ -245,7 +319,7 @@ class SafariWebExtensionHandler: NSObject, NSExtensionRequestHandling {
                     )
                     return
                 default:
-                    NSLog("Braver Search: Unknown message type")
+                    debugLog("Braver Search: Unknown message type")
                 }
             }
         }
@@ -261,7 +335,7 @@ class SafariWebExtensionHandler: NSObject, NSExtensionRequestHandling {
             }
             
             if let state = state {
-                NSLog("Braver Search: Extension enabled in Safari: %@", String(describing: state.isEnabled))
+                debugLog("Braver Search: Extension enabled in Safari: \(state.isEnabled)")
             }
         }
         #endif
@@ -281,7 +355,7 @@ class SafariWebExtensionHandler: NSObject, NSExtensionRequestHandling {
     }
     
     private func sendResponse(_ response: [String: Any], context: NSExtensionContext) {
-        NSLog("Braver Search: Sending response: %@", String(describing: response))
+        debugLog("Braver Search: Sending response: \(String(describing: response))")
         let extensionItem = NSExtensionItem()
         extensionItem.userInfo = [ SFExtensionMessageKey: response ]
         context.completeRequest(returningItems: [extensionItem], completionHandler: nil)

@@ -1,10 +1,10 @@
 'use strict';
 
-console.log("Braver Search: Background script loaded");
-
+const DEBUG_LOGGING = false;
 const BANG_REDIRECT_WINDOW_MS = 5000;
+const BRAVE_SEARCH_URL = 'https://search.brave.com/search?q=';
 
-const SEARCH_ENGINE_HOSTS = [
+const SEARCH_ENGINE_HOSTS = new Set([
     'google.com',
     'google.co.uk',
     'google.ca',
@@ -15,34 +15,52 @@ const SEARCH_ENGINE_HOSTS = [
     'www.bing.com',
     'www.duckduckgo.com',
     'www.yandex.com',
-    'search.yahoo.com',
-    'www.yandex.com'
-];
+    'search.yahoo.com'
+]);
+
+const SEARCH_PATHS = new Set([
+    '/search',
+    '/search/',
+    '/web',
+    '/web/'
+]);
+
+const REDIRECT_PARAM_PATTERN = /(?:^|[?&])(url|u|redirect|redirect_uri|dest|destination|target|next|continue|to)=/i;
+const WRAPPER_KEYWORD_PATTERN = /(awstrack|safelinks|urldefense|doubleclick|tracking|trk|lnk|linkprotect|mailchi\.mp|mandrillapp)/i;
+const PURE_URL_PATTERN = /^https?:\/\/\S+$/i;
+const ENCODED_URL_PATTERN = /^https?%3a%2f%2f/i;
+const DOMAIN_WITH_PATH_PATTERN = /^(?:www\.)?[\w.-]+\.[a-z]{2,}(?:[/?#].*)$/i;
+const OPAQUE_TOKEN_PATTERN = /\b[A-Za-z0-9_-]{32,}\b/;
+const JWT_PATTERN = /\b[A-Za-z0-9_-]{16,}\.[A-Za-z0-9_-]{16,}\.[A-Za-z0-9_-]{16,}\b/;
+
+const enabledState = {
+    loaded: false,
+    value: true,
+    pending: null
+};
 
 const pendingBangRedirects = new Map();
 
+function debugLog(...args) {
+    if (DEBUG_LOGGING) {
+        console.log(...args);
+    }
+}
+
 function isSupportedSearchEngine(url) {
-    // Check if the hostname matches
-    if (!SEARCH_ENGINE_HOSTS.some(domain => url.hostname === domain)) {
+    if (!SEARCH_ENGINE_HOSTS.has(url.hostname)) {
         return false;
     }
-    
-    // Check if this is actually a search path
-    const searchPaths = ['/search', '/web'];
-    // Root path needs special handling - only redirect if it has a 'q' parameter
+
     if (url.pathname === '/' || url.pathname === '') {
         return url.searchParams.has('q');
     }
-    
-    return searchPaths.some(path => url.pathname === path || url.pathname === path + '/');
+
+    return SEARCH_PATHS.has(url.pathname);
 }
 
 function isBraveSearchUrl(url) {
-    if (url.hostname !== 'search.brave.com') {
-        return false;
-    }
-
-    return url.pathname === '/search' || url.pathname === '/search/';
+    return url.hostname === 'search.brave.com' && (url.pathname === '/search' || url.pathname === '/search/');
 }
 
 function findBangToken(query) {
@@ -84,38 +102,144 @@ function shouldSkipRedirectForBang(details) {
     return true;
 }
 
-// Function to check if redirect is enabled
-async function isRedirectEnabled() {
-    try {
-        const result = await browser.storage.local.get('enabled');
-        console.log("Braver Search: Redirect enabled?", result.enabled);
-        return result.enabled || false;
-    } catch (error) {
-        console.error("Braver Search: Failed to get enabled state", error);
-        return false;
+function normalizeEnabledValue(value) {
+    return typeof value === 'undefined' ? true : Boolean(value);
+}
+
+function loadEnabledState() {
+    if (enabledState.loaded) {
+        return Promise.resolve(enabledState.value);
     }
+
+    if (enabledState.pending) {
+        return enabledState.pending;
+    }
+
+    enabledState.pending = browser.storage.local.get('enabled')
+        .then(result => {
+            enabledState.value = normalizeEnabledValue(result.enabled);
+            enabledState.loaded = true;
+            debugLog("Braver Search: Enabled state initialized", enabledState.value);
+            return enabledState.value;
+        })
+        .catch(error => {
+            console.error("Braver Search: Failed to get enabled state", error);
+            return enabledState.loaded ? enabledState.value : false;
+        })
+        .finally(() => {
+            enabledState.pending = null;
+        });
+
+    return enabledState.pending;
+}
+
+function getEnabledState() {
+    return enabledState.loaded ? Promise.resolve(enabledState.value) : loadEnabledState();
 }
 
 function trackEvent(event, properties = {}) {
     if (!browser.runtime?.sendNativeMessage) {
         console.error("Braver Search: Native messaging unavailable for analytics", { event });
-        return;
+        return Promise.resolve();
     }
 
-    const payload = {
+    return browser.runtime.sendNativeMessage({
         type: 'trackEvent',
         event,
         properties
-    };
+    }).catch(error => {
+        console.error("Braver Search: Analytics event failed", error);
+    });
+}
 
-    return browser.runtime.sendNativeMessage(payload)
-        .then(response => {
-            console.log("Braver Search: Analytics event queued", { event, response });
-            return response;
-        })
-        .catch(error => {
-            console.error("Braver Search: Analytics event failed", error);
-        });
+function safeDecodeURIComponent(value) {
+    try {
+        return decodeURIComponent(value);
+    } catch (error) {
+        return value;
+    }
+}
+
+function stripWrappedPunctuation(value) {
+    return value
+        .trim()
+        .replace(/^[("'[\]{}<>]+/, '')
+        .replace(/[)"'\]{}<>.,!?;:]+$/, '');
+}
+
+function isPureUrlLikeQuery(query) {
+    const normalized = stripWrappedPunctuation(query);
+    if (!normalized || /\s/.test(normalized)) {
+        return false;
+    }
+
+    return PURE_URL_PATTERN.test(normalized)
+        || ENCODED_URL_PATTERN.test(normalized)
+        || DOMAIN_WITH_PATH_PATTERN.test(normalized);
+}
+
+function countUrlLikeSegments(value) {
+    const matches = value.match(/https?:\/\/|https?%3a%2f%2f|www\.[\w.-]+\.[a-z]{2,}(?:\/|\?)/gi);
+    return matches ? matches.length : 0;
+}
+
+function countQueryParams(value) {
+    const matches = value.match(/[?&][^=\s&#]{1,40}=[^&\s#]+/g);
+    return matches ? matches.length : 0;
+}
+
+function scoreWrappedQuery(query) {
+    const trimmedQuery = query.trim();
+    if (!trimmedQuery) {
+        return 0;
+    }
+
+    const onceDecodedQuery = safeDecodeURIComponent(trimmedQuery);
+    let score = 0;
+
+    if (isPureUrlLikeQuery(trimmedQuery)) {
+        score += 3;
+    }
+
+    if (onceDecodedQuery !== trimmedQuery && isPureUrlLikeQuery(onceDecodedQuery)) {
+        score += 2;
+    }
+
+    if (REDIRECT_PARAM_PATTERN.test(trimmedQuery) || REDIRECT_PARAM_PATTERN.test(onceDecodedQuery)) {
+        score += 2;
+    }
+
+    const nestedUrlCount = countUrlLikeSegments(trimmedQuery) + countUrlLikeSegments(onceDecodedQuery);
+    if (nestedUrlCount >= 2) {
+        score += 2;
+    } else if (nestedUrlCount === 1) {
+        score += 1;
+    }
+
+    if (WRAPPER_KEYWORD_PATTERN.test(trimmedQuery) || WRAPPER_KEYWORD_PATTERN.test(onceDecodedQuery)) {
+        score += 1;
+    }
+
+    const queryParamCount = Math.max(countQueryParams(trimmedQuery), countQueryParams(onceDecodedQuery));
+    if (queryParamCount >= 3) {
+        score += 2;
+    } else if (queryParamCount === 2) {
+        score += 1;
+    }
+
+    if (OPAQUE_TOKEN_PATTERN.test(onceDecodedQuery) || JWT_PATTERN.test(onceDecodedQuery)) {
+        score += 1;
+    }
+
+    if (onceDecodedQuery.length > 180) {
+        score += 1;
+    }
+
+    return score;
+}
+
+function shouldSkipQuery(query) {
+    return scoreWrappedQuery(query) >= 3;
 }
 
 browser.storage.onChanged?.addListener((changes, areaName) => {
@@ -125,130 +249,85 @@ browser.storage.onChanged?.addListener((changes, areaName) => {
 
     const oldValue = changes.enabled.oldValue;
     const newValue = changes.enabled.newValue;
+    enabledState.value = normalizeEnabledValue(newValue);
+    enabledState.loaded = true;
 
     if (oldValue === newValue || typeof newValue === 'undefined') {
         return;
     }
 
-    console.log("Braver Search: Enabled state changed", { oldValue, newValue });
-    trackEvent('redirect_setting_changed', {
+    debugLog("Braver Search: Enabled state changed", { oldValue, newValue });
+    void trackEvent('redirect_setting_changed', {
         enabled: Boolean(newValue),
         surface: 'extension_storage'
     });
 });
 
-browser.webNavigation.onBeforeNavigate.addListener(async (details) => {
-    console.log("Braver Search: Navigation detected", { 
-        details,
-        userAgent: navigator.userAgent
-    });
-    
-    // First check if redirect is enabled
-    const enabled = await isRedirectEnabled();
-    if (!enabled) {
-        console.log("Braver Search: Redirect is disabled, skipping");
+browser.webNavigation.onBeforeNavigate.addListener(async details => {
+    if (!details.url) {
         return;
     }
-    
-    if (details.url) {
-        console.log("Braver Search: URL detected", details.url);
-        
-        try {
-            const url = new URL(details.url);
-            const searchQuery = url.searchParams.get('q');
 
-            if (searchQuery && isBraveSearchUrl(url)) {
-                const bangToken = findBangToken(searchQuery);
-                if (bangToken) {
-                    console.log("Braver Search: Remembering Brave bang search", {
-                        tabId: details.tabId,
-                        bangToken
-                    });
-                    rememberBangRedirect(details, bangToken);
-                }
-                return;
-            }
-            
-            // Skip URLs that are too complex or likely not search queries
-            if (details.url.includes('%2F%2F') || url.pathname.length > 30) {
-                console.log("Braver Search: Skipping complex URL", details.url);
-                return;
-            }
-            
-            // Check if this is a supported search engine domain and path
-            if (!isSupportedSearchEngine(url)) {
-                console.log("Braver Search: Not a supported search engine or path", {
-                    hostname: url.hostname,
-                    pathname: url.pathname
-                });
-                return;
-            }
-
-            console.log("Braver Search: Search query found", { 
-                url: url.toString(), 
-                hostname: url.hostname,
-                pathname: url.pathname,
-                searchQuery 
-            });
-            
-            if (searchQuery) {
-                if (shouldSkipRedirectForBang(details)) {
-                    console.log("Braver Search: Skipping redirect for Brave bang search", {
-                        tabId: details.tabId
-                    });
-                    return;
-                }
-
-                // More sophisticated check to distinguish URLs from legitimate searches
-                const isLikelyURL = (query) => {
-                    // If it's very long, likely a complex URL
-                    if (query.length > 100) return true;
-                    
-                    // Check for encoded URL components that indicate a complex URL
-                    if (query.includes('%2F%2F')) return true;
-                    
-                    // Check for tracking or redirect URLs
-                    if (query.includes('awstrack.me')) return true;
-                    if (query.includes('tracking=') || query.includes('redirect=')) return true;
-                    
-                    // Look for URL-like patterns, but be more lenient with searches
-                    const urlPattern = /^https?:\/\/[\w\.-]+\.[a-z]{2,}(\/[\w\.-]*)*$/i;
-                    if (urlPattern.test(query)) return true;
-                    
-                    // Check for complex URL structures (multiple paths and query params)
-                    const hasMultiplePaths = (query.match(/\//g) || []).length > 2;
-                    const hasMultipleQueryParams = (query.match(/[?&][^?&]+=[^?&]+/g) || []).length > 1;
-                    if (hasMultiplePaths && hasMultipleQueryParams) return true;
-                    
-                    // Don't block queries that just happen to contain domains or technical terms
-                    return false;
-                };
-                
-                if (isLikelyURL(searchQuery)) {
-                    console.log("Braver Search: Query looks like a URL, skipping", searchQuery);
-                    return;
-                }
-                
-                const searchUrl = "https://search.brave.com/search?q=";
-                const redirectUrl = searchUrl + encodeURIComponent(searchQuery);
-                console.log("Braver Search: Attempting redirect to", redirectUrl);
-
-                trackEvent('search_redirected', {
-                    surface: 'background_redirect'
-                });
-                
-                browser.tabs.update(details.tabId, { url: redirectUrl })
-                    .then(() => {
-                        console.log("Braver Search: Redirect successful");
-                    })
-                    .catch(error => console.error("Braver Search: Redirect failed", error));
-            } else {
-                console.log("Braver Search: No search query found in URL");
-            }
-        } catch (error) {
-            console.error("Braver Search: Error processing URL", error);
-        }
-    } else {
-        console.log("Braver Search: No URL in navigation details", details);
+    if (typeof details.frameId === 'number' && details.frameId !== 0) {
+        return;
     }
-}); 
+
+    let url;
+    try {
+        url = new URL(details.url);
+    } catch (error) {
+        console.error("Braver Search: Error processing URL", error);
+        return;
+    }
+
+    const searchQuery = url.searchParams.get('q');
+
+    if (searchQuery && isBraveSearchUrl(url)) {
+        const bangToken = findBangToken(searchQuery);
+        if (bangToken) {
+            debugLog("Braver Search: Remembering Brave bang search", {
+                tabId: details.tabId,
+                bangToken
+            });
+            rememberBangRedirect(details, bangToken);
+        }
+        return;
+    }
+
+    if (!isSupportedSearchEngine(url) || !searchQuery) {
+        return;
+    }
+
+    const enabled = await getEnabledState();
+    if (!enabled) {
+        return;
+    }
+
+    if (shouldSkipRedirectForBang(details)) {
+        debugLog("Braver Search: Skipping redirect for Brave bang search", {
+            tabId: details.tabId
+        });
+        return;
+    }
+
+    if (shouldSkipQuery(searchQuery)) {
+        debugLog("Braver Search: Skipping wrapped or pasted URL query", searchQuery);
+        return;
+    }
+
+    const redirectUrl = BRAVE_SEARCH_URL + encodeURIComponent(searchQuery);
+    debugLog("Braver Search: Attempting redirect", { tabId: details.tabId, redirectUrl });
+
+    browser.tabs.update(details.tabId, { url: redirectUrl })
+        .then(() => {
+            debugLog("Braver Search: Redirect successful");
+            return trackEvent('search_redirected', {
+                surface: 'background_redirect'
+            });
+        })
+        .catch(error => {
+            console.error("Braver Search: Redirect failed", error);
+        });
+});
+
+void loadEnabledState();
