@@ -42,6 +42,9 @@ enum IOSAppAnalytics {
     }
 
     private static func resolvedAppGroupIdentifier() -> String? {
+        #if os(iOS)
+        return baseGroupIdentifier
+        #else
         guard let task = SecTaskCreateFromSelf(nil),
               let value = SecTaskCopyValueForEntitlement(
                 task,
@@ -52,6 +55,7 @@ enum IOSAppAnalytics {
         }
 
         return (value as? [String])?.first
+        #endif
     }
 
     static func initializeSharedState(bundle: Bundle = .main) {

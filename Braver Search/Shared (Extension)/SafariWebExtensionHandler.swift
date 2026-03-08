@@ -57,6 +57,9 @@ enum ExtensionAnalytics {
     }
 
     private static func resolvedAppGroupIdentifier() -> String? {
+        #if os(iOS)
+        return baseGroupIdentifier
+        #else
         guard let task = SecTaskCreateFromSelf(nil),
               let value = SecTaskCopyValueForEntitlement(
                 task,
@@ -67,6 +70,7 @@ enum ExtensionAnalytics {
         }
 
         return (value as? [String])?.first
+        #endif
     }
 
     static func track(_ event: String, properties: [String: Any] = [:]) -> [String: Any] {
@@ -184,12 +188,7 @@ class SafariWebExtensionHandler: NSObject, NSExtensionRequestHandling {
         // Parse incoming message
         if let item = context.inputItems.first as? NSExtensionItem,
            let userInfo = item.userInfo {
-            let rawMessage: Any?
-            if #available(iOS 15.0, macOS 11.0, *) {
-                rawMessage = userInfo[SFExtensionMessageKey]
-            } else {
-                rawMessage = userInfo["message"]
-            }
+            let rawMessage = userInfo[SFExtensionMessageKey]
 
             NSLog("Braver Search: Received message: %@", String(describing: rawMessage))
 
@@ -284,11 +283,7 @@ class SafariWebExtensionHandler: NSObject, NSExtensionRequestHandling {
     private func sendResponse(_ response: [String: Any], context: NSExtensionContext) {
         NSLog("Braver Search: Sending response: %@", String(describing: response))
         let extensionItem = NSExtensionItem()
-        if #available(iOS 15.0, macOS 11.0, *) {
-            extensionItem.userInfo = [ SFExtensionMessageKey: response ]
-        } else {
-            extensionItem.userInfo = [ "message": response ]
-        }
+        extensionItem.userInfo = [ SFExtensionMessageKey: response ]
         context.completeRequest(returningItems: [extensionItem], completionHandler: nil)
     }
 }
