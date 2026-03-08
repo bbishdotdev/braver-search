@@ -64,6 +64,7 @@ Braver Search/
 - **SafariWebExtensionHandler**: Manages extension state and Safari integration
 - Supports both iOS and macOS platforms
 - Uses UserDefaults for persistent storage
+- For analytics, the app and extension share a single anonymous ID through the app group container
 
 ## How It Works
 
@@ -83,6 +84,133 @@ Braver Search/
    - Instant feedback on state changes
 
 ## Development
+
+### PostHog Analytics
+
+Braver Search now supports a minimal PostHog integration designed for anonymous usage analytics only.
+
+Setup:
+- Copy `Braver Search/Config/AnalyticsSecrets.xcconfig.example` to `Braver Search/Config/AnalyticsSecrets.xcconfig`.
+- Set `POSTHOG_API_KEY` in that local file to your PostHog project key.
+- Leave `POSTHOG_HOST` as `https:$(FORWARD_SLASH)$(FORWARD_SLASH)us.i.posthog.com` unless you use EU Cloud or a self-hosted PostHog instance.
+- `AnalyticsSecrets.xcconfig` is gitignored. Xcode injects those values into the app and extension `Info.plist` files at build time.
+
+Events:
+- `first_app_open`: fired once per local install footprint the first time the host app launches
+- `app_opened`: fired when the iOS or macOS host app launches
+- `redirect_setting_changed`: fired when the user toggles Braver Search on or off in the iOS app or extension popup
+- `search_redirected`: fired only after a Safari search was successfully redirected to Brave Search
+
+Exactly what is tracked:
+- `first_app_open`
+  - Purpose: approximate installs / first-time activations on a device
+  - Fired from the host app once per local install footprint
+  - Code: [iOS host app](./Braver%20Search/iOS%20%28App%29/AppDelegate.swift#L124-L143), [macOS host app](./Braver%20Search/macOS%20%28App%29/AppDelegate.swift#L124-L141)
+- `app_opened`
+  - Purpose: count raw host app opens
+  - Fired every time the host app launches
+  - Code: [iOS host app](./Braver%20Search/iOS%20%28App%29/AppDelegate.swift#L140-L143), [macOS host app](./Braver%20Search/macOS%20%28App%29/AppDelegate.swift#L138-L141)
+- `redirect_setting_changed`
+  - Purpose: count enable / disable state changes
+  - Fired when the toggle changes in the iOS app or when the extension storage state changes in Safari
+  - Extra properties sent: `enabled`, `surface`
+  - Code: [iOS app toggle](./Braver%20Search/iOS%20%28App%29/MainView.swift#L35-L46), [Safari background listener](./Braver%20Search/Shared%20%28Extension%29/Resources/background.js#L70-L87)
+- `search_redirected`
+  - Purpose: count successful Braver Search redirects
+  - Fired from the Safari extension before `tabs.update(...)` so analytics never block the redirect
+  - Extra properties sent: `surface`
+  - Code: [Safari background redirect flow](./Braver%20Search/Shared%20%28Extension%29/Resources/background.js#L162-L174)
+
+Exactly what is not tracked:
+- No search query text
+- No full URL or referrer
+- No email, name, account ID, or device advertising ID
+- No cookies or localStorage are used for analytics identity outside the app-group UUID
+- No custom person properties are sent
+
+Anonymous identity:
+- A random UUID is generated once and stored locally in the shared app group as `analyticsAnonymousID`.
+- That UUID is sent as PostHog `distinct_id`.
+- Inference from PostHog's capture API docs: unique anonymous users come from your stable `distinct_id`, not from IP address or geolocation.
+- Code: [iOS host app identity setup](./Braver%20Search/iOS%20%28App%29/AppDelegate.swift#L57-L121), [macOS host app identity setup](./Braver%20Search/macOS%20%28App%29/AppDelegate.swift#L57-L121), [Safari extension sender](./Braver%20Search/Shared%20%28Extension%29/SafariWebExtensionHandler.swift#L28-L144)
+
+Minimum data configuration:
+- Braver Search sends only `distinct_id`, event name, and a few coarse properties needed for aggregate counts: `platform`, `source`, `app_version`, `enabled`, and `surface`.
+- Braver Search also sends `$process_person_profile: false` so these events stay anonymous and do not create person profiles.
+- PostHog Cloud may still enrich events with IP-derived GeoIP properties by default on the server side.
+- If you want the least possible data collection, disable the GeoIP plugin in your PostHog project so country/city/region data are not added server-side.
+
+Actual payloads sent by Braver Search:
+- `first_app_open`
+```json
+{
+  "api_key": "phc_...",
+  "event": "first_app_open",
+  "properties": {
+    "distinct_id": "LOCAL_RANDOM_UUID",
+    "$process_person_profile": false,
+    "platform": "ios | macos",
+    "source": "host_app",
+    "app_version": "1.1"
+  }
+}
+```
+- `app_opened`
+```json
+{
+  "api_key": "phc_...",
+  "event": "app_opened",
+  "properties": {
+    "distinct_id": "LOCAL_RANDOM_UUID",
+    "$process_person_profile": false,
+    "platform": "ios | macos",
+    "source": "host_app",
+    "app_version": "1.1"
+  }
+}
+```
+- `redirect_setting_changed`
+```json
+{
+  "api_key": "phc_...",
+  "event": "redirect_setting_changed",
+  "properties": {
+    "distinct_id": "LOCAL_RANDOM_UUID",
+    "$process_person_profile": false,
+    "platform": "ios | macos",
+    "source": "host_app | safari_extension",
+    "app_version": "1.1",
+    "enabled": true,
+    "surface": "ios_app | extension_storage"
+  }
+}
+```
+- `search_redirected`
+```json
+{
+  "api_key": "phc_...",
+  "event": "search_redirected",
+  "properties": {
+    "distinct_id": "LOCAL_RANDOM_UUID",
+    "$process_person_profile": false,
+    "platform": "ios | macos",
+    "source": "safari_extension",
+    "app_version": "1.1",
+    "surface": "background_redirect"
+  }
+}
+```
+
+Fields added by PostHog on ingest:
+- PostHog will add its own envelope fields such as `created_at`, `uuid`, `team_id`, and normalized `timestamp`.
+- PostHog may also mirror `distinct_id` at the top level of the stored event.
+- Those are not extra fields sent by Braver Search.
+
+Privacy:
+- A random UUID is generated once and stored locally in the shared app group as the anonymous PostHog `distinct_id`.
+- No search query, URL, referrer, IP-derived user property, email, name, or account identifier is sent by the app.
+- The search event contains only coarse metadata needed for counting, such as platform, source surface, and app version.
+- Analytics calls are fire-and-forget and are not awaited inside the redirect flow.
 
 ### Contributing
 We welcome contributions! Here's how you can help:
@@ -212,7 +340,7 @@ The Commons Clause restricts you from:
 - No personal information collected
 - Search queries sent directly to Brave Search
 - Settings stored locally
-- No analytics or tracking
+- Optional anonymous PostHog analytics can be configured for aggregate usage counts only
 
 ## Contributing
 

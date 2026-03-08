@@ -62,6 +62,7 @@ document.addEventListener('DOMContentLoaded', async function() {
             if (result !== null) {
                 console.log("Braver Search: State updated successfully");
                 updateUI(result);
+                console.log("Braver Search: Analytics for toggle will be handled by background storage listener");
             } else {
                 console.error("Braver Search: Failed to update state");
                 // Revert checkbox state on failure

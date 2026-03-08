@@ -82,6 +82,8 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		CE1A00012E00000100B47EE3 /* AnalyticsConfig.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = AnalyticsConfig.xcconfig; sourceTree = "<group>"; };
+		CE1A00022E00000100B47EE3 /* AnalyticsSecrets.xcconfig.example */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = AnalyticsSecrets.xcconfig.example; sourceTree = "<group>"; };
 		CE77FAC42D3C8C8000B47EE3 /* Braver Search.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Braver Search.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		CE77FAD62D3C8C8000B47EE3 /* Braver Search.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Braver Search.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		CE77FAE22D3C8C8000B47EE3 /* Braver Search Extension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = "Braver Search Extension.appex"; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -286,9 +288,19 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		CE1A00032E00000100B47EE3 /* Config */ = {
+			isa = PBXGroup;
+			children = (
+				CE1A00012E00000100B47EE3 /* AnalyticsConfig.xcconfig */,
+				CE1A00022E00000100B47EE3 /* AnalyticsSecrets.xcconfig.example */,
+			);
+			path = Config;
+			sourceTree = "<group>";
+		};
 		CE77FAA72D3C8C7E00B47EE3 = {
 			isa = PBXGroup;
 			children = (
+				CE1A00032E00000100B47EE3 /* Config */,
 				CE77FAAC2D3C8C7F00B47EE3 /* Shared (App) */,
 				CE77FAB52D3C8C7F00B47EE3 /* Shared (Extension) */,
 				CE77FAC62D3C8C8000B47EE3 /* iOS (App) */,
@@ -803,7 +815,7 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = "macOS (Extension)/Braver Search.entitlements";
 				CODE_SIGN_IDENTITY = "Apple Development";
-				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "3rd Party Mac Developer Application";
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Mac Developer";
 				CODE_SIGN_STYLE = Manual;
 				CURRENT_PROJECT_VERSION = "$(CURRENT_PROJECT_VERSION)";
 				DEVELOPMENT_TEAM = "";
@@ -828,7 +840,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = "xyz.bsquared.Braver-Search.Extension";
 				PRODUCT_NAME = "Braver Search Extension";
 				PROVISIONING_PROFILE_SPECIFIER = "";
-				"PROVISIONING_PROFILE_SPECIFIER[sdk=macosx*]" = "Braver Search macOS Extension App Store";
+				"PROVISIONING_PROFILE_SPECIFIER[sdk=macosx*]" = "Braver Search (Extension) MacOS Dev";
 				SDKROOT = macosx;
 				SKIP_INSTALL = YES;
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -842,7 +854,7 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = "macOS (Extension)/Braver Search.entitlements";
 				CODE_SIGN_IDENTITY = "Apple Development";
-				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "3rd Party Mac Developer Application";
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Mac Developer";
 				CODE_SIGN_STYLE = Manual;
 				CURRENT_PROJECT_VERSION = "$(CURRENT_PROJECT_VERSION)";
 				DEVELOPMENT_TEAM = "";
@@ -867,7 +879,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = "xyz.bsquared.Braver-Search.Extension";
 				PRODUCT_NAME = "Braver Search Extension";
 				PROVISIONING_PROFILE_SPECIFIER = "";
-				"PROVISIONING_PROFILE_SPECIFIER[sdk=macosx*]" = "Braver Search macOS Extension App Store";
+				"PROVISIONING_PROFILE_SPECIFIER[sdk=macosx*]" = "Braver Search (Extension) MacOS Dev";
 				SDKROOT = macosx;
 				SKIP_INSTALL = YES;
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -883,7 +895,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = "macOS (App)/Braver Search.entitlements";
 				CODE_SIGN_IDENTITY = "Apple Development";
-				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "3rd Party Mac Developer Application";
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Mac Developer";
 				CODE_SIGN_STYLE = Manual;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = "$(CURRENT_PROJECT_VERSION)";
@@ -891,11 +903,8 @@
 				"DEVELOPMENT_TEAM[sdk=macosx*]" = A947N6H5GS;
 				EMBEDDED_CONTENT_CONTAINS_SWIFT = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = "Braver Search";
-				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
-				INFOPLIST_KEY_NSMainStoryboardFile = Main;
-				INFOPLIST_KEY_NSPrincipalClass = NSApplication;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = "macOS (App)/Info.plist";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
@@ -911,7 +920,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = "xyz.bsquared.Braver-Search";
 				PRODUCT_NAME = "Braver Search";
 				PROVISIONING_PROFILE_SPECIFIER = "";
-				"PROVISIONING_PROFILE_SPECIFIER[sdk=macosx*]" = "Braver Search macOS App Store";
+				"PROVISIONING_PROFILE_SPECIFIER[sdk=macosx*]" = "Braver Search MacOS Dev";
 				SDKROOT = macosx;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
@@ -926,7 +935,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = "macOS (App)/Braver Search.entitlements";
 				CODE_SIGN_IDENTITY = "Apple Development";
-				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "3rd Party Mac Developer Application";
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Mac Developer";
 				CODE_SIGN_STYLE = Manual;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = "$(CURRENT_PROJECT_VERSION)";
@@ -934,11 +943,8 @@
 				"DEVELOPMENT_TEAM[sdk=macosx*]" = A947N6H5GS;
 				EMBEDDED_CONTENT_CONTAINS_SWIFT = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = "Braver Search";
-				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
-				INFOPLIST_KEY_NSMainStoryboardFile = Main;
-				INFOPLIST_KEY_NSPrincipalClass = NSApplication;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = "macOS (App)/Info.plist";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
@@ -954,7 +960,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = "xyz.bsquared.Braver-Search";
 				PRODUCT_NAME = "Braver Search";
 				PROVISIONING_PROFILE_SPECIFIER = "";
-				"PROVISIONING_PROFILE_SPECIFIER[sdk=macosx*]" = "Braver Search macOS App Store";
+				"PROVISIONING_PROFILE_SPECIFIER[sdk=macosx*]" = "Braver Search MacOS Dev";
 				SDKROOT = macosx;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
@@ -964,6 +970,7 @@
 		};
 		CE77FB262D3C8C8000B47EE3 /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = CE1A00012E00000100B47EE3 /* AnalyticsConfig.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
@@ -1028,6 +1035,7 @@
 		};
 		CE77FB272D3C8C8000B47EE3 /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = CE1A00012E00000100B47EE3 /* AnalyticsConfig.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
