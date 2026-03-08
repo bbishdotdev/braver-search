@@ -1,44 +1,53 @@
 describe('Background Script', () => {
     let navigationListener;
     let storageChangeListener;
-    
-    beforeEach(() => {
-        // Reset the navigation listener
+
+    const flushPromises = () => new Promise(resolve => setTimeout(resolve, 0));
+
+    async function loadBackgroundScript({ enabled = true, storageGetImplementation } = {}) {
         navigationListener = null;
         storageChangeListener = null;
-        
-        // Set up the listener capture
+
         browser.webNavigation.onBeforeNavigate.addListener.mockImplementation(fn => {
             navigationListener = fn;
             return fn;
         });
+
         browser.storage.onChanged.addListener.mockImplementation(fn => {
             storageChangeListener = fn;
             return fn;
         });
-        
-        // Import the background script in isolation
+
+        if (storageGetImplementation) {
+            browser.storage.local.get.mockImplementation(storageGetImplementation);
+        } else {
+            browser.storage.local.get.mockResolvedValue({ enabled });
+        }
+
         jest.isolateModules(() => {
             require('../../Shared (Extension)/Resources/background.js');
         });
-        
-        // Verify setup
+
         expect(navigationListener).toBeTruthy();
         expect(storageChangeListener).toBeTruthy();
-    });
-    
-    describe('isRedirectEnabled', () => {
-        it('should return true when enabled in storage', async () => {
-            // Setup
-            browser.storage.local.get.mockImplementation(() => Promise.resolve({ enabled: true }));
-            
-            // Execute
-            await navigationListener({
-                url: 'https://google.com/search?q=test'
-            });
-            await new Promise(resolve => setTimeout(resolve, 0));
-            
-            // Verify
+
+        await flushPromises();
+    }
+
+    async function navigateToGoogleSearch(query, overrides = {}) {
+        await navigationListener({
+            url: `https://google.com/search?q=${encodeURIComponent(query)}`,
+            ...overrides
+        });
+    }
+
+    describe('enabled state caching', () => {
+        it('should redirect when enabled in storage', async () => {
+            await loadBackgroundScript({ enabled: true });
+
+            await navigateToGoogleSearch('test');
+            await flushPromises();
+
             expect(browser.tabs.update).toHaveBeenCalledWith(
                 undefined,
                 { url: 'https://search.brave.com/search?q=test' }
@@ -53,27 +62,121 @@ describe('Background Script', () => {
                 }
             );
         });
-        
+
         it('should not redirect when disabled in storage', async () => {
-            // Setup
-            browser.storage.local.get.mockImplementation(() => Promise.resolve({ enabled: false }));
-            
-            // Execute
-            await navigationListener({
-                url: 'https://google.com/search?q=test'
+            await loadBackgroundScript({ enabled: false });
+
+            await navigateToGoogleSearch('test');
+
+            expect(browser.tabs.update).not.toHaveBeenCalled();
+        });
+
+        it('should avoid repeated storage reads after initialization', async () => {
+            await loadBackgroundScript({ enabled: true });
+            const initialCalls = browser.storage.local.get.mock.calls.length;
+
+            await navigateToGoogleSearch('first');
+            await flushPromises();
+            await navigateToGoogleSearch('second');
+            await flushPromises();
+
+            expect(browser.storage.local.get).toHaveBeenCalledTimes(initialCalls);
+        });
+
+        it('should reuse the same pending storage read on cold start', async () => {
+            let resolveStorage;
+            const pendingStorageRead = new Promise(resolve => {
+                resolveStorage = resolve;
             });
-            
-            // Verify
+
+            await loadBackgroundScript({
+                storageGetImplementation: jest.fn(() => pendingStorageRead)
+            });
+
+            const navigationPromise = navigateToGoogleSearch('test');
+            expect(browser.storage.local.get).toHaveBeenCalledTimes(1);
+
+            resolveStorage({ enabled: true });
+            await navigationPromise;
+            await flushPromises();
+
+            expect(browser.tabs.update).toHaveBeenCalledWith(
+                undefined,
+                { url: 'https://search.brave.com/search?q=test' }
+            );
+        });
+
+        it('should update the cached enabled state from storage changes', async () => {
+            await loadBackgroundScript({ enabled: true });
+
+            storageChangeListener(
+                {
+                    enabled: {
+                        oldValue: true,
+                        newValue: false
+                    }
+                },
+                'local'
+            );
+
+            await navigateToGoogleSearch('test');
+
             expect(browser.tabs.update).not.toHaveBeenCalled();
         });
     });
-    
-    describe('URL handling', () => {
-        beforeEach(() => {
-            browser.storage.local.get.mockImplementation(() => Promise.resolve({ enabled: true }));
+
+    describe('early exits', () => {
+        it('should ignore unsupported hosts before reading storage again', async () => {
+            await loadBackgroundScript({ enabled: true });
+            const initialCalls = browser.storage.local.get.mock.calls.length;
+
+            await navigationListener({
+                url: 'https://example.com/search?q=test'
+            });
+
+            expect(browser.storage.local.get).toHaveBeenCalledTimes(initialCalls);
+            expect(browser.tabs.update).not.toHaveBeenCalled();
         });
 
-        // Test legitimate search queries that contain URL-like terms
+        it('should ignore non-main-frame navigations before reading storage again', async () => {
+            await loadBackgroundScript({ enabled: true });
+            const initialCalls = browser.storage.local.get.mock.calls.length;
+
+            await navigationListener({
+                frameId: 2,
+                url: 'https://google.com/search?q=test'
+            });
+
+            expect(browser.storage.local.get).toHaveBeenCalledTimes(initialCalls);
+            expect(browser.tabs.update).not.toHaveBeenCalled();
+        });
+
+        it('should not redirect Brave Search URLs', async () => {
+            await loadBackgroundScript({ enabled: true });
+
+            await navigationListener({
+                url: 'https://search.brave.com/search?q=test'
+            });
+
+            expect(browser.tabs.update).not.toHaveBeenCalled();
+        });
+
+        it('should not redirect URLs without search queries', async () => {
+            await loadBackgroundScript({ enabled: true });
+
+            await navigationListener({
+                url: 'https://google.com'
+            });
+
+            expect(browser.tabs.update).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('URL handling', () => {
+        beforeEach(async () => {
+            await loadBackgroundScript({ enabled: true });
+        });
+
         describe('legitimate search queries', () => {
             const validSearchQueries = [
                 'What is http',
@@ -87,14 +190,15 @@ describe('Background Script', () => {
                 'http vs https security',
                 'compare .com vs .org',
                 'what is port 8080 used for',
-                'localhost not working'
+                'localhost not working',
+                '"https://example.com" review',
+                'what is redirect_uri'
             ];
 
             validSearchQueries.forEach(query => {
                 it(`should redirect search: "${query}"`, async () => {
-                    await navigationListener({
-                        url: `https://google.com/search?q=${encodeURIComponent(query)}`
-                    });
+                    await navigateToGoogleSearch(query);
+                    await flushPromises();
 
                     expect(browser.tabs.update).toHaveBeenCalledWith(
                         undefined,
@@ -104,101 +208,30 @@ describe('Background Script', () => {
             });
         });
 
-        // Test URLs that should not be redirected
-        describe('complex URLs that should not redirect', () => {
-            const urlsThatShouldNotRedirect = [
-                // Email tracking URLs
+        describe('wrapped URLs that should not redirect', () => {
+            const wrappedQueries = [
                 'https://4bqs42xm.r.us-west-2.awstrack.me/L0/https:%2F%2Fstore.ui.com%2Fus%2Fen%2Forder%2Fstatus/1/123',
-                // URLs with multiple query parameters
-                'https://example.com/path?id=123&redirect=https://another.com',
-                // URLs with encoded components
-                'https://example.com/redirect?url=https%3A%2F%2Fgoogle.com',
-                // Complex paths with dots
-                'https://api.service.com/v1/users/profile.json',
-                // URLs with tracking parameters
                 'https://click.email.domain.com/tracking?id=123&url=https://shop.com',
-                // Deep links
-                'https://app.domain.com/deep/link/to/content?ref=email',
-                // URLs with authentication tokens
                 'https://auth.service.com/callback?token=abc123&redirect_uri=https://app.com',
-                // URLs with fragments
-                'https://docs.domain.com/page#section-1?source=email'
+                'https://nam12.safelinks.protection.outlook.com/?url=https%3A%2F%2Fexample.com%2Fmagic%3Ftoken%3Dabc123&data=some-long-signed-payload',
+                'https://example.com/login?otp=123456&redirect_uri=https%3A%2F%2Fapp.example.com%2Fwelcome&token=ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890'
             ];
 
-            urlsThatShouldNotRedirect.forEach(url => {
-                it(`should not redirect URL: "${url}"`, async () => {
-                    await navigationListener({
-                        url: url
-                    });
+            wrappedQueries.forEach(query => {
+                it(`should skip wrapped URL query: "${query}"`, async () => {
+                    await navigateToGoogleSearch(query);
 
                     expect(browser.tabs.update).not.toHaveBeenCalled();
                 });
             });
         });
 
-        // Test edge cases
-        describe('edge cases', () => {
-            const edgeCases = [
-                {
-                    name: 'search query with IP address',
-                    url: 'https://google.com/search?q=ping 192.168.1.1',
-                    shouldRedirect: true
-                },
-                {
-                    name: 'search about localhost',
-                    url: 'https://google.com/search?q=what is localhost:8080',
-                    shouldRedirect: true
-                },
-                {
-                    name: 'search with URL in quotes',
-                    url: 'https://google.com/search?q="https://example.com" review',
-                    shouldRedirect: true
-                },
-                {
-                    name: 'search about domain extensions',
-                    url: 'https://google.com/search?q=.com vs .org vs .net',
-                    shouldRedirect: true
-                }
-            ];
-
-            edgeCases.forEach(({ name, url, shouldRedirect }) => {
-                it(`should handle ${name} correctly`, async () => {
-                    await navigationListener({
-                        url: url
-                    });
-
-                    if (shouldRedirect) {
-                        expect(browser.tabs.update).toHaveBeenCalled();
-                    } else {
-                        expect(browser.tabs.update).not.toHaveBeenCalled();
-                    }
-                });
-            });
-        });
-
-        // Original test cases
-        it('should not redirect Brave Search URLs', async () => {
-            await navigationListener({
-                url: 'https://search.brave.com/search?q=test'
-            });
-            
-            expect(browser.tabs.update).not.toHaveBeenCalled();
-        });
-
-        it('should not redirect URLs without search queries', async () => {
-            await navigationListener({
-                url: 'https://google.com'
-            });
-            
-            expect(browser.tabs.update).not.toHaveBeenCalled();
-        });
-
         it('should properly encode search queries', async () => {
             await navigationListener({
                 url: 'https://google.com/search?q=test search'
             });
-            await new Promise(resolve => setTimeout(resolve, 0));
-            
+            await flushPromises();
+
             expect(browser.tabs.update).toHaveBeenCalledWith(
                 undefined,
                 { url: 'https://search.brave.com/search?q=test%20search' }
@@ -208,10 +241,8 @@ describe('Background Script', () => {
         it('should not block redirects when analytics fails', async () => {
             browser.runtime.sendNativeMessage.mockRejectedValueOnce(new Error('analytics unavailable'));
 
-            await navigationListener({
-                url: 'https://google.com/search?q=test'
-            });
-            await new Promise(resolve => setTimeout(resolve, 0));
+            await navigateToGoogleSearch('test');
+            await flushPromises();
 
             expect(browser.tabs.update).toHaveBeenCalledWith(
                 undefined,
@@ -243,6 +274,7 @@ describe('Background Script', () => {
                 tabId: 42,
                 url: 'https://google.com/search?q=cats'
             });
+            await flushPromises();
 
             expect(browser.tabs.update).toHaveBeenCalledWith(
                 42,
