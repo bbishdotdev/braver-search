@@ -2,6 +2,8 @@
 
 console.log("Braver Search: Background script loaded");
 
+const BANG_REDIRECT_WINDOW_MS = 5000;
+
 const SEARCH_ENGINE_HOSTS = [
     'google.com',
     'google.co.uk',
@@ -17,6 +19,8 @@ const SEARCH_ENGINE_HOSTS = [
     'www.yandex.com'
 ];
 
+const pendingBangRedirects = new Map();
+
 function isSupportedSearchEngine(url) {
     // Check if the hostname matches
     if (!SEARCH_ENGINE_HOSTS.some(domain => url.hostname === domain)) {
@@ -31,6 +35,53 @@ function isSupportedSearchEngine(url) {
     }
     
     return searchPaths.some(path => url.pathname === path || url.pathname === path + '/');
+}
+
+function isBraveSearchUrl(url) {
+    if (url.hostname !== 'search.brave.com') {
+        return false;
+    }
+
+    return url.pathname === '/search' || url.pathname === '/search/';
+}
+
+function findBangToken(query) {
+    if (!query) {
+        return null;
+    }
+
+    const tokens = query.trim().split(/\s+/);
+    return tokens.find(token => /^![a-z0-9][a-z0-9-]*$/i.test(token))?.toLowerCase() ?? null;
+}
+
+function rememberBangRedirect(details, bangToken) {
+    if (!bangToken || typeof details.tabId !== 'number' || details.tabId < 0) {
+        return;
+    }
+
+    pendingBangRedirects.set(details.tabId, {
+        bangToken,
+        expiresAt: Date.now() + BANG_REDIRECT_WINDOW_MS
+    });
+}
+
+function shouldSkipRedirectForBang(details) {
+    if (typeof details.tabId !== 'number' || details.tabId < 0) {
+        return false;
+    }
+
+    const pendingBangRedirect = pendingBangRedirects.get(details.tabId);
+    if (!pendingBangRedirect) {
+        return false;
+    }
+
+    if (pendingBangRedirect.expiresAt <= Date.now()) {
+        pendingBangRedirects.delete(details.tabId);
+        return false;
+    }
+
+    pendingBangRedirects.delete(details.tabId);
+    return true;
 }
 
 // Function to check if redirect is enabled
@@ -104,6 +155,19 @@ browser.webNavigation.onBeforeNavigate.addListener(async (details) => {
         
         try {
             const url = new URL(details.url);
+            const searchQuery = url.searchParams.get('q');
+
+            if (searchQuery && isBraveSearchUrl(url)) {
+                const bangToken = findBangToken(searchQuery);
+                if (bangToken) {
+                    console.log("Braver Search: Remembering Brave bang search", {
+                        tabId: details.tabId,
+                        bangToken
+                    });
+                    rememberBangRedirect(details, bangToken);
+                }
+                return;
+            }
             
             // Skip URLs that are too complex or likely not search queries
             if (details.url.includes('%2F%2F') || url.pathname.length > 30) {
@@ -119,8 +183,7 @@ browser.webNavigation.onBeforeNavigate.addListener(async (details) => {
                 });
                 return;
             }
-            
-            const searchQuery = url.searchParams.get('q');
+
             console.log("Braver Search: Search query found", { 
                 url: url.toString(), 
                 hostname: url.hostname,
@@ -129,6 +192,13 @@ browser.webNavigation.onBeforeNavigate.addListener(async (details) => {
             });
             
             if (searchQuery) {
+                if (shouldSkipRedirectForBang(details)) {
+                    console.log("Braver Search: Skipping redirect for Brave bang search", {
+                        tabId: details.tabId
+                    });
+                    return;
+                }
+
                 // More sophisticated check to distinguish URLs from legitimate searches
                 const isLikelyURL = (query) => {
                     // If it's very long, likely a complex URL
