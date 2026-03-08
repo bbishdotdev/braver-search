@@ -177,14 +177,3 @@ input:checked + .slider:before {
 .section {
   padding: 16px 16px 0 16px;
 }
-
-.bmc-button {
-  display: flex;
-  align-items: center;
-  cursor: pointer;
-}
-
-.bmc-button img {
-  width: 180px;
-  height: 80px;
-}

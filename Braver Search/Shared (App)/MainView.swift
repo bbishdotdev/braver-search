@@ -35,17 +35,10 @@ struct MainView: View {
 
                 Section {
                     Link("Have an issue?", destination: URL(string: "https://github.com/btbishop93/braver-search")!).padding(.vertical, 10)
-                    Link(destination: URL(string: "https://buymeacoffee.com/brendenbishop")!) {
-                        Image("BmcButton")
-                            .resizable()
-                            .scaledToFit()
-                            .frame(height: 50)
-                            .padding(.vertical, 5)
-                    }
                 } header: {
                     Text("Help & Support")
                 } footer: {
-                    Text("Feel free to donate to help support the app. (optional)")
+                    Text("Visit the project page for help, bug reports, and updates.")
                 }
                 
                 Section {
