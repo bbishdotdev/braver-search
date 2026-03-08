@@ -138,6 +138,7 @@ coverage-report/
 # Logs
 logs
 *.log 
+Braver Search/Config/AnalyticsSecrets.xcconfig
 Braver Search/Braver Search.xcodeproj/project.pbxproj
 *.pbxproj
 
