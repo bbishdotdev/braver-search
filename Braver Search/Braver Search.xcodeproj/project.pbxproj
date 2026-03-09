@@ -9,6 +9,8 @@
 /* Begin PBXBuildFile section */
 		CE77FAE32D3C8C8000B47EE3 /* Braver Search Extension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = CE77FAE22D3C8C8000B47EE3 /* Braver Search Extension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		CE77FAED2D3C8C8000B47EE3 /* Braver Search Extension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = CE77FAEC2D3C8C8000B47EE3 /* Braver Search Extension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		CE7CB6112F5F2CD8002B9A1E /* StoreKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = CE7CB6102F5F2CD8002B9A1E /* StoreKit.framework */; };
+		CE7CB6132F5F2CEF002B9A1E /* StoreKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = CE7CB6122F5F2CEF002B9A1E /* StoreKit.framework */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -88,6 +90,8 @@
 		CE77FAD62D3C8C8000B47EE3 /* Braver Search.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Braver Search.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		CE77FAE22D3C8C8000B47EE3 /* Braver Search Extension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = "Braver Search Extension.appex"; sourceTree = BUILT_PRODUCTS_DIR; };
 		CE77FAEC2D3C8C8000B47EE3 /* Braver Search Extension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = "Braver Search Extension.appex"; sourceTree = BUILT_PRODUCTS_DIR; };
+		CE7CB6102F5F2CD8002B9A1E /* StoreKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = StoreKit.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS26.0.sdk/System/Library/Frameworks/StoreKit.framework; sourceTree = DEVELOPER_DIR; };
+		CE7CB6122F5F2CEF002B9A1E /* StoreKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = StoreKit.framework; path = System/Library/Frameworks/StoreKit.framework; sourceTree = SDKROOT; };
 		CEE6B2C52D405B95003F51F9 /* Braver Search iOS Tests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "Braver Search iOS Tests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 		CEE6B2D22D405BAE003F51F9 /* Braver Search macOS Tests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "Braver Search macOS Tests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -247,6 +251,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				CE7CB6112F5F2CD8002B9A1E /* StoreKit.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -254,6 +259,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				CE7CB6132F5F2CEF002B9A1E /* StoreKit.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -309,6 +315,7 @@
 				CE77FAF02D3C8C8000B47EE3 /* macOS (Extension) */,
 				CEE6B2C62D405B95003F51F9 /* Braver Search iOS Tests */,
 				CEE6B2D32D405BAE003F51F9 /* Braver Search macOS Tests */,
+				CE7CB60F2F5F2CD8002B9A1E /* Frameworks */,
 				CE77FAC52D3C8C8000B47EE3 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -324,6 +331,15 @@
 				CEE6B2D22D405BAE003F51F9 /* Braver Search macOS Tests.xctest */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		CE7CB60F2F5F2CD8002B9A1E /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				CE7CB6122F5F2CEF002B9A1E /* StoreKit.framework */,
+				CE7CB6102F5F2CD8002B9A1E /* StoreKit.framework */,
+			);
+			name = Frameworks;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
