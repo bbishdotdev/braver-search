@@ -135,6 +135,20 @@ jobs:
           mkdir -p ~/.appstoreconnect/private_keys
           echo "$APPLE_API_PRIVATE_KEY" > ~/.appstoreconnect/private_keys/AuthKey_${APPLE_API_KEY_ID}.p8
 
+      - name: Configure analytics build settings
+        env:
+          POSTHOG_API_KEY: ${{ secrets.POSTHOG_API_KEY }}
+        run: |
+          if [ -z "$POSTHOG_API_KEY" ]; then
+            echo "POSTHOG_API_KEY secret is not set; CI builds will ship without PostHog analytics."
+          fi
+
+          cat > "Braver Search/Config/AnalyticsSecrets.xcconfig" <<EOF
+          FORWARD_SLASH = /
+          POSTHOG_API_KEY = $POSTHOG_API_KEY
+          POSTHOG_HOST = https:\$(FORWARD_SLASH)\$(FORWARD_SLASH)us.i.posthog.com
+          EOF
+
       - name: Calculate new version
         id: version
         run: |
