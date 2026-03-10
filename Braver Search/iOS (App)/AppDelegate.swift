@@ -7,6 +7,7 @@
 
 import Foundation
 import Security
+import StoreKit
 import UIKit
 
 enum IOSAppAnalytics {
@@ -145,6 +146,11 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         IOSAppAnalytics.initializeSharedState()
         IOSAppAnalytics.trackFirstAppOpenIfNeeded()
         IOSAppAnalytics.track("app_opened")
+        MonetizationManager.shared.configureIfNeeded()
+        Task {
+            await MonetizationManager.shared.resolveUserState()
+            await StoreManager.shared.loadProductsIfNeeded()
+        }
         return true
     }
 

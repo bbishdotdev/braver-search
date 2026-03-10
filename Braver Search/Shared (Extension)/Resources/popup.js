@@ -6,6 +6,8 @@ document.addEventListener('DOMContentLoaded', async function() {
     const toggleButton = document.getElementById('toggleButton');
     const statusDot = document.querySelector('.status-dot');
     const statusText = document.querySelector('.status-text');
+    const reviewLink = document.getElementById('reviewLink');
+    const supportLink = document.getElementById('supportLink');
 
     console.log("Braver Search: Elements found?", {
         button: !!toggleButton,
@@ -16,6 +18,29 @@ document.addEventListener('DOMContentLoaded', async function() {
     if (!toggleButton) {
         console.error("Braver Search: Toggle button not found!");
         return;
+    }
+
+    async function loadMonetizationState() {
+        if (!browser.runtime?.sendNativeMessage) {
+            return;
+        }
+
+        try {
+            const response = await browser.runtime.sendNativeMessage({
+                type: 'getMonetizationState'
+            });
+
+            if (reviewLink && response?.reviewURL) {
+                reviewLink.href = response.reviewURL;
+            }
+
+            if (supportLink && response?.canTip && response?.supportURL) {
+                supportLink.href = response.supportURL;
+                supportLink.classList.remove('hidden');
+            }
+        } catch (error) {
+            console.error("Braver Search: Failed to load monetization state", error);
+        }
     }
 
     // Function to get current state
@@ -47,6 +72,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     const initialState = await getCurrentState();
     console.log("Braver Search: Initial state", initialState);
     updateUI(initialState);
+    await loadMonetizationState();
 
     // Handle toggle change
     toggleButton.addEventListener('change', async function(event) {

@@ -10,6 +10,9 @@ import os.log
 
 struct MainView: View {
     @State private var isEnabled: Bool
+    @State private var isShowingSupportSheet = false
+    @StateObject private var monetization = MonetizationManager.shared
+    @StateObject private var store = StoreManager.shared
     private let userDefaults: UserDefaults
     
     init() {
@@ -64,10 +67,60 @@ struct MainView: View {
 
                 Section {
                     Link("Have an issue?", destination: URL(string: "https://github.com/btbishop93/braver-search")!).padding(.vertical, 10)
+                    Link("Write a review", destination: MonetizationConfig.reviewURL)
                 } header: {
                     Text("Help & Support")
                 } footer: {
                     Text("Visit the project page for help, bug reports, and updates.")
+                }
+
+                if monetization.canShowSupport {
+                    Section {
+                        ForEach(MonetizationConfig.donationOptions) { option in
+                            Button {
+                                Task {
+                                    await store.purchase(option: option)
+                                }
+                            } label: {
+                                HStack(spacing: 12) {
+                                    Image(option.assetName)
+                                        .resizable()
+                                        .scaledToFit()
+                                        .frame(width: 56, height: 56)
+                                        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+
+                                    VStack(alignment: .leading, spacing: 4) {
+                                        Text(option.displayName)
+                                            .foregroundStyle(.primary)
+                                        Text(store.priceText(for: option))
+                                            .font(.footnote)
+                                            .foregroundStyle(.secondary)
+                                    }
+
+                                    Spacer()
+                                }
+                                .padding(.vertical, 4)
+                            }
+                            .buttonStyle(.plain)
+                            .disabled(store.activePurchaseProductID != nil)
+                        }
+
+                        if monetization.hasDonated {
+                            Text("Thanks again for supporting Braver Search.")
+                                .font(.footnote)
+                                .foregroundStyle(.secondary)
+                        }
+
+                        if let purchaseMessage = store.purchaseMessage {
+                            Text(purchaseMessage)
+                                .font(.footnote)
+                                .foregroundStyle(.secondary)
+                        }
+                    } header: {
+                        Text("Support Braver Search")
+                    } footer: {
+                        Text("Optional tips are available only for users who downloaded Braver Search before it became a paid app.")
+                    }
                 }
                 
                 Section {
@@ -78,6 +131,20 @@ struct MainView: View {
                 }
             }
             .navigationTitle("Braver Search")
+        }
+        .task {
+            MonetizationManager.shared.configureIfNeeded()
+            await MonetizationManager.shared.resolveUserState()
+            await StoreManager.shared.loadProductsIfNeeded()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .openSupportFlow)) { _ in
+            guard monetization.canShowSupport else {
+                return
+            }
+            isShowingSupportSheet = true
+        }
+        .sheet(isPresented: $isShowingSupportSheet) {
+            SupportSheetView()
         }
     }
 }
