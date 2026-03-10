@@ -92,6 +92,10 @@ struct MainView: View {
                                     VStack(alignment: .leading, spacing: 4) {
                                         Text(option.displayName)
                                             .foregroundStyle(.primary)
+                                        Text(option.description)
+                                            .font(.footnote)
+                                            .foregroundStyle(.secondary)
+                                            .multilineTextAlignment(.leading)
                                         Text(store.priceText(for: option))
                                             .font(.footnote)
                                             .foregroundStyle(.secondary)

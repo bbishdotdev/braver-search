@@ -21,7 +21,7 @@ body {
     flex-direction: column;
 
     gap: var(--spacing);
-    margin: 0 calc(var(--spacing) * 2);
+    margin: var(--spacing) calc(var(--spacing) * 2);
     height: 100%;
 
     font: -apple-system-short-body;
@@ -65,11 +65,11 @@ button {
 }
 
 .support-section {
-    width: min(420px, 100%);
+    width: min(620px, 100%);
     display: flex;
     flex-direction: column;
     gap: 12px;
-    padding: 18px;
+    padding: 22px;
     border-radius: 18px;
     background: color-mix(in srgb, CanvasText 6%, Canvas 94%);
 }
@@ -98,14 +98,55 @@ button {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 12px 14px;
+    gap: 14px;
+    padding: 14px 16px;
     border: 0;
     border-radius: 14px;
     background: color-mix(in srgb, AccentColor 12%, Canvas 88%);
     cursor: pointer;
+    text-align: left;
 }
 
+.support-product-content,
+.support-product-copy,
+.support-product-art,
 .support-product-title,
+.support-product-description,
 .support-product-price {
     pointer-events: none;
+}
+
+.support-product-content {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.support-product-copy {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.support-product-art {
+    width: 56px;
+    height: 56px;
+    border-radius: 14px;
+    object-fit: cover;
+    flex-shrink: 0;
+}
+
+.support-product-title {
+    font-weight: 700;
+}
+
+.support-product-description {
+    color: color-mix(in srgb, CanvasText 68%, Canvas 32%);
+    line-height: 1.35;
+}
+
+.support-product-price {
+    font-size: 1.05em;
+    font-weight: 700;
+    white-space: nowrap;
 }
