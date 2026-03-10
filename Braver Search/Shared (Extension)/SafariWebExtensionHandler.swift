@@ -38,6 +38,16 @@ struct Message {
     }
 }
 
+private enum ExtensionMonetizationKeys {
+    static let userState = "monetization.userState"
+    static let redirectCount = "monetization.redirectCount"
+    static let hasDonated = "monetization.hasDonated"
+    static let unknownState = "unknown"
+    static let grandfatheredState = "grandfathered"
+    static let reviewURL = "https://apps.apple.com/app/id6740840706?action=write-review"
+    static let supportURL = "braversearch://support"
+}
+
 enum ExtensionAnalytics {
     static let baseGroupIdentifier = "group.xyz.bsquared.braversearch"
     private static let anonymousIDKey = "analyticsAnonymousID"
@@ -292,6 +302,9 @@ class SafariWebExtensionHandler: NSObject, NSExtensionRequestHandling {
                     return
                 case "trackEvent":
                     if let event = message.event {
+                        if event == "search_redirected" {
+                            userDefaults.set(userDefaults.integer(forKey: ExtensionMonetizationKeys.redirectCount) + 1, forKey: ExtensionMonetizationKeys.redirectCount)
+                        }
                         let trackResult = ExtensionAnalytics.track(event, properties: message.properties)
                         sendResponse(
                             [
@@ -304,6 +317,20 @@ class SafariWebExtensionHandler: NSObject, NSExtensionRequestHandling {
                         )
                         return
                     }
+                case "getMonetizationState":
+                    let userState = userDefaults.string(forKey: ExtensionMonetizationKeys.userState) ?? ExtensionMonetizationKeys.unknownState
+                    let canTip = userState == ExtensionMonetizationKeys.grandfatheredState
+                    sendResponse(
+                        [
+                            "userState": userState,
+                            "canTip": canTip,
+                            "hasDonated": userDefaults.bool(forKey: ExtensionMonetizationKeys.hasDonated),
+                            "reviewURL": ExtensionMonetizationKeys.reviewURL,
+                            "supportURL": ExtensionMonetizationKeys.supportURL,
+                        ],
+                        context: context
+                    )
+                    return
                 case "getState":
                     debugLog("Braver Search: Getting current state")
                     let settings = Settings(

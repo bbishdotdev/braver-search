@@ -59,3 +59,53 @@ body.state-off :is(.state-on, .state-unknown) {
 button {
     font-size: 1em;
 }
+
+.hidden {
+    display: none;
+}
+
+.support-section {
+    width: min(420px, 100%);
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 18px;
+    border-radius: 18px;
+    background: color-mix(in srgb, CanvasText 6%, Canvas 94%);
+}
+
+.support-section h2 {
+    margin: 0;
+}
+
+.support-copy,
+.support-thanks {
+    margin: 0;
+    color: color-mix(in srgb, CanvasText 72%, Canvas 28%);
+}
+
+.support-actions {
+    display: flex;
+    justify-content: center;
+}
+
+.support-products {
+    display: grid;
+    gap: 10px;
+}
+
+.support-product {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 14px;
+    border: 0;
+    border-radius: 14px;
+    background: color-mix(in srgb, AccentColor 12%, Canvas 88%);
+    cursor: pointer;
+}
+
+.support-product-title,
+.support-product-price {
+    pointer-events: none;
+}

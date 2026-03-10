@@ -177,3 +177,7 @@ input:checked + .slider:before {
 .section {
   padding: 16px 16px 0 16px;
 }
+
+.hidden {
+  display: none;
+}
