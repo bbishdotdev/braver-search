@@ -7,6 +7,7 @@ describe('Popup Script', () => {
     let statusDot;
     let statusText;
     let reviewLink;
+    let supportCard;
     let supportLink;
     
     beforeEach(() => {
@@ -16,6 +17,7 @@ describe('Popup Script', () => {
             <div class="status-dot"></div>
             <div class="status-text"></div>
             <a id="reviewLink" href="#"></a>
+            <section id="supportCard" class="hidden"></section>
             <a id="supportLink" href="#" class="hidden"></a>
         `;
         
@@ -23,6 +25,7 @@ describe('Popup Script', () => {
         statusDot = document.querySelector('.status-dot');
         statusText = document.querySelector('.status-text');
         reviewLink = document.getElementById('reviewLink');
+        supportCard = document.getElementById('supportCard');
         supportLink = document.getElementById('supportLink');
         
         // Clear all mocks
@@ -52,6 +55,7 @@ describe('Popup Script', () => {
             expect(statusText.classList.contains('active')).toBe(true);
             expect(statusText.textContent).toBe('Enabled');
             expect(reviewLink.href).toBe('https://apps.apple.com/app/id6740840706?action=write-review');
+            expect(supportCard.classList.contains('hidden')).toBe(false);
             expect(supportLink.href).toBe('braversearch://support');
             expect(supportLink.classList.contains('hidden')).toBe(false);
         });
@@ -70,6 +74,7 @@ describe('Popup Script', () => {
             expect(statusDot.classList.contains('active')).toBe(false);
             expect(statusText.classList.contains('active')).toBe(false);
             expect(statusText.textContent).toBe('Disabled');
+            expect(supportCard.classList.contains('hidden')).toBe(true);
             expect(supportLink.classList.contains('hidden')).toBe(true);
         });
     });

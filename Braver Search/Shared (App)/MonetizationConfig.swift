@@ -14,6 +14,7 @@ struct DonationOption: Identifiable {
     let id: String
     let displayName: String
     let fallbackPrice: String
+    let description: String
     let assetName: String
 }
 
@@ -37,24 +38,28 @@ enum MonetizationConfig {
             id: "braversearch.tip.thanks",
             displayName: "Thanks",
             fallbackPrice: "$1.99",
+            description: "If this app helped, this means a lot to me",
             assetName: "TipThanks"
         ),
         DonationOption(
             id: "braversearch.tip.cheers",
             displayName: "Cheers",
             fallbackPrice: "$4.99",
+            description: "Thanks for helping me keep Braver Search going",
             assetName: "TipCheers"
         ),
         DonationOption(
             id: "braversearch.tip.lifesaver",
             displayName: "You're a lifesaver",
             fallbackPrice: "$9.99",
+            description: "Your support helps me keep building this app",
             assetName: "TipLifesaver"
         ),
         DonationOption(
             id: "braversearch.tip.max",
             displayName: "I can't thank you enough",
             fallbackPrice: "$99.99",
+            description: "Your generosity truly means the world to me",
             assetName: "TipMax"
         ),
     ]

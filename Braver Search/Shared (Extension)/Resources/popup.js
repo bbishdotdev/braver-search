@@ -7,6 +7,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     const statusDot = document.querySelector('.status-dot');
     const statusText = document.querySelector('.status-text');
     const reviewLink = document.getElementById('reviewLink');
+    const supportCard = document.getElementById('supportCard');
     const supportLink = document.getElementById('supportLink');
 
     console.log("Braver Search: Elements found?", {
@@ -34,7 +35,8 @@ document.addEventListener('DOMContentLoaded', async function() {
                 reviewLink.href = response.reviewURL;
             }
 
-            if (supportLink && response?.canTip && response?.supportURL) {
+            if (supportCard && supportLink && response?.canTip && response?.supportURL) {
+                supportCard.classList.remove('hidden');
                 supportLink.href = response.supportURL;
                 supportLink.classList.remove('hidden');
             }

@@ -55,6 +55,13 @@ class ViewController: PlatformViewController, WKNavigationDelegate, WKScriptMess
         }
     }
 
+    override func viewDidAppear() {
+        super.viewDidAppear()
+#if os(macOS)
+        configureWindowLayout()
+#endif
+    }
+
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
 #if os(iOS)
         webView.evaluateJavaScript("show('ios')")
@@ -140,7 +147,9 @@ class ViewController: PlatformViewController, WKNavigationDelegate, WKScriptMess
                 [
                     "id": option.id,
                     "displayName": option.displayName,
+                    "description": option.description,
                     "price": StoreManager.shared.priceText(for: option),
+                    "imageDataURL": imageDataURL(for: option.assetName) ?? "",
                 ]
             },
         ]
@@ -160,5 +169,47 @@ class ViewController: PlatformViewController, WKNavigationDelegate, WKScriptMess
         webView.evaluateJavaScript("focusSupportSection()")
 #endif
     }
+
+#if os(macOS)
+    private func configureWindowLayout() {
+        guard let window = view.window else {
+            return
+        }
+
+        let minimumSize = NSSize(width: 760, height: 860)
+        window.minSize = minimumSize
+
+        let currentSize = window.frame.size
+        guard currentSize.width < minimumSize.width || currentSize.height < minimumSize.height else {
+            return
+        }
+
+        let frame = window.frame
+        let targetSize = NSSize(
+            width: max(frame.size.width, minimumSize.width),
+            height: max(frame.size.height, minimumSize.height)
+        )
+        let newOrigin = NSPoint(
+            x: frame.origin.x - ((targetSize.width - frame.size.width) / 2),
+            y: frame.origin.y - (targetSize.height - frame.size.height)
+        )
+
+        window.setFrame(NSRect(origin: newOrigin, size: targetSize), display: true, animate: false)
+    }
+
+    private func imageDataURL(for assetName: String) -> String? {
+        guard let image = NSImage(named: assetName) else {
+            return nil
+        }
+
+        guard let tiffData = image.tiffRepresentation,
+              let bitmap = NSBitmapImageRep(data: tiffData),
+              let pngData = bitmap.representation(using: .png, properties: [:]) else {
+            return nil
+        }
+
+        return "data:image/png;base64,\(pngData.base64EncodedString())"
+    }
+#endif
 
 }

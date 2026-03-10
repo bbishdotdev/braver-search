@@ -43,7 +43,19 @@ function updateMonetization(payload) {
         const button = document.createElement("button");
         button.type = "button";
         button.className = "support-product";
-        button.innerHTML = `<span class="support-product-title">${product.displayName}</span><span class="support-product-price">${product.price}</span>`;
+        const imageMarkup = product.imageDataURL
+            ? `<img class="support-product-art" src="${product.imageDataURL}" alt="${product.displayName}">`
+            : "";
+        button.innerHTML = `
+            <span class="support-product-content">
+                ${imageMarkup}
+                <span class="support-product-copy">
+                    <span class="support-product-title">${product.displayName}</span>
+                    <span class="support-product-description">${product.description ?? ""}</span>
+                </span>
+            </span>
+            <span class="support-product-price">${product.price}</span>
+        `;
         button.addEventListener("click", () => {
             webkit.messageHandlers.controller.postMessage({
                 action: "purchase",
