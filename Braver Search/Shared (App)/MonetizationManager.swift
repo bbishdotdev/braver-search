@@ -55,6 +55,13 @@ final class MonetizationManager: ObservableObject {
     func resolveUserState() async {
         configureIfNeeded()
 
+        #if DEBUG
+        defaults.set(MonetizationUserState.grandfathered.rawValue, forKey: MonetizationDefaultsKey.userState)
+        refreshFromDefaults()
+        notifyChange()
+        return
+        #endif
+
         guard #available(iOS 16.0, macOS 13.0, *) else {
             defaults.set(MonetizationUserState.unknown.rawValue, forKey: MonetizationDefaultsKey.userState)
             refreshFromDefaults()
