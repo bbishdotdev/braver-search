@@ -1,0 +1,27 @@
+"Braver Search/Shared (App)/Resources/Style.css"
+  1f82effd0076f4da 11-14,27-28,71-79,83,85-110,113-117,119-121,124-142,149-156,162,167-168,173-178,183,185-194,204-206,213-214,220-223,226-232,234-255
+"Braver Search/Shared (App)/ViewController.swift"
+  1f82effd0076f4da 58-62,67,150,184
+"Braver Search/Shared (App)/Resources/Script.js"
+  1f82effd0076f4da 29,35-36,48-49,53-57,59,65
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.9",
+  "base_commit_sha": "e21a7c025d377e1834462808bdc75453223b8374",
+  "prompts": {
+    "1f82effd0076f4da": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019ccba3-fe79-7790-9839-8388f48b7910",
+        "model": "gpt-5.4"
+      },
+      "human_author": "Brenden Bishop <btbishop93@gmail.com>",
+      "messages": [],
+      "total_additions": 306,
+      "total_deletions": 197,
+      "accepted_lines": 169,
+      "overriden_lines": 0
+    }
+  }
+}
