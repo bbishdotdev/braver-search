@@ -2,16 +2,16 @@ name: App Store Build & Deployment
 
 on:
   workflow_run:
-    workflows: ["Tests"]  # This should match the name in test.yml
+    workflows: ["Tests"] # This should match the name in test.yml
     types:
       - completed
     branches: [main]
   workflow_dispatch:
     inputs:
       version_bump:
-        description: 'Version bump type (patch/minor/major)'
+        description: "Version bump type (patch/minor/major)"
         required: false
-        default: 'patch'
+        default: "patch"
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref_name }}
@@ -61,10 +61,10 @@ jobs:
       contents: read
       repository-projects: write
       id-token: write
-    
+
     env:
       APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
-    
+
     steps:
       # Common Setup Steps
       - name: Checkout repository
@@ -88,7 +88,7 @@ jobs:
         run: |
           # Create variables
           KEYCHAIN_PATH=$RUNNER_TEMP/app-signing.keychain-db
-          
+
           # Create keychain
           security create-keychain -p "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
           security set-keychain-settings -lut 21600 $KEYCHAIN_PATH
@@ -342,7 +342,7 @@ jobs:
             exit 1
           fi
           echo "Found APP at: $APP_PATH"
-          
+
           # Upload macOS build
           echo "Uploading macOS build..."
           xcrun altool --upload-app --type osx \
@@ -357,12 +357,12 @@ jobs:
           GH_TOKEN: ${{ secrets.PAT_TOKEN }}
         run: |
           # Update marketing version
-          gh api -X PATCH /repos/btbishop93/braver-search/actions/variables/MARKETING_VERSION \
+          gh api -X PATCH /repos/bbishdotdev/braver-search/actions/variables/MARKETING_VERSION \
             -f value="${{ steps.version.outputs.new_marketing_version }}"
 
           # Increment build number
           NEW_BUILD_NUMBER=$((BUILD_NUMBER + 1))
-          gh api -X PATCH /repos/btbishop93/braver-search/actions/variables/BUILD_NUMBER \
+          gh api -X PATCH /repos/bbishdotdev/braver-search/actions/variables/BUILD_NUMBER \
             -f value="$NEW_BUILD_NUMBER"
 
       # Cleanup
