@@ -55,12 +55,16 @@ class ViewController: PlatformViewController, WKNavigationDelegate, WKScriptMess
         }
     }
 
+#if os(iOS)
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+    }
+#elseif os(macOS)
     override func viewDidAppear() {
         super.viewDidAppear()
-#if os(macOS)
         configureWindowLayout()
-#endif
     }
+#endif
 
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
 #if os(iOS)
@@ -143,6 +147,7 @@ class ViewController: PlatformViewController, WKNavigationDelegate, WKScriptMess
             "canTip": MonetizationManager.shared.canShowSupport,
             "hasDonated": MonetizationManager.shared.hasDonated,
             "reviewURL": MonetizationConfig.reviewURL.absoluteString,
+            "reviewImageDataURL": imageDataURL(for: "RateReview") ?? "",
             "products": MonetizationConfig.donationOptions.map { option in
                 [
                     "id": option.id,
@@ -176,7 +181,7 @@ class ViewController: PlatformViewController, WKNavigationDelegate, WKScriptMess
             return
         }
 
-        let minimumSize = NSSize(width: 760, height: 860)
+        let minimumSize = NSSize(width: 980, height: 620)
         window.minSize = minimumSize
 
         let currentSize = window.frame.size

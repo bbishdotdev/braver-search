@@ -1,9 +1,11 @@
 import Foundation
 import StoreKit
+import os
 
 @MainActor
 final class MonetizationManager: ObservableObject {
     static let shared = MonetizationManager()
+    private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "xyz.bsquared.braversearch", category: "Monetization")
 
     @Published private(set) var userState: MonetizationUserState
     @Published private(set) var hasDonated: Bool
@@ -55,15 +57,18 @@ final class MonetizationManager: ObservableObject {
     func resolveUserState() async {
         configureIfNeeded()
 
-        #if DEBUG
-        defaults.set(MonetizationUserState.grandfathered.rawValue, forKey: MonetizationDefaultsKey.userState)
-        refreshFromDefaults()
-        notifyChange()
-        return
-        #endif
+        guard let paidLaunchDate = MonetizationConfig.paidLaunchDate else {
+            logger.notice("Paid launch date is not configured; resolving userState=grandfathered for all users")
+            defaults.set(MonetizationUserState.grandfathered.rawValue, forKey: MonetizationDefaultsKey.userState)
+            refreshFromDefaults()
+            notifyChange()
+            return
+        }
 
         guard #available(iOS 16.0, macOS 13.0, *) else {
-            defaults.set(MonetizationUserState.unknown.rawValue, forKey: MonetizationDefaultsKey.userState)
+            let fallbackState = fallbackUserState(for: paidLaunchDate)
+            logger.notice("StoreKit app transaction unavailable on this OS version; setting userState=\(fallbackState.rawValue, privacy: .public)")
+            defaults.set(fallbackState.rawValue, forKey: MonetizationDefaultsKey.userState)
             refreshFromDefaults()
             notifyChange()
             return
@@ -75,16 +80,26 @@ final class MonetizationManager: ObservableObject {
 
             switch verificationResult {
             case .verified(let transaction):
-                resolvedState = transaction.originalPurchaseDate < MonetizationConfig.paidLaunchDate
+                let originalPurchaseDate = transaction.originalPurchaseDate
+                resolvedState = transaction.originalPurchaseDate < paidLaunchDate
                     ? .grandfathered
                     : .paidAppCustomer
+
+                logger.notice(
+                    """
+                    Resolved StoreKit app transaction: verification=verified originalPurchaseDate=\(Self.iso8601String(from: originalPurchaseDate), privacy: .public) paidLaunchDate=\(Self.iso8601String(from: paidLaunchDate), privacy: .public) userState=\(resolvedState.rawValue, privacy: .public)
+                    """
+                )
             case .unverified:
-                resolvedState = .unknown
+                resolvedState = fallbackUserState(for: paidLaunchDate)
+                logger.error("Resolved StoreKit app transaction: verification=unverified userState=\(resolvedState.rawValue, privacy: .public)")
             }
 
             defaults.set(resolvedState.rawValue, forKey: MonetizationDefaultsKey.userState)
         } catch {
-            defaults.set(MonetizationUserState.unknown.rawValue, forKey: MonetizationDefaultsKey.userState)
+            let fallbackState = fallbackUserState(for: paidLaunchDate)
+            logger.error("Failed to resolve StoreKit app transaction: \(String(describing: error), privacy: .public); fallbackUserState=\(fallbackState.rawValue, privacy: .public)")
+            defaults.set(fallbackState.rawValue, forKey: MonetizationDefaultsKey.userState)
         }
 
         refreshFromDefaults()
@@ -105,5 +120,15 @@ final class MonetizationManager: ObservableObject {
 
     private func notifyChange() {
         NotificationCenter.default.post(name: .monetizationStateDidChange, object: nil)
+    }
+
+    private func fallbackUserState(for paidLaunchDate: Date) -> MonetizationUserState {
+        Date() < paidLaunchDate ? .grandfathered : .unknown
+    }
+
+    private static func iso8601String(from date: Date) -> String {
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        return formatter.string(from: date)
     }
 }

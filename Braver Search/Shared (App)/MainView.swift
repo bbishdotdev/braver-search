@@ -34,7 +34,7 @@ struct MainView: View {
                 }
 
                 Section {
-                    Link("Have an issue?", destination: URL(string: "https://github.com/btbishop93/braver-search")!).padding(.vertical, 10)
+                    Link("Have an issue?", destination: URL(string: "https://github.com/bbishdotdev/braver-search")!).padding(.vertical, 10)
                 } header: {
                     Text("Help & Support")
                 } footer: {

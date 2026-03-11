@@ -318,7 +318,11 @@ class SafariWebExtensionHandler: NSObject, NSExtensionRequestHandling {
                         return
                     }
                 case "getMonetizationState":
+                    #if DEBUG
+                    let userState = ExtensionMonetizationKeys.grandfatheredState
+                    #else
                     let userState = userDefaults.string(forKey: ExtensionMonetizationKeys.userState) ?? ExtensionMonetizationKeys.unknownState
+                    #endif
                     let canTip = userState == ExtensionMonetizationKeys.grandfatheredState
                     sendResponse(
                         [
