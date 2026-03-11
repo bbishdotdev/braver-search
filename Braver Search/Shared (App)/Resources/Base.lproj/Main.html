@@ -1,29 +1,88 @@
-<!DOCTYPE html>
+<!doctype html>
 <html>
-<head>
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; img-src 'self' data:"
+    />
 
-    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, user-scalable=no"
+    />
 
-    <link rel="stylesheet" href="../Style.css">
+    <link rel="stylesheet" href="../Style.css" />
     <script src="../Script.js" defer></script>
-</head>
-<body>
-    <img src="../Icon.png" width="128" height="128" alt="Braver Search Icon">
-    <p class="platform-ios">You can turn on Braver Search’s Safari extension in Settings.</p>
-    <p class="platform-mac state-unknown">You can turn on Braver Search’s extension in Safari Extensions preferences.</p>
-    <p class="platform-mac state-on">Braver Search’s extension is currently on. You can turn it off in Safari Extensions preferences.</p>
-    <p class="platform-mac state-off">Braver Search’s extension is currently off. You can turn it on in Safari Extensions preferences.</p>
-    <button class="platform-mac open-preferences">Quit and Open Safari Extensions Preferences…</button>
-    <section class="support-section hidden">
-        <h2>Support Braver Search</h2>
-        <p class="support-copy">If Braver Search has been useful, you can support ongoing maintenance with an optional tip.</p>
-        <div class="support-actions">
-            <button class="review-button" type="button">Write a Review</button>
+  </head>
+  <body>
+    <section class="summary-grid">
+      <article class="summary-card status-card">
+        <h2>Braver Search</h2>
+        <div class="summary-row">
+          <img
+            src="../Icon.png"
+            width="72"
+            height="72"
+            alt="Braver Search Icon"
+            class="summary-icon"
+          />
+          <div class="summary-copy">
+            <p class="platform-ios">
+              You can turn on Braver Search’s Safari extension in Settings.
+            </p>
+            <p class="platform-mac state-unknown">
+              You can turn on Braver Search’s extension in Safari Extensions
+              preferences.
+            </p>
+            <p class="platform-mac state-on">
+              Braver Search’s extension is currently on. You can turn it off in
+              Safari Extensions preferences.
+            </p>
+            <p class="platform-mac state-off">
+              Braver Search’s extension is currently off. You can turn it on in
+              Safari Extensions preferences.
+            </p>
+          </div>
         </div>
-        <div class="support-products"></div>
-        <p class="support-thanks hidden">Thanks again for supporting Braver Search.</p>
+        <button class="platform-mac open-preferences">
+          Quit and Open Safari Extensions Preferences…
+        </button>
+      </article>
+
+      <article class="summary-card review-card">
+        <h2>Rate &amp; Review</h2>
+        <div class="summary-row">
+          <img
+            src=""
+            width="72"
+            height="72"
+            alt="Rate and Review"
+            class="summary-icon review-icon"
+          />
+          <p class="summary-copy-text">
+            Leaving a review motivates me to keep building, and it shows other
+            people that Braver Search works and is worth trying.
+          </p>
+        </div>
+        <button class="review-button" type="button">Write a Review</button>
+      </article>
     </section>
-</body>
+
+    <section class="support-section hidden">
+      <h2>Give Thanks</h2>
+      <p class="support-copy">
+        If Braver Search has been useful, you can leave an optional tip to help
+        support ongoing maintenance.
+      </p>
+      <div class="support-products"></div>
+      <p class="support-thanks hidden">
+        Thanks again for supporting Braver Search.
+      </p>
+    </section>
+    <p class="support-disclaimer">
+      Not affiliated with Brave Software Inc.
+      <a href="https://search.brave.com" target="_blank">About Brave Search</a>
+    </p>
+  </body>
 </html>

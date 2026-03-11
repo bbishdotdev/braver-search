@@ -4,8 +4,6 @@
 
 describe('Popup Script', () => {
     let toggleButton;
-    let statusDot;
-    let statusText;
     let reviewLink;
     let supportCard;
     let supportLink;
@@ -14,16 +12,12 @@ describe('Popup Script', () => {
         // Set up our document body
         document.body.innerHTML = `
             <input type="checkbox" id="toggleButton">
-            <div class="status-dot"></div>
-            <div class="status-text"></div>
             <a id="reviewLink" href="#"></a>
             <section id="supportCard" class="hidden"></section>
-            <a id="supportLink" href="#" class="hidden"></a>
+            <a id="supportLink" href="#" class="hidden"><span>Give Thanks!</span></a>
         `;
         
         toggleButton = document.getElementById('toggleButton');
-        statusDot = document.querySelector('.status-dot');
-        statusText = document.querySelector('.status-text');
         reviewLink = document.getElementById('reviewLink');
         supportCard = document.getElementById('supportCard');
         supportLink = document.getElementById('supportLink');
@@ -51,13 +45,11 @@ describe('Popup Script', () => {
             await new Promise(resolve => setTimeout(resolve, 0));
             
             expect(toggleButton.checked).toBe(true);
-            expect(statusDot.classList.contains('active')).toBe(true);
-            expect(statusText.classList.contains('active')).toBe(true);
-            expect(statusText.textContent).toBe('Enabled');
             expect(reviewLink.href).toBe('https://apps.apple.com/app/id6740840706?action=write-review');
             expect(supportCard.classList.contains('hidden')).toBe(false);
             expect(supportLink.href).toBe('braversearch://support');
             expect(supportLink.classList.contains('hidden')).toBe(false);
+            expect(supportLink.textContent).toContain('Give Thanks!');
         });
         
         it('should handle disabled initial state', async () => {
@@ -71,9 +63,6 @@ describe('Popup Script', () => {
             await new Promise(resolve => setTimeout(resolve, 0));
             
             expect(toggleButton.checked).toBe(false);
-            expect(statusDot.classList.contains('active')).toBe(false);
-            expect(statusText.classList.contains('active')).toBe(false);
-            expect(statusText.textContent).toBe('Disabled');
             expect(supportCard.classList.contains('hidden')).toBe(true);
             expect(supportLink.classList.contains('hidden')).toBe(true);
         });
@@ -100,8 +89,7 @@ describe('Popup Script', () => {
             await new Promise(resolve => setTimeout(resolve, 0));
             
             expect(browser.storage.local.set).toHaveBeenCalledWith({ enabled: true });
-            expect(statusDot.classList.contains('active')).toBe(true);
-            expect(statusText.textContent).toBe('Enabled');
+            expect(toggleButton.checked).toBe(true);
             expect(browser.runtime.sendNativeMessage).not.toHaveBeenCalled();
         });
 
@@ -114,7 +102,6 @@ describe('Popup Script', () => {
             await new Promise(resolve => setTimeout(resolve, 0));
             
             expect(toggleButton.checked).toBe(false);
-            expect(statusText.textContent).toBe('Disabled');
             expect(browser.runtime.sendNativeMessage).not.toHaveBeenCalled();
         });
     });

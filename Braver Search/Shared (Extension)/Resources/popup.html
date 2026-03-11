@@ -1,50 +1,57 @@
-<!DOCTYPE html>
+<!doctype html>
 <html>
   <head>
     <meta charset="UTF-8" />
     <link rel="stylesheet" href="popup.css" />
-    <script type="module" src="popup.js"></script>
+    <script defer src="popup.js"></script>
   </head>
   <body>
-    <div class="container">
-      <div class="toggle-container">
-        <label class="toggle">
-          <input type="checkbox" id="toggleButton" />
-          <span class="slider"></span>
-        </label>
-      </div>
-      <div class="status">
-        <span class="status-dot"></span>
-        <span class="status-text">Enabled</span>
-      </div>
-      <p class="description">
-        If enabled, Safari searches will be redirected to Brave Search.
-      </p>
+    <main class="popup-shell">
+      <section class="hero-card">
+        <div class="hero-top">
+          <div class="hero-copy">
+            <h1>Redirect Search</h1>
+            <p>Redirect Safari searches to Brave Search.</p>
+          </div>
+          <label class="toggle">
+            <input type="checkbox" id="toggleButton" />
+            <span class="slider"></span>
+          </label>
+        </div>
+      </section>
 
-      <div class="container">
-        <h2>Help & Support</h2>
-        <a href="https://github.com/btbishop93/braver-search" target="_blank">
-          <span>Report an issue</span>
+      <section class="action-grid">
+        <a
+          class="action-link"
+          href="https://github.com/bbishdotdev/braver-search"
+          target="_blank"
+        >
+          <span>Help &amp; Support</span>
         </a>
-        <a id="reviewLink" href="#" target="_blank">
-          <span>Write a review</span>
-        </a>
-      </div>
-      <section id="supportCard" class="support-card hidden">
-        <h2>Enjoying Braver Search?</h2>
-        <p class="support-description">
-          If it has been useful, you can leave a small one-time tip in the app.
-        </p>
-        <a id="supportLink" href="#" class="support-link hidden">
-          <span>Leave a tip in the app</span>
+        <a id="reviewLink" class="action-link" href="#" target="_blank">
+          <span>Rate &amp; Review</span>
         </a>
       </section>
+
+      <section id="supportCard" class="support-card hidden">
+        <div class="support-card-copy">
+          <h2>Enjoying Braver Search?</h2>
+          <p class="support-description">
+            If it has been useful, you can leave a small one-time tip in the
+            app.
+          </p>
+        </div>
+        <a id="supportLink" href="#" class="support-link hidden">
+          <span>Give Thanks!</span>
+        </a>
+      </section>
+
       <p class="disclaimer pb">
         Not affiliated with Brave Software Inc.
         <a href="https://search.brave.com" target="_blank"
           >About Brave Search</a
         >
       </p>
-    </div>
+    </main>
   </body>
 </html>

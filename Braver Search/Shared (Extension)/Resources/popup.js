@@ -4,16 +4,12 @@ document.addEventListener('DOMContentLoaded', async function() {
     console.log("Braver Search: DOM loaded");
     
     const toggleButton = document.getElementById('toggleButton');
-    const statusDot = document.querySelector('.status-dot');
-    const statusText = document.querySelector('.status-text');
     const reviewLink = document.getElementById('reviewLink');
     const supportCard = document.getElementById('supportCard');
     const supportLink = document.getElementById('supportLink');
 
     console.log("Braver Search: Elements found?", {
-        button: !!toggleButton,
-        dot: !!statusDot,
-        text: !!statusText
+        button: !!toggleButton
     });
 
     if (!toggleButton) {
@@ -108,17 +104,6 @@ document.addEventListener('DOMContentLoaded', async function() {
         
         // Update checkbox state
         toggleButton.checked = enabled;
-
-        // Update status with transition
-        if (enabled) {
-            statusDot.classList.add('active');
-            statusText.classList.add('active');
-            statusText.textContent = 'Enabled';
-        } else {
-            statusDot.classList.remove('active');
-            statusText.classList.remove('active');
-            statusText.textContent = 'Disabled';
-        }
         
         console.log("Braver Search: UI updated");
     }

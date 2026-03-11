@@ -26,9 +26,14 @@ function updateMonetization(payload) {
     const supportProducts = document.querySelector(".support-products");
     const supportThanks = document.querySelector(".support-thanks");
     const reviewButton = document.querySelector(".review-button");
+    const reviewIcon = document.querySelector(".review-icon");
 
     if (!supportSection || !supportProducts || !supportThanks || !reviewButton) {
         return;
+    }
+
+    if (reviewIcon && payload.reviewImageDataURL) {
+        reviewIcon.src = payload.reviewImageDataURL;
     }
 
     supportSection.classList.toggle("hidden", !payload.canTip);
@@ -40,29 +45,24 @@ function updateMonetization(payload) {
     }
 
     payload.products.forEach((product) => {
-        const button = document.createElement("button");
-        button.type = "button";
-        button.className = "support-product";
+        const card = document.createElement("article");
+        card.className = "support-product";
         const imageMarkup = product.imageDataURL
             ? `<img class="support-product-art" src="${product.imageDataURL}" alt="${product.displayName}">`
             : "";
-        button.innerHTML = `
-            <span class="support-product-content">
-                ${imageMarkup}
-                <span class="support-product-copy">
-                    <span class="support-product-title">${product.displayName}</span>
-                    <span class="support-product-description">${product.description ?? ""}</span>
-                </span>
-            </span>
-            <span class="support-product-price">${product.price}</span>
+        card.innerHTML = `
+            <span class="support-product-title">${product.displayName}</span>
+            ${imageMarkup}
+            <span class="support-product-description">${product.description ?? ""}</span>
+            <button type="button" class="support-product-button">Tip ${product.price}</button>
         `;
-        button.addEventListener("click", () => {
+        card.querySelector(".support-product-button")?.addEventListener("click", () => {
             webkit.messageHandlers.controller.postMessage({
                 action: "purchase",
                 productId: product.id
             });
         });
-        supportProducts.appendChild(button);
+        supportProducts.appendChild(card);
     });
 
     reviewButton.onclick = () => {

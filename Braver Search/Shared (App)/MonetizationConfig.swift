@@ -23,7 +23,8 @@ enum MonetizationConfig {
     static let appStoreID = "6740840706"
     static let supportURL = URL(string: "braversearch://support")!
     static let reviewURL = URL(string: "https://apps.apple.com/app/id\(appStoreID)?action=write-review")!
-    static let paidLaunchDate: Date = {
+    // Set to `nil` while the app is still free for everyone.
+    static let paidLaunchDate: Date? = {
         var components = DateComponents()
         components.calendar = Calendar(identifier: .gregorian)
         components.timeZone = TimeZone(secondsFromGMT: 0)
@@ -36,30 +37,30 @@ enum MonetizationConfig {
     static let donationOptions: [DonationOption] = [
         DonationOption(
             id: "braversearch.tip.thanks",
-            displayName: "Thanks",
+            displayName: "Thanks!",
             fallbackPrice: "$1.99",
-            description: "If this app helped, this means a lot to me",
+            description: "If you're enjoying this app, this means a lot to me.",
             assetName: "TipThanks"
         ),
         DonationOption(
             id: "braversearch.tip.cheers",
-            displayName: "Cheers",
+            displayName: "Cheers!",
             fallbackPrice: "$4.99",
-            description: "Thanks for helping me keep Braver Search going",
+            description: "Buy me a coffee and support future updates.",
             assetName: "TipCheers"
         ),
         DonationOption(
             id: "braversearch.tip.lifesaver",
-            displayName: "You're a lifesaver",
+            displayName: "You're a lifesaver!",
             fallbackPrice: "$9.99",
-            description: "Your support helps me keep building this app",
+            description: "I'm deeply grateful for support like this!",
             assetName: "TipLifesaver"
         ),
         DonationOption(
             id: "braversearch.tip.max",
-            displayName: "I can't thank you enough",
+            displayName: "I can't thank you enough!",
             fallbackPrice: "$99.99",
-            description: "Your generosity truly means the world to me",
+            description: "Your generosity truly means the world to me!",
             assetName: "TipMax"
         ),
     ]
