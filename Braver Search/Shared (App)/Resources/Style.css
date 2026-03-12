@@ -8,6 +8,10 @@
     color-scheme: light dark;
 
     --spacing: 20px;
+    --tip-card-width: 200px;
+    --tip-grid-gap: 10px;
+    --section-side-padding: 18px;
+    --content-width: calc((var(--tip-card-width) * 4) + (var(--tip-grid-gap) * 3) + (var(--section-side-padding) * 2));
 }
 
 html {
@@ -20,8 +24,8 @@ body {
     justify-content: center;
     flex-direction: column;
 
-    gap: var(--spacing);
-    margin: 0 calc(var(--spacing) * 2);
+    gap: 16px;
+    margin: 6px calc(var(--spacing) * 2) 16px;
     height: 100%;
 
     font: -apple-system-short-body;
@@ -58,4 +62,189 @@ body.state-off :is(.state-on, .state-unknown) {
 
 button {
     font-size: 1em;
+}
+
+.hidden {
+    display: none;
+}
+
+.summary-grid {
+    width: min(var(--content-width), 100%);
+    box-sizing: border-box;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+}
+
+.summary-card {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 14px 16px;
+    border-radius: 18px;
+    background: color-mix(in srgb, CanvasText 5%, Canvas 95%);
+}
+
+.summary-card h2 {
+    margin: 0;
+    text-align: left;
+}
+
+.summary-row {
+    display: grid;
+    grid-template-columns: 72px minmax(0, 1fr);
+    align-items: center;
+    gap: 14px;
+}
+
+.summary-icon {
+    border-radius: 20px;
+    width: 72px;
+    height: 72px;
+}
+
+.summary-copy {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    text-align: left;
+}
+
+.summary-copy p {
+    margin: 0;
+}
+
+.summary-copy-text {
+    margin: 0;
+    text-align: left;
+    color: inherit;
+    line-height: 1.38;
+}
+
+.open-preferences {
+    width: 100%;
+    padding: 10px 14px;
+    text-align: center;
+}
+
+.review-button {
+    width: 100%;
+    padding: 10px 14px;
+    text-align: center;
+}
+
+.support-section {
+    width: min(var(--content-width), 100%);
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding: 12px var(--section-side-padding) 14px;
+    border-radius: 18px;
+    background: color-mix(in srgb, CanvasText 6%, Canvas 94%);
+}
+
+.support-section h2 {
+    margin: 0;
+    text-align: left;
+}
+
+.support-copy {
+    margin: 0;
+    color: inherit;
+    line-height: 1.38;
+    text-align: left;
+}
+
+.support-actions {
+    display: flex;
+    justify-content: flex-start;
+    flex-shrink: 0;
+}
+
+.support-products {
+    display: grid;
+    grid-template-columns: repeat(4, var(--tip-card-width));
+    width: max-content;
+    max-width: 100%;
+    justify-content: center;
+    gap: var(--tip-grid-gap);
+    margin: 0 auto;
+}
+
+.support-product {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 10px;
+    border-radius: 12px;
+    background: color-mix(in srgb, #0f2745 34%, Canvas 66%);
+    border: 1px solid rgba(240, 98, 48, 0.22);
+    box-shadow:
+        inset 0 1px 0 rgba(255, 215, 130, 0.08),
+        0 0 0 1px rgba(240, 98, 48, 0.05),
+        0 12px 28px rgba(240, 98, 48, 0.08);
+    text-align: center;
+}
+
+.support-product-art,
+.support-product-title,
+.support-product-description {
+    pointer-events: none;
+}
+
+.support-product-art {
+    width: 78px;
+    height: 78px;
+    border-radius: 12px;
+    object-fit: cover;
+    flex-shrink: 0;
+}
+
+.support-product-title {
+    font-weight: 700;
+    font-size: 1.08em;
+    margin-bottom: 2px;
+}
+
+.support-product-description {
+    color: color-mix(in srgb, CanvasText 68%, Canvas 32%);
+    line-height: 1.35;
+    max-width: 20ch;
+    min-height: 2.7em;
+    font-size: 0.88em;
+    margin-bottom: 6px;
+}
+
+.support-product-button {
+    border: 0;
+    border-radius: 10px;
+    padding: 8px 12px;
+    background: linear-gradient(180deg, #f5cf78 0%, #d39a2c 100%);
+    color: #2d1a00;
+    font-size: 0.88em;
+    font-weight: 700;
+    min-width: 104px;
+    box-shadow: 0 8px 18px rgba(211, 154, 44, 0.22);
+}
+
+@media (max-width: 780px) {
+    .summary-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .summary-copy {
+        text-align: left;
+    }
+
+    .support-products {
+        grid-template-columns: repeat(2, var(--tip-card-width));
+    }
+}
+
+@media (max-width: 700px) {
+    .support-products {
+        grid-template-columns: 1fr;
+    }
 }
