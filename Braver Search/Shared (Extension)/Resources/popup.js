@@ -4,18 +4,41 @@ document.addEventListener('DOMContentLoaded', async function() {
     console.log("Braver Search: DOM loaded");
     
     const toggleButton = document.getElementById('toggleButton');
-    const statusDot = document.querySelector('.status-dot');
-    const statusText = document.querySelector('.status-text');
+    const reviewLink = document.getElementById('reviewLink');
+    const supportCard = document.getElementById('supportCard');
+    const supportLink = document.getElementById('supportLink');
 
     console.log("Braver Search: Elements found?", {
-        button: !!toggleButton,
-        dot: !!statusDot,
-        text: !!statusText
+        button: !!toggleButton
     });
 
     if (!toggleButton) {
         console.error("Braver Search: Toggle button not found!");
         return;
+    }
+
+    async function loadMonetizationState() {
+        if (!browser.runtime?.sendNativeMessage) {
+            return;
+        }
+
+        try {
+            const response = await browser.runtime.sendNativeMessage({
+                type: 'getMonetizationState'
+            });
+
+            if (reviewLink && response?.reviewURL) {
+                reviewLink.href = response.reviewURL;
+            }
+
+            if (supportCard && supportLink && response?.canTip && response?.supportURL) {
+                supportCard.classList.remove('hidden');
+                supportLink.href = response.supportURL;
+                supportLink.classList.remove('hidden');
+            }
+        } catch (error) {
+            console.error("Braver Search: Failed to load monetization state", error);
+        }
     }
 
     // Function to get current state
@@ -47,6 +70,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     const initialState = await getCurrentState();
     console.log("Braver Search: Initial state", initialState);
     updateUI(initialState);
+    await loadMonetizationState();
 
     // Handle toggle change
     toggleButton.addEventListener('change', async function(event) {
@@ -80,17 +104,6 @@ document.addEventListener('DOMContentLoaded', async function() {
         
         // Update checkbox state
         toggleButton.checked = enabled;
-
-        // Update status with transition
-        if (enabled) {
-            statusDot.classList.add('active');
-            statusText.classList.add('active');
-            statusText.textContent = 'Enabled';
-        } else {
-            statusDot.classList.remove('active');
-            statusText.classList.remove('active');
-            statusText.textContent = 'Disabled';
-        }
         
         console.log("Braver Search: UI updated");
     }

@@ -24,10 +24,25 @@
     <string>$(POSTHOG_API_KEY)</string>
     <key>POSTHOG_HOST</key>
     <string>$(POSTHOG_HOST)</string>
-    <key>LSRequiresIPhoneOS</key>
-    <true/>
-    <key>UIApplicationSceneManifest</key>
-    <dict>
+    <key>PAID_LAUNCH_ISO8601</key>
+    <string>$(PAID_LAUNCH_ISO8601)</string>
+	    <key>LSRequiresIPhoneOS</key>
+	    <true/>
+	    <key>CFBundleURLTypes</key>
+	    <array>
+	        <dict>
+	            <key>CFBundleTypeRole</key>
+	            <string>Editor</string>
+	            <key>CFBundleURLName</key>
+	            <string>xyz.bsquared.Braver-Search.support</string>
+	            <key>CFBundleURLSchemes</key>
+	            <array>
+	                <string>braversearch</string>
+	            </array>
+	        </dict>
+	    </array>
+	    <key>UIApplicationSceneManifest</key>
+	    <dict>
         <key>UIApplicationSupportsMultipleScenes</key>
         <false/>
         <key>UISceneConfigurations</key>

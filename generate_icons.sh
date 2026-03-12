@@ -1,50 +1,96 @@
 #!/bin/bash
 
-# Generate iOS icons (square)
-IOS_ASSET_PATH="Braver Search/Shared (App)/Assets.xcassets/AppIcon.appiconset"
-for size in 16 20 29 32 40 48 60 64 76 83.5 96 128 256 512 1024 2048; do
-  /opt/homebrew/bin/rsvg-convert -w ${size%.*} -h ${size%.*} braver.svg > "$IOS_ASSET_PATH/icon-${size}.png"
+set -euo pipefail
+
+SOURCE_ICON="/Users/brenden/Developer/hobby/braver-search/assets/braver-search.png"
+ASSET_PATH="Braver Search/Shared (App)/Assets.xcassets/AppIcon.appiconset"
+HOST_ICON_PATH="Braver Search/Shared (App)/Resources/Icon.png"
+EXTENSION_ICON_PATH="Braver Search/Shared (Extension)/Resources/images"
+
+if [ ! -f "$SOURCE_ICON" ]; then
+  echo "Missing source icon: $SOURCE_ICON" >&2
+  exit 1
+fi
+
+generate_icon() {
+  local size="$1"
+  local output="$2"
+  sips -s format png -z "$size" "$size" "$SOURCE_ICON" --out "$ASSET_PATH/$output" >/dev/null
+}
+
+generate_png() {
+  local size="$1"
+  local output="$2"
+  sips -s format png -z "$size" "$size" "$SOURCE_ICON" --out "$output" >/dev/null
+}
+
+generate_rounded_png() {
+  local size="$1"
+  local output="$2"
+  local radius=$(( size * 23 / 100 ))
+
+  magick "$SOURCE_ICON" \
+    -resize "${size}x${size}" \
+    \( -size "${size}x${size}" xc:none -fill white -draw "roundrectangle 0,0,$((size - 1)),$((size - 1)),$radius,$radius" \) \
+    -alpha set \
+    -compose copyopacity \
+    -composite \
+    "$output"
+}
+
+find "$ASSET_PATH" -maxdepth 1 -type f -name "*.png" -delete
+
+# iPhone
+generate_icon 40 "icon-20@2x.png"
+generate_icon 60 "icon-20@3x.png"
+generate_icon 58 "icon-29@2x.png"
+generate_icon 87 "icon-29@3x.png"
+generate_icon 80 "icon-40@2x.png"
+generate_icon 120 "icon-40@3x.png"
+generate_icon 120 "icon-60@2x.png"
+generate_icon 180 "icon-60@3x.png"
+
+# iPad
+generate_icon 20 "icon-20.png"
+generate_icon 40 "icon-20@2x.png"
+generate_icon 29 "icon-29.png"
+generate_icon 58 "icon-29@2x.png"
+generate_icon 40 "icon-40.png"
+generate_icon 80 "icon-40@2x.png"
+generate_icon 76 "icon-76.png"
+generate_icon 152 "icon-76@2x.png"
+generate_icon 167 "icon-83.5@2x.png"
+
+# App Store
+generate_icon 1024 "icon-1024.png"
+
+# macOS
+generate_icon 16 "mac-16.png"
+generate_icon 32 "mac-16@2x.png"
+generate_icon 32 "mac-32.png"
+generate_icon 64 "mac-32@2x.png"
+generate_icon 128 "mac-128.png"
+generate_icon 256 "mac-128@2x.png"
+generate_icon 256 "mac-256.png"
+generate_icon 512 "mac-256@2x.png"
+generate_icon 512 "mac-512.png"
+generate_icon 1024 "mac-512@2x.png"
+
+echo "Generated app icons from $SOURCE_ICON"
+
+# Host app HTML icon
+generate_png 384 "$HOST_ICON_PATH"
+
+# Safari extension icons
+generate_extension_icon() {
+  local size="$1"
+  local output="$2"
+  generate_rounded_png "$size" "$EXTENSION_ICON_PATH/$output"
+}
+
+mkdir -p "$EXTENSION_ICON_PATH"
+for size in 16 32 48 64 96 128 256 512 1024 2048; do
+  generate_extension_icon "$size" "icon-${size}.png"
 done
 
-for size in 20 29 40 60 76; do
-  /opt/homebrew/bin/rsvg-convert -w $((size*2)) -h $((size*2)) braver.svg > "$IOS_ASSET_PATH/icon-${size}@2x.png"
-done
-
-for size in 20 29 40 60; do
-  /opt/homebrew/bin/rsvg-convert -w $((size*3)) -h $((size*3)) braver.svg > "$IOS_ASSET_PATH/icon-${size}@3x.png"
-done
-
-/opt/homebrew/bin/rsvg-convert -w 167 -h 167 braver.svg > "$IOS_ASSET_PATH/icon-83.5@2x.png"
-
-# Add missing iOS sizes
-declare -a ios_sizes=(
-    "16" "20" "29" "32" "40" "48" "60" "64" 
-    "76" "83.5" "96" "128" "256" "512" "1024" "2048"
-)
-
-# Add retina validation
-for size in 20 29 40 60 76; do
-    if [ ! -f "$IOS_ASSET_PATH/icon-${size}@2x.png" ]; then
-        echo "Error: Missing iOS icon ${size}@2x"
-        exit 1
-    fi
-done
-
-# Generate macOS icons (rounded)
-MAC_ASSET_PATH="Braver Search/Shared (App)/Assets.xcassets/AppIcon.appiconset"
-declare -a mac_sizes=("16" "32" "64" "128" "256" "512" "1024")
-
-# Generate 1x and 2x sizes
-for size in "${mac_sizes[@]}"; do
-  # 1x scale
-  /opt/homebrew/bin/rsvg-convert -w $size -h $size braver-rounded.svg > "$MAC_ASSET_PATH/mac-${size}.png"
-  # 2x scale
-  double_size=$((size*2))
-  /opt/homebrew/bin/rsvg-convert -w $double_size -h $double_size braver-rounded.svg > "$MAC_ASSET_PATH/mac-${size}@2x.png"
-done
-
-# Special case for 16x16@2x (32x32)
-/opt/homebrew/bin/rsvg-convert -w 32 -h 32 braver-rounded.svg > "$MAC_ASSET_PATH/mac-16@2x.png"
-
-# Generate 512@2x (1024x1024) separately to avoid duplication
-/opt/homebrew/bin/rsvg-convert -w 1024 -h 1024 braver-rounded.svg > "$MAC_ASSET_PATH/mac-512@2x.png"
+echo "Generated host and extension icons from $SOURCE_ICON"

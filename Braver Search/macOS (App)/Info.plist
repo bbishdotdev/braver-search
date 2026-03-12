@@ -20,6 +20,19 @@
     <string>$(MARKETING_VERSION)</string>
     <key>CFBundleVersion</key>
     <string>$(CURRENT_PROJECT_VERSION)</string>
+    <key>CFBundleURLTypes</key>
+    <array>
+        <dict>
+            <key>CFBundleTypeRole</key>
+            <string>Editor</string>
+            <key>CFBundleURLName</key>
+            <string>xyz.bsquared.Braver-Search.support</string>
+            <key>CFBundleURLSchemes</key>
+            <array>
+                <string>braversearch</string>
+            </array>
+        </dict>
+    </array>
     <key>LSApplicationCategoryType</key>
     <string>public.app-category.utilities</string>
     <key>LSMinimumSystemVersion</key>
@@ -36,5 +49,7 @@
     <string>$(POSTHOG_API_KEY)</string>
     <key>POSTHOG_HOST</key>
     <string>$(POSTHOG_HOST)</string>
+    <key>PAID_LAUNCH_ISO8601</key>
+    <string>$(PAID_LAUNCH_ISO8601)</string>
 </dict>
 </plist>

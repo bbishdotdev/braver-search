@@ -1,0 +1,12 @@
+{
+  "images" : [
+    {
+      "filename" : "rate-review.png",
+      "idiom" : "universal"
+    }
+  ],
+  "info" : {
+    "author" : "xcode",
+    "version" : 1
+  }
+}

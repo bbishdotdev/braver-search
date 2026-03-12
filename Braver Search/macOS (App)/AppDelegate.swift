@@ -8,6 +8,7 @@
 import Cocoa
 import Foundation
 import Security
+import StoreKit
 
 enum MacAppAnalytics {
     static let baseGroupIdentifier = "group.xyz.bsquared.braversearch"
@@ -143,10 +144,24 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         MacAppAnalytics.initializeSharedState()
         MacAppAnalytics.trackFirstAppOpenIfNeeded()
         MacAppAnalytics.track("app_opened")
+        MonetizationManager.shared.configureIfNeeded()
+        Task {
+            await MonetizationManager.shared.resolveUserState()
+            await StoreManager.shared.loadProductsIfNeeded()
+        }
     }
 
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
         return true
+    }
+
+    func application(_ application: NSApplication, open urls: [URL]) {
+        guard urls.contains(where: { $0.scheme?.lowercased() == "braversearch" && $0.host?.lowercased() == "support" }) else {
+            return
+        }
+
+        MonetizationManager.shared.openSupportFlow()
+        NSApp.activate(ignoringOtherApps: true)
     }
 
 }

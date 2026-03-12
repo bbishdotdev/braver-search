@@ -1,0 +1,12 @@
+{
+  "images" : [
+    {
+      "filename" : "tip-thanks.png",
+      "idiom" : "universal"
+    }
+  ],
+  "info" : {
+    "author" : "xcode",
+    "version" : 1
+  }
+}
