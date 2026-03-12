@@ -24,6 +24,8 @@
     <string>$(POSTHOG_API_KEY)</string>
     <key>POSTHOG_HOST</key>
     <string>$(POSTHOG_HOST)</string>
+    <key>PAID_LAUNCH_ISO8601</key>
+    <string>$(PAID_LAUNCH_ISO8601)</string>
 	    <key>LSRequiresIPhoneOS</key>
 	    <true/>
 	    <key>CFBundleURLTypes</key>

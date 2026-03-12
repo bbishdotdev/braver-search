@@ -49,16 +49,17 @@ private enum ExtensionMonetizationKeys {
 }
 
 private enum ExtensionMonetizationConfig {
-    static let paidLaunchDate: Date = {
-        var components = DateComponents()
-        components.calendar = Calendar(identifier: .gregorian)
-        components.timeZone = TimeZone(identifier: "America/Los_Angeles")
-        components.year = 2026
-        components.month = 4
-        components.day = 2
-        components.hour = 0
-        components.minute = 0
-        return components.date!
+    private static let paidLaunchDateInfoKey = "PAID_LAUNCH_ISO8601"
+
+    static let paidLaunchDate: Date? = {
+        guard let rawValue = Bundle.main.object(forInfoDictionaryKey: paidLaunchDateInfoKey) as? String,
+              !rawValue.isEmpty else {
+            return nil
+        }
+
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime]
+        return formatter.date(from: rawValue)
     }()
 }
 
@@ -68,7 +69,11 @@ private func resolvedExtensionUserState(from defaults: UserDefaults) -> String {
         return storedState
     }
 
-    return Date() < ExtensionMonetizationConfig.paidLaunchDate
+    guard let paidLaunchDate = ExtensionMonetizationConfig.paidLaunchDate else {
+        return ExtensionMonetizationKeys.grandfatheredState
+    }
+
+    return Date() < paidLaunchDate
         ? ExtensionMonetizationKeys.grandfatheredState
         : ExtensionMonetizationKeys.unknownState
 }

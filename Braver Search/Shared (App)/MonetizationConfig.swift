@@ -19,21 +19,21 @@ struct DonationOption: Identifiable {
 }
 
 enum MonetizationConfig {
+    private static let paidLaunchDateInfoKey = "PAID_LAUNCH_ISO8601"
     static let appGroupIdentifier = "group.xyz.bsquared.braversearch"
     static let appStoreID = "6740840706"
     static let supportURL = URL(string: "braversearch://support")!
     static let reviewURL = URL(string: "https://apps.apple.com/app/id\(appStoreID)?action=write-review")!
     // Set to `nil` while the app is still free for everyone.
     static let paidLaunchDate: Date? = {
-        var components = DateComponents()
-        components.calendar = Calendar(identifier: .gregorian)
-        components.timeZone = TimeZone(identifier: "America/Los_Angeles")
-        components.year = 2026
-        components.month = 4
-        components.day = 2
-        components.hour = 0
-        components.minute = 0
-        return components.date!
+        guard let rawValue = Bundle.main.object(forInfoDictionaryKey: paidLaunchDateInfoKey) as? String,
+              !rawValue.isEmpty else {
+            return nil
+        }
+
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime]
+        return formatter.date(from: rawValue)
     }()
 
     static let donationOptions: [DonationOption] = [
