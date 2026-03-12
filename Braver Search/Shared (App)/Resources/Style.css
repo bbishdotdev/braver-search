@@ -156,12 +156,6 @@ button {
     text-align: left;
 }
 
-.support-thanks {
-    margin: 0;
-    color: color-mix(in srgb, CanvasText 72%, Canvas 28%);
-    text-align: left;
-}
-
 .support-actions {
     display: flex;
     justify-content: flex-start;

@@ -24,11 +24,10 @@ function openPreferences() {
 function updateMonetization(payload) {
     const supportSection = document.querySelector(".support-section");
     const supportProducts = document.querySelector(".support-products");
-    const supportThanks = document.querySelector(".support-thanks");
     const reviewButton = document.querySelector(".review-button");
     const reviewIcon = document.querySelector(".review-icon");
 
-    if (!supportSection || !supportProducts || !supportThanks || !reviewButton) {
+    if (!supportSection || !supportProducts || !reviewButton) {
         return;
     }
 
@@ -37,7 +36,6 @@ function updateMonetization(payload) {
     }
 
     supportSection.classList.toggle("hidden", !payload.canTip);
-    supportThanks.classList.toggle("hidden", !payload.hasDonated);
     supportProducts.innerHTML = "";
 
     if (!payload.canTip) {

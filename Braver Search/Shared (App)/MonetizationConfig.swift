@@ -27,10 +27,12 @@ enum MonetizationConfig {
     static let paidLaunchDate: Date? = {
         var components = DateComponents()
         components.calendar = Calendar(identifier: .gregorian)
-        components.timeZone = TimeZone(secondsFromGMT: 0)
+        components.timeZone = TimeZone(identifier: "America/Los_Angeles")
         components.year = 2026
         components.month = 4
         components.day = 2
+        components.hour = 0
+        components.minute = 0
         return components.date!
     }()
 
