@@ -38,12 +38,6 @@ struct SupportSheetView: View {
                             )
                         }
 
-                        if monetization.hasDonated {
-                            Text("Thanks again for supporting Braver Search.")
-                                .font(.system(size: 14, weight: .medium))
-                                .foregroundStyle(IOSTheme.secondaryText)
-                        }
-
                         if let purchaseMessage = store.purchaseMessage {
                             Text(purchaseMessage)
                                 .font(.system(size: 14, weight: .medium))

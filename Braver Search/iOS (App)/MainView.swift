@@ -181,12 +181,6 @@ struct MainView: View {
                 }
             )
 
-            if monetization.hasDonated {
-                Text("Thanks again for supporting Braver Search.")
-                    .font(.system(size: 14, weight: .medium))
-                    .foregroundStyle(IOSTheme.secondaryText)
-            }
-
             if let purchaseMessage = store.purchaseMessage {
                 Text(purchaseMessage)
                     .font(.system(size: 14, weight: .medium))
@@ -375,13 +369,13 @@ struct IOSDonationCarousel: View {
 
     var body: some View {
         VStack(spacing: 12) {
-            HStack(spacing: 8) {
+            HStack(spacing: 12) {
                 Group {
                     if selectedIndex > 0 {
-                        IOSCarouselEdgeIndicator(systemName: "chevron.left")
+                        IOSCarouselEdgeIndicator(direction: .leading)
                     } else {
                         Color.clear
-                            .frame(width: 28, height: 28)
+                            .frame(width: 32, height: 28)
                     }
                 }
 
@@ -416,10 +410,10 @@ struct IOSDonationCarousel: View {
 
                 Group {
                     if selectedIndex < MonetizationConfig.donationOptions.count - 1 {
-                        IOSCarouselEdgeIndicator(systemName: "chevron.right")
+                        IOSCarouselEdgeIndicator(direction: .trailing)
                     } else {
                         Color.clear
-                            .frame(width: 28, height: 28)
+                            .frame(width: 32, height: 28)
                     }
                 }
             }
@@ -470,16 +464,50 @@ struct IOSDonationCarousel: View {
     }
 }
 
+enum IOSCarouselIndicatorDirection {
+    case leading
+    case trailing
+
+    var symbolName: String {
+        switch self {
+        case .leading:
+            return "chevron.left.2"
+        case .trailing:
+            return "chevron.right.2"
+        }
+    }
+
+    var offset: CGFloat {
+        switch self {
+        case .leading:
+            return -4
+        case .trailing:
+            return 4
+        }
+    }
+}
+
 struct IOSCarouselEdgeIndicator: View {
-    let systemName: String
+    let direction: IOSCarouselIndicatorDirection
+    @State private var isAnimating = false
 
     var body: some View {
-        Image(systemName: systemName)
-            .font(.system(size: 14, weight: .bold))
-            .foregroundStyle(Color.white.opacity(0.55))
-            .frame(width: 28, height: 28)
-            .background(Color.black.opacity(0.18))
-            .clipShape(Circle())
+        Image(systemName: direction.symbolName)
+            .font(.system(size: 12, weight: .black))
+            .foregroundStyle(Color.white.opacity(isAnimating ? 0.34 : 0.16))
+            .frame(width: 32, height: 28)
+            .offset(x: isAnimating ? direction.offset : 0)
+            .allowsHitTesting(false)
+            .accessibilityHidden(true)
+            .onAppear {
+                guard !isAnimating else {
+                    return
+                }
+
+                withAnimation(.easeInOut(duration: 1.1).repeatForever(autoreverses: true)) {
+                    isAnimating = true
+                }
+            }
     }
 }
 
