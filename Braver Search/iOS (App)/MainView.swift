@@ -169,7 +169,7 @@ struct MainView: View {
 
             IOSDonationCarousel(
                 selectedIndex: $selectedDonationIndex,
-                height: 380,
+                height: 344,
                 isDisabled: store.activePurchaseProductID != nil,
                 priceText: { option in
                     store.priceText(for: option)
@@ -286,11 +286,12 @@ struct IOSDonationCard: View {
     let priceText: String
     let isDisabled: Bool
     let action: () -> Void
+    private let cornerRadius: CGFloat = 26
 
     var body: some View {
-        VStack(alignment: .center, spacing: 18) {
+        VStack(alignment: .center, spacing: 14) {
             Text(option.displayName)
-                .font(.system(size: 24, weight: .bold))
+                .font(.system(size: 22, weight: .bold))
                 .foregroundStyle(.white)
                 .multilineTextAlignment(.center)
                 .frame(maxWidth: .infinity)
@@ -298,11 +299,11 @@ struct IOSDonationCard: View {
             Image(option.assetName)
                 .resizable()
                 .scaledToFit()
-                .frame(width: 124, height: 124)
-                .clipShape(RoundedRectangle(cornerRadius: 28, style: .continuous))
+                .frame(width: 108, height: 108)
+                .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
 
             Text(option.description)
-                .font(.system(size: 18, weight: .medium))
+                .font(.system(size: 16, weight: .medium))
                 .foregroundStyle(IOSTheme.secondaryText)
                 .multilineTextAlignment(.center)
                 .frame(maxWidth: .infinity, alignment: .center)
@@ -312,12 +313,12 @@ struct IOSDonationCard: View {
 
             Button(action: action) {
                 Text("Tip \(priceText)")
-                    .font(.system(size: 20, weight: .bold))
+                    .font(.system(size: 18, weight: .bold))
                     .foregroundStyle(IOSTheme.goldText)
                     .frame(maxWidth: .infinity)
-                    .padding(.vertical, 14)
+                    .padding(.vertical, 12)
                     .background(
-                        RoundedRectangle(cornerRadius: 18, style: .continuous)
+                        RoundedRectangle(cornerRadius: 16, style: .continuous)
                             .fill(
                                 LinearGradient(
                                     colors: [IOSTheme.goldStart, IOSTheme.goldEnd],
@@ -326,18 +327,18 @@ struct IOSDonationCard: View {
                                 )
                             )
                     )
-                    .shadow(color: IOSTheme.goldEnd.opacity(0.25), radius: 12, y: 8)
+                    .shadow(color: IOSTheme.goldEnd.opacity(0.2), radius: 8, y: 5)
             }
             .buttonStyle(.plain)
             .disabled(isDisabled)
             .opacity(isDisabled ? 0.7 : 1)
         }
-        .padding(.horizontal, 22)
-        .padding(.top, 22)
-        .padding(.bottom, 20)
+        .padding(.horizontal, 20)
+        .padding(.top, 18)
+        .padding(.bottom, 16)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .background(
-            RoundedRectangle(cornerRadius: 28, style: .continuous)
+            RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
                 .fill(
                     LinearGradient(
                         colors: [IOSTheme.supportStart, IOSTheme.supportEnd],
@@ -347,10 +348,10 @@ struct IOSDonationCard: View {
                 )
         )
         .overlay(
-            RoundedRectangle(cornerRadius: 28, style: .continuous)
+            RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
                 .stroke(IOSTheme.supportBorder, lineWidth: 1)
         )
-        .shadow(color: IOSTheme.supportBorder.opacity(0.24), radius: 14)
+        .shadow(color: IOSTheme.supportBorder.opacity(0.18), radius: 9, y: 4)
     }
 }
 
@@ -388,7 +389,7 @@ struct IOSDonationCarousel: View {
                             action: { action(option) }
                         )
                         .padding(.horizontal, 12)
-                        .padding(.vertical, 4)
+                        .padding(.vertical, 8)
                         .tag(index)
                     }
                 }

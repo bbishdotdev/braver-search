@@ -25,7 +25,7 @@ struct SupportSheetView: View {
                         if monetization.canShowSupport {
                             IOSDonationCarousel(
                                 selectedIndex: $selectedDonationIndex,
-                                height: 380,
+                                height: 344,
                                 isDisabled: store.activePurchaseProductID != nil,
                                 priceText: { option in
                                     store.priceText(for: option)
