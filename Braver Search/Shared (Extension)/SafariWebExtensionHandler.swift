@@ -48,6 +48,31 @@ private enum ExtensionMonetizationKeys {
     static let supportURL = "braversearch://support"
 }
 
+private enum ExtensionMonetizationConfig {
+    static let paidLaunchDate: Date = {
+        var components = DateComponents()
+        components.calendar = Calendar(identifier: .gregorian)
+        components.timeZone = TimeZone(identifier: "America/Los_Angeles")
+        components.year = 2026
+        components.month = 4
+        components.day = 2
+        components.hour = 0
+        components.minute = 0
+        return components.date!
+    }()
+}
+
+private func resolvedExtensionUserState(from defaults: UserDefaults) -> String {
+    let storedState = defaults.string(forKey: ExtensionMonetizationKeys.userState) ?? ExtensionMonetizationKeys.unknownState
+    guard storedState == ExtensionMonetizationKeys.unknownState else {
+        return storedState
+    }
+
+    return Date() < ExtensionMonetizationConfig.paidLaunchDate
+        ? ExtensionMonetizationKeys.grandfatheredState
+        : ExtensionMonetizationKeys.unknownState
+}
+
 enum ExtensionAnalytics {
     static let baseGroupIdentifier = "group.xyz.bsquared.braversearch"
     private static let anonymousIDKey = "analyticsAnonymousID"
@@ -318,7 +343,7 @@ class SafariWebExtensionHandler: NSObject, NSExtensionRequestHandling {
                         return
                     }
                 case "getMonetizationState":
-                    let userState = userDefaults.string(forKey: ExtensionMonetizationKeys.userState) ?? ExtensionMonetizationKeys.unknownState
+                    let userState = resolvedExtensionUserState(from: userDefaults)
                     let canTip = userState == ExtensionMonetizationKeys.grandfatheredState
                     sendResponse(
                         [
