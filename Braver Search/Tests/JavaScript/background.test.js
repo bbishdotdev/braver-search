@@ -214,7 +214,10 @@ describe('Background Script', () => {
                 'https://click.email.domain.com/tracking?id=123&url=https://shop.com',
                 'https://auth.service.com/callback?token=abc123&redirect_uri=https://app.com',
                 'https://nam12.safelinks.protection.outlook.com/?url=https%3A%2F%2Fexample.com%2Fmagic%3Ftoken%3Dabc123&data=some-long-signed-payload',
-                'https://example.com/login?otp=123456&redirect_uri=https%3A%2F%2Fapp.example.com%2Fwelcome&token=ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890'
+                'https://example.com/login?otp=123456&redirect_uri=https%3A%2F%2Fapp.example.com%2Fwelcome&token=ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890',
+                'myapp://callback?code=abc123&state=xyz789',
+                'https://accounts.example.com/verify#access_token=abc.def.ghi',
+                'https://localhost:3000/auth/callback?code=abc123&state=xyz789'
             ];
 
             wrappedQueries.forEach(query => {
