@@ -30,6 +30,10 @@ const WRAPPER_KEYWORD_PATTERN = /(awstrack|safelinks|urldefense|doubleclick|trac
 const PURE_URL_PATTERN = /^https?:\/\/\S+$/i;
 const ENCODED_URL_PATTERN = /^https?%3a%2f%2f/i;
 const DOMAIN_WITH_PATH_PATTERN = /^(?:www\.)?[\w.-]+\.[a-z]{2,}(?:[/?#].*)$/i;
+const SUSPICIOUS_QUERY_PATTERN = /[:/?&=#%]|(?:^|\s)www\.|(?:^|\s)localhost\b|\b\d{1,3}(?:\.\d{1,3}){3}\b/i;
+const AUTH_LINK_PATTERN = /(?:^|[?&#&;])(?:code|state|token|id_token|access_token|refresh_token|auth_token|otp|nonce|ticket|samlresponse|redirect_uri)=/i;
+const AUTH_WORD_PATTERN = /(?:^|[\/?&#._-])(?:auth|callback|verify|verification|magic|login|signin|sign-in|reset|activate)(?:[\/?&#._=-]|$)/i;
+const CUSTOM_SCHEME_PATTERN = /^[a-z][a-z0-9+.-]*:\/\/\S+/i;
 const OPAQUE_TOKEN_PATTERN = /\b[A-Za-z0-9_-]{32,}\b/;
 const JWT_PATTERN = /\b[A-Za-z0-9_-]{16,}\.[A-Za-z0-9_-]{16,}\.[A-Za-z0-9_-]{16,}\b/;
 
@@ -133,8 +137,12 @@ function loadEnabledState() {
     return enabledState.pending;
 }
 
-function getEnabledState() {
-    return enabledState.loaded ? Promise.resolve(enabledState.value) : loadEnabledState();
+async function isRedirectEnabledForNavigation() {
+    if (enabledState.loaded) {
+        return enabledState.value;
+    }
+
+    return loadEnabledState();
 }
 
 function trackEvent(event, properties = {}) {
@@ -178,6 +186,32 @@ function isPureUrlLikeQuery(query) {
         || DOMAIN_WITH_PATH_PATTERN.test(normalized);
 }
 
+function isSimpleSearchQuery(query) {
+    const trimmedQuery = query.trim();
+    if (!trimmedQuery || trimmedQuery.length > 120) {
+        return false;
+    }
+
+    return !SUSPICIOUS_QUERY_PATTERN.test(trimmedQuery)
+        && !OPAQUE_TOKEN_PATTERN.test(trimmedQuery)
+        && !JWT_PATTERN.test(trimmedQuery);
+}
+
+function isAuthOrVerificationQuery(query, onceDecodedQuery) {
+    const candidates = [query, onceDecodedQuery];
+    return candidates.some(candidate => {
+        const normalized = stripWrappedPunctuation(candidate);
+        if (!normalized || /\s/.test(normalized)) {
+            return false;
+        }
+
+        return CUSTOM_SCHEME_PATTERN.test(normalized)
+            || AUTH_LINK_PATTERN.test(normalized)
+            || AUTH_WORD_PATTERN.test(normalized)
+            || JWT_PATTERN.test(normalized);
+    });
+}
+
 function countUrlLikeSegments(value) {
     const matches = value.match(/https?:\/\/|https?%3a%2f%2f|www\.[\w.-]+\.[a-z]{2,}(?:\/|\?)/gi);
     return matches ? matches.length : 0;
@@ -196,6 +230,10 @@ function scoreWrappedQuery(query) {
 
     const onceDecodedQuery = safeDecodeURIComponent(trimmedQuery);
     let score = 0;
+
+    if (isAuthOrVerificationQuery(trimmedQuery, onceDecodedQuery)) {
+        return 3;
+    }
 
     if (isPureUrlLikeQuery(trimmedQuery)) {
         score += 3;
@@ -239,7 +277,7 @@ function scoreWrappedQuery(query) {
 }
 
 function shouldSkipQuery(query) {
-    return scoreWrappedQuery(query) >= 3;
+    return !isSimpleSearchQuery(query) && scoreWrappedQuery(query) >= 3;
 }
 
 browser.storage.onChanged?.addListener((changes, areaName) => {
@@ -298,7 +336,7 @@ browser.webNavigation.onBeforeNavigate.addListener(async details => {
         return;
     }
 
-    const enabled = await getEnabledState();
+    const enabled = await isRedirectEnabledForNavigation();
     if (!enabled) {
         return;
     }
