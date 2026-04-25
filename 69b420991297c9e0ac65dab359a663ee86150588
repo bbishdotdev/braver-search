@@ -1,0 +1,38 @@
+"Braver Search/Tests/JavaScript/background.test.js"
+  97a1312d41d885c1 217-220
+"Braver Search/Shared (Extension)/Resources/background.js"
+  97a1312d41d885c1 33-36,140-145,189-212,234-236,280,339
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.22",
+  "base_commit_sha": "69b420991297c9e0ac65dab359a663ee86150588",
+  "prompts": {
+    "4f6929dcad5bc144": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019cd35e-598d-7152-8196-4ca91e697692",
+        "model": "gpt-5.4"
+      },
+      "human_author": "Brenden Bishop <btbishop93@gmail.com>",
+      "messages": [],
+      "total_additions": 122,
+      "total_deletions": 0,
+      "accepted_lines": 122,
+      "overriden_lines": 0
+    },
+    "97a1312d41d885c1": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019dae01-8a1d-7172-b041-a2a722362f4f",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Brenden Bishop <btbishop93@gmail.com>",
+      "messages": [],
+      "total_additions": 46,
+      "total_deletions": 5,
+      "accepted_lines": 46,
+      "overriden_lines": 0
+    }
+  }
+}
