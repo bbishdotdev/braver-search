@@ -7,7 +7,6 @@
 
 import SwiftUI
 import Combine
-import UIKit
 
 private enum IOSSetupKeys {
     static let hasSeenExtensionRuntime = "hasSeenExtensionRuntime"
@@ -18,7 +17,6 @@ private enum IOSAnalyticsEvents {
 }
 
 struct MainView: View {
-    @State private var hasSeenExtensionRuntime: Bool
     @State private var isShowingSupportSheet = false
     @State private var selectedDonationIndex = 0
     @StateObject private var monetization = MonetizationManager.shared
@@ -33,8 +31,6 @@ struct MainView: View {
             defaults.set(true, forKey: "enabled")
             defaults.synchronize()
         }
-
-        self._hasSeenExtensionRuntime = State(initialValue: defaults.bool(forKey: IOSSetupKeys.hasSeenExtensionRuntime))
     }
 
     var body: some View {
@@ -67,9 +63,6 @@ struct MainView: View {
             await MonetizationManager.shared.resolveUserState()
             await StoreManager.shared.loadProductsIfNeeded()
         }
-        .onReceive(NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification)) { _ in
-            refreshExtensionRuntimeStatus()
-        }
         .onReceive(NotificationCenter.default.publisher(for: .openSupportFlow)) { _ in
             guard monetization.canShowSupport else {
                 return
@@ -84,42 +77,29 @@ struct MainView: View {
     private var activationCard: some View {
         IOSSurfaceCard {
             VStack(alignment: .leading, spacing: 16) {
-                if !hasSeenExtensionRuntime {
-                    SetupVideoView()
-                }
+                SetupVideoView()
 
-                HStack(alignment: .top, spacing: 14) {
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text(hasSeenExtensionRuntime ? "Safari Setup Detected" : "Finish Safari Setup")
-                            .font(.system(size: 24, weight: .bold))
-                            .foregroundStyle(.white)
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Finish Safari Setup")
+                        .font(.system(size: 24, weight: .bold))
+                        .foregroundStyle(.white)
 
-                        Text(hasSeenExtensionRuntime ? "Safari has loaded Braver Search on this device. Try a search in Safari to confirm redirects are working." : "Safari has its own extension switch. Follow the video, then use the guide if you get stuck.")
-                            .font(.system(size: 15, weight: .medium))
-                            .foregroundStyle(IOSTheme.secondaryText)
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
-
-                    Spacer(minLength: 8)
-
-                    IOSStatusPill(
-                        title: hasSeenExtensionRuntime ? "Detected" : "Needed",
-                        tint: hasSeenExtensionRuntime ? IOSTheme.activeGreen : IOSTheme.accentOrange
-                    )
+                    Text("Safari has its own extension switch. Follow the video, then use the guide if you get stuck.")
+                        .font(.system(size: 15, weight: .medium))
+                        .foregroundStyle(IOSTheme.secondaryText)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
 
                 NavigationLink(destination: InstallationGuideView()) {
-                    IOSInlineActionLabel(title: hasSeenExtensionRuntime ? "Review setup guide" : "Open detailed guide")
+                    IOSInlineActionLabel(title: "Open detailed guide")
                 }
                 .buttonStyle(.plain)
                 .simultaneousGesture(TapGesture().onEnded(trackSetupGuideOpened))
 
-                if !hasSeenExtensionRuntime {
-                    Text("iOS does not provide a safe direct link to Safari extension settings, so these steps walk you through Settings manually.")
-                        .font(.system(size: 13, weight: .medium))
-                        .foregroundStyle(IOSTheme.tertiaryText)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
+                Text("iOS does not provide a safe direct link to Safari extension settings, so these steps walk you through Settings manually.")
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundStyle(IOSTheme.tertiaryText)
+                    .fixedSize(horizontal: false, vertical: true)
             }
         }
     }
@@ -205,16 +185,12 @@ struct MainView: View {
         }
     }
 
-    private func refreshExtensionRuntimeStatus() {
-        hasSeenExtensionRuntime = userDefaults.bool(forKey: IOSSetupKeys.hasSeenExtensionRuntime)
-    }
-
     private func trackSetupGuideOpened() {
         IOSAppAnalytics.track(
             IOSAnalyticsEvents.setupGuideOpened,
             properties: [
                 "surface": "ios_app",
-                "extension_runtime_seen": hasSeenExtensionRuntime,
+                "extension_runtime_seen": userDefaults.bool(forKey: IOSSetupKeys.hasSeenExtensionRuntime),
             ]
         )
     }
@@ -226,7 +202,6 @@ enum IOSTheme {
     static let supportStart = Color(red: 0.06, green: 0.12, blue: 0.24)
     static let supportEnd = Color(red: 0.06, green: 0.16, blue: 0.32)
     static let supportBorder = Color(red: 0.93, green: 0.35, blue: 0.16).opacity(0.34)
-    static let activeGreen = Color(red: 0.20, green: 0.78, blue: 0.35)
     static let accentOrange = Color(red: 1.0, green: 0.60, blue: 0.18)
     static let secondaryText = Color.white.opacity(0.78)
     static let tertiaryText = Color.white.opacity(0.58)
@@ -268,27 +243,6 @@ struct IOSCompactActionCard: View {
                 .frame(maxWidth: .infinity, alignment: .center)
                 .padding(.vertical, 4)
         }
-    }
-}
-
-struct IOSStatusPill: View {
-    let title: String
-    let tint: Color
-
-    var body: some View {
-        Text(title)
-            .font(.system(size: 13, weight: .bold))
-            .foregroundStyle(tint)
-            .padding(.horizontal, 10)
-            .padding(.vertical, 6)
-            .background(
-                Capsule()
-                    .fill(tint.opacity(0.14))
-            )
-            .overlay(
-                Capsule()
-                    .stroke(tint.opacity(0.28), lineWidth: 1)
-            )
     }
 }
 
