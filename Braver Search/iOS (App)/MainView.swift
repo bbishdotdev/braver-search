@@ -7,10 +7,18 @@
 
 import SwiftUI
 import Combine
-import os.log
+import UIKit
+
+private enum IOSSetupKeys {
+    static let hasSeenExtensionRuntime = "hasSeenExtensionRuntime"
+}
+
+private enum IOSAnalyticsEvents {
+    static let setupGuideOpened = "setup_guide_opened"
+}
 
 struct MainView: View {
-    @State private var isEnabled: Bool
+    @State private var hasSeenExtensionRuntime: Bool
     @State private var isShowingSupportSheet = false
     @State private var selectedDonationIndex = 0
     @StateObject private var monetization = MonetizationManager.shared
@@ -24,12 +32,9 @@ struct MainView: View {
         if defaults.object(forKey: "enabled") == nil {
             defaults.set(true, forKey: "enabled")
             defaults.synchronize()
-            self._isEnabled = State(initialValue: true)
-        } else {
-            self._isEnabled = State(initialValue: defaults.bool(forKey: "enabled"))
         }
 
-        os_log(.debug, "Braver Search: Initialized with enabled = %{public}@", String(describing: self._isEnabled.wrappedValue))
+        self._hasSeenExtensionRuntime = State(initialValue: defaults.bool(forKey: IOSSetupKeys.hasSeenExtensionRuntime))
     }
 
     var body: some View {
@@ -39,8 +44,7 @@ struct MainView: View {
 
                 ScrollView(showsIndicators: false) {
                     VStack(alignment: .leading, spacing: 18) {
-                        heroCard
-                        installationCard
+                        activationCard
                         reviewCard
 
                         if monetization.canShowSupport {
@@ -63,6 +67,9 @@ struct MainView: View {
             await MonetizationManager.shared.resolveUserState()
             await StoreManager.shared.loadProductsIfNeeded()
         }
+        .onReceive(NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification)) { _ in
+            refreshExtensionRuntimeStatus()
+        }
         .onReceive(NotificationCenter.default.publisher(for: .openSupportFlow)) { _ in
             guard monetization.canShowSupport else {
                 return
@@ -74,58 +81,47 @@ struct MainView: View {
         }
     }
 
-    private var heroCard: some View {
+    private var activationCard: some View {
         IOSSurfaceCard {
-            VStack(alignment: .leading, spacing: 14) {
-                HStack(alignment: .center, spacing: 16) {
-                    Text("Redirect Search")
-                        .font(.system(size: 22, weight: .bold, design: .default))
-                        .foregroundStyle(.white)
-
-                    Spacer(minLength: 16)
-
-                    Toggle("", isOn: $isEnabled)
-                        .labelsHidden()
-                        .tint(IOSTheme.activeGreen)
-                        .onChange(of: isEnabled) { newValue in
-                            os_log(.debug, "Braver Search: Toggle changed to %{public}@", String(describing: newValue))
-                            userDefaults.set(newValue, forKey: "enabled")
-                            userDefaults.synchronize()
-                            IOSAppAnalytics.track(
-                                "redirect_setting_changed",
-                                properties: [
-                                    "enabled": newValue,
-                                    "surface": "ios_app",
-                                ]
-                            )
-                        }
+            VStack(alignment: .leading, spacing: 16) {
+                if !hasSeenExtensionRuntime {
+                    SetupVideoView()
                 }
 
-                Text("When enabled, searches from Safari with Google, DuckDuckGo, or Bing will be redirected to Brave Search.")
-                    .font(.system(size: 15, weight: .medium))
-                    .foregroundStyle(IOSTheme.secondaryText)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-        }
-    }
+                HStack(alignment: .top, spacing: 14) {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text(hasSeenExtensionRuntime ? "Safari Setup Detected" : "Finish Safari Setup")
+                            .font(.system(size: 24, weight: .bold))
+                            .foregroundStyle(.white)
 
-    private var installationCard: some View {
-        NavigationLink(destination: InstallationGuideView()) {
-            IOSSurfaceCard {
-                HStack(alignment: .center, spacing: 12) {
-                    Text("How to Install")
-                        .font(.system(size: 20, weight: .bold))
-                        .foregroundStyle(.white)
+                        Text(hasSeenExtensionRuntime ? "Safari has loaded Braver Search on this device. Try a search in Safari to confirm redirects are working." : "Safari has its own extension switch. Follow the video, then use the guide if you get stuck.")
+                            .font(.system(size: 15, weight: .medium))
+                            .foregroundStyle(IOSTheme.secondaryText)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
 
-                    Spacer(minLength: 12)
+                    Spacer(minLength: 8)
 
-                    Image(systemName: "chevron.right")
-                        .font(.system(size: 18, weight: .semibold))
-                        .foregroundStyle(IOSTheme.chevron)
+                    IOSStatusPill(
+                        title: hasSeenExtensionRuntime ? "Detected" : "Needed",
+                        tint: hasSeenExtensionRuntime ? IOSTheme.activeGreen : IOSTheme.accentOrange
+                    )
+                }
+
+                NavigationLink(destination: InstallationGuideView()) {
+                    IOSInlineActionLabel(title: hasSeenExtensionRuntime ? "Review setup guide" : "Open detailed guide")
+                }
+                .buttonStyle(.plain)
+                .simultaneousGesture(TapGesture().onEnded(trackSetupGuideOpened))
+
+                if !hasSeenExtensionRuntime {
+                    Text("iOS does not provide a safe direct link to Safari extension settings, so these steps walk you through Settings manually.")
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundStyle(IOSTheme.tertiaryText)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
             }
         }
-        .buttonStyle(.plain)
     }
 
     private var reviewCard: some View {
@@ -208,6 +204,20 @@ struct MainView: View {
                 .padding(.top, 8)
         }
     }
+
+    private func refreshExtensionRuntimeStatus() {
+        hasSeenExtensionRuntime = userDefaults.bool(forKey: IOSSetupKeys.hasSeenExtensionRuntime)
+    }
+
+    private func trackSetupGuideOpened() {
+        IOSAppAnalytics.track(
+            IOSAnalyticsEvents.setupGuideOpened,
+            properties: [
+                "surface": "ios_app",
+                "extension_runtime_seen": hasSeenExtensionRuntime,
+            ]
+        )
+    }
 }
 
 enum IOSTheme {
@@ -261,6 +271,27 @@ struct IOSCompactActionCard: View {
     }
 }
 
+struct IOSStatusPill: View {
+    let title: String
+    let tint: Color
+
+    var body: some View {
+        Text(title)
+            .font(.system(size: 13, weight: .bold))
+            .foregroundStyle(tint)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 6)
+            .background(
+                Capsule()
+                    .fill(tint.opacity(0.14))
+            )
+            .overlay(
+                Capsule()
+                    .stroke(tint.opacity(0.28), lineWidth: 1)
+            )
+    }
+}
+
 struct IOSOutlineActionLabel: View {
     let title: String
 
@@ -278,6 +309,22 @@ struct IOSOutlineActionLabel: View {
                 RoundedRectangle(cornerRadius: 16, style: .continuous)
                     .stroke(Color.white.opacity(0.08), lineWidth: 1)
             )
+    }
+}
+
+struct IOSInlineActionLabel: View {
+    let title: String
+
+    var body: some View {
+        HStack(spacing: 8) {
+            Text(title)
+                .font(.system(size: 15, weight: .semibold))
+
+            Image(systemName: "chevron.right")
+                .font(.system(size: 12, weight: .bold))
+        }
+        .foregroundStyle(IOSTheme.secondaryText)
+        .padding(.vertical, 2)
     }
 }
 

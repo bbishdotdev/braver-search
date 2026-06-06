@@ -2,30 +2,51 @@ import SwiftUI
 
 struct Step: Identifiable {
     let id = UUID()
-    let text: String
+    let title: String
+    let detail: String
     let imageName: String
 }
 
 let installationSteps: [Step] = [
-    Step(text: "1. Open the Settings app on your iPhone and tap on Apps (indicated by the pointer emoji).", imageName: "braver_search_setup_1"),
-    Step(text: "2. Search for or scroll down and tap Safari (indicated by the pointer emoji).", imageName: "braver_search_setup_2"),
-    Step(text: "3. Scroll down and tap Extensions inside Safari settings (indicated by the pointer emoji).", imageName: "braver_search_setup_3"),
-    Step(text: "4. Find and tap Braver Search in the list of extensions, then toggle the switch next to Braver Search to the \"On\" position (indicated by the pointer emoji).", imageName: "braver_search_setup_4"),
-    Step(text: "5. Open Safari and do a search, noticing it still goes to your default search (indicated by the pointer emoji).", imageName: "braver_search_setup_5"),
-    Step(text: "6. Tap on the extensions icon to bring up the Safari extensions menu (indicated by the pointer emoji).", imageName: "braver_search_setup_6"),
-    Step(text: "7. Tap on the Braver Search option in the Safari menu (indicated by the pointer emoji).", imageName: "braver_search_setup_7"),
-    Step(text: "8. When the extension requests access, confirm by tapping Always Allow.... Alternatively, if you prefer temporary access, tap Allow for One Day, though this may need to be repeated (indicated by the pointer emoji).", imageName: "braver_search_setup_8"),
-    Step(text: "9. When prompted, tap Always Allow on Every Website to grant full access (indicated by the pointer emoji).", imageName: "braver_search_setup_9"),
-    Step(text: "10. Tap Done to now have your searches redirected to Brave and, if needed, adjust additional settings via the Braver Search option (indicated by the pointer emoji).", imageName: "braver_search_setup_10")
+    Step(title: "1. Open Settings", detail: "Open the Settings app and tap Apps.", imageName: "braver_search_setup_1"),
+    Step(title: "2. Open Safari Settings", detail: "Search for Safari or scroll down and tap Safari.", imageName: "braver_search_setup_2"),
+    Step(title: "3. Open Extensions", detail: "Scroll down inside Safari settings and tap Extensions.", imageName: "braver_search_setup_3"),
+    Step(title: "4. Turn On Braver Search", detail: "Tap Braver Search, then turn on the switch next to Braver Search.", imageName: "braver_search_setup_4"),
+    Step(title: "5. Open Safari", detail: "Open Safari and make a quick search so Safari can show the extension permission controls.", imageName: "braver_search_setup_5"),
+    Step(title: "6. Open The Extensions Menu", detail: "Tap Safari's extensions button in the address bar.", imageName: "braver_search_setup_6"),
+    Step(title: "7. Choose Braver Search", detail: "Tap Braver Search in Safari's extension menu.", imageName: "braver_search_setup_7"),
+    Step(title: "8. Always Allow", detail: "When Safari asks for access, tap Always Allow. One-day access works, but redirects may stop later.", imageName: "braver_search_setup_8"),
+    Step(title: "9. Allow Every Website", detail: "When prompted, tap Always Allow on Every Website so supported search engines can redirect.", imageName: "braver_search_setup_9"),
+    Step(title: "10. Finish", detail: "Tap Done. You can return to this menu later to change Braver Search settings.", imageName: "braver_search_setup_10"),
+    Step(title: "11. Test A Search", detail: "Search from Safari again. The address should change to search.brave.com.", imageName: "braver_search_setup_11")
 ]
 
 struct InstallationGuideView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 24) {
+                VStack(alignment: .leading, spacing: 10) {
+                    Text("Turn On Braver Search")
+                        .font(.system(size: 26, weight: .bold))
+
+                    Text("Safari setup has two parts: enable the extension in Settings, then allow website access from Safari.")
+                        .font(.system(size: 16, weight: .medium))
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+
                 ForEach(installationSteps) { step in
                     VStack(alignment: .leading, spacing: 16) {
-                        Text(step.text)
+                        VStack(alignment: .leading, spacing: 6) {
+                            Text(step.title)
+                                .font(.system(size: 18, weight: .bold))
+
+                            Text(step.detail)
+                                .font(.system(size: 15, weight: .medium))
+                                .foregroundStyle(.secondary)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+
                         Image(step.imageName)
                             .resizable()
                             .scaledToFit()
@@ -48,4 +69,4 @@ struct InstallationGuideView: View {
     NavigationView {
         InstallationGuideView()
     }
-} 
+}

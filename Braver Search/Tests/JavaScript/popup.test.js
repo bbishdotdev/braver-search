@@ -30,6 +30,24 @@ describe('Popup Script', () => {
     });
     
     describe('Initial state', () => {
+        it('should track popup opens', async () => {
+            browser.storage.local.get.mockResolvedValue({ enabled: true });
+            browser.runtime.sendNativeMessage.mockResolvedValue({});
+
+            document.dispatchEvent(new Event('DOMContentLoaded'));
+            await new Promise(resolve => setTimeout(resolve, 0));
+
+            expect(browser.runtime.sendNativeMessage).toHaveBeenCalledWith(
+                {
+                    type: 'trackEvent',
+                    event: 'extension_popup_opened',
+                    properties: {
+                        surface: 'extension_popup'
+                    }
+                }
+            );
+        });
+
         it('should load initial state from storage', async () => {
             browser.storage.local.get.mockResolvedValue({ enabled: true });
             browser.runtime.sendNativeMessage.mockResolvedValue({

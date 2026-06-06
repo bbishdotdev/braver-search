@@ -3,6 +3,7 @@
 const DEBUG_LOGGING = false;
 const BANG_REDIRECT_WINDOW_MS = 5000;
 const BRAVE_SEARCH_URL = 'https://search.brave.com/search?q=';
+const EXTENSION_ACTIVATED_STORAGE_KEY = 'hasTrackedExtensionActivated';
 
 const SEARCH_ENGINE_HOSTS = new Set([
     'google.com',
@@ -158,6 +159,26 @@ function trackEvent(event, properties = {}) {
     }).catch(error => {
         console.error("Braver Search: Analytics event failed", error);
     });
+}
+
+async function trackExtensionActivatedOnce() {
+    if (!browser.storage?.local) {
+        return;
+    }
+
+    try {
+        const result = await browser.storage.local.get(EXTENSION_ACTIVATED_STORAGE_KEY);
+        if (result[EXTENSION_ACTIVATED_STORAGE_KEY]) {
+            return;
+        }
+
+        await browser.storage.local.set({ [EXTENSION_ACTIVATED_STORAGE_KEY]: true });
+        await trackEvent('extension_activated', {
+            surface: 'background_runtime'
+        });
+    } catch (error) {
+        console.error("Braver Search: Failed to track extension activation", error);
+    }
 }
 
 function safeDecodeURIComponent(value) {
@@ -369,3 +390,4 @@ browser.webNavigation.onBeforeNavigate.addListener(async details => {
 });
 
 void loadEnabledState();
+void trackExtensionActivatedOnce();

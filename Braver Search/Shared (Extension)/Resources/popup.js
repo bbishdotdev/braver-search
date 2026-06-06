@@ -17,6 +17,20 @@ document.addEventListener('DOMContentLoaded', async function() {
         return;
     }
 
+    function trackEvent(event, properties = {}) {
+        if (!browser.runtime?.sendNativeMessage) {
+            return;
+        }
+
+        browser.runtime.sendNativeMessage({
+            type: 'trackEvent',
+            event,
+            properties
+        }).catch(error => {
+            console.error("Braver Search: Analytics event failed", error);
+        });
+    }
+
     async function loadMonetizationState() {
         if (!browser.runtime?.sendNativeMessage) {
             return;
@@ -67,6 +81,9 @@ document.addEventListener('DOMContentLoaded', async function() {
 
     // Load initial state
     console.log("Braver Search: Loading initial state");
+    trackEvent('extension_popup_opened', {
+        surface: 'extension_popup'
+    });
     const initialState = await getCurrentState();
     console.log("Braver Search: Initial state", initialState);
     updateUI(initialState);
