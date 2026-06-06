@@ -42,6 +42,33 @@ describe('Background Script', () => {
     }
 
     describe('enabled state caching', () => {
+        it('should track extension activation once when background runtime starts', async () => {
+            const storage = { enabled: true };
+            const storageGetImplementation = key => Promise.resolve({ [key]: storage[key] });
+            browser.storage.local.get.mockImplementation(storageGetImplementation);
+            browser.storage.local.set.mockImplementation(update => {
+                Object.assign(storage, update);
+                return Promise.resolve();
+            });
+
+            await loadBackgroundScript({
+                storageGetImplementation
+            });
+
+            expect(browser.storage.local.set).toHaveBeenCalledWith({
+                hasTrackedExtensionActivated: true
+            });
+            expect(browser.runtime.sendNativeMessage).toHaveBeenCalledWith(
+                {
+                    type: 'trackEvent',
+                    event: 'extension_activated',
+                    properties: {
+                        surface: 'background_runtime'
+                    }
+                }
+            );
+        });
+
         it('should redirect when enabled in storage', async () => {
             await loadBackgroundScript({ enabled: true });
 
@@ -92,9 +119,10 @@ describe('Background Script', () => {
             await loadBackgroundScript({
                 storageGetImplementation: jest.fn(() => pendingStorageRead)
             });
+            const initialCalls = browser.storage.local.get.mock.calls.length;
 
             const navigationPromise = navigateToGoogleSearch('test');
-            expect(browser.storage.local.get).toHaveBeenCalledTimes(1);
+            expect(browser.storage.local.get).toHaveBeenCalledTimes(initialCalls);
 
             resolveStorage({ enabled: true });
             await navigationPromise;

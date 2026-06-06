@@ -48,6 +48,11 @@ private enum ExtensionMonetizationKeys {
     static let supportURL = "braversearch://support"
 }
 
+private enum ExtensionSetupKeys {
+    static let hasSeenExtensionRuntime = "hasSeenExtensionRuntime"
+    static let extensionRuntimeLastSeenAt = "extensionRuntimeLastSeenAt"
+}
+
 private enum ExtensionMonetizationConfig {
     private static let paidLaunchDateInfoKey = "PAID_LAUNCH_ISO8601"
 
@@ -332,6 +337,11 @@ class SafariWebExtensionHandler: NSObject, NSExtensionRequestHandling {
                     return
                 case "trackEvent":
                     if let event = message.event {
+                        if event == "extension_activated" || event == "extension_popup_opened" || event == "search_redirected" {
+                            userDefaults.set(true, forKey: ExtensionSetupKeys.hasSeenExtensionRuntime)
+                            userDefaults.set(Date().timeIntervalSince1970, forKey: ExtensionSetupKeys.extensionRuntimeLastSeenAt)
+                        }
+
                         if event == "search_redirected" {
                             userDefaults.set(userDefaults.integer(forKey: ExtensionMonetizationKeys.redirectCount) + 1, forKey: ExtensionMonetizationKeys.redirectCount)
                         }

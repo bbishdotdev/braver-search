@@ -98,7 +98,14 @@ Setup:
 Events:
 - `first_app_open`: fired once per local install footprint the first time the host app launches
 - `app_opened`: fired when the iOS or macOS host app launches
-- `redirect_setting_changed`: fired when the user toggles Braver Search on or off in the iOS app or extension popup
+- `setup_guide_opened`: fired when the user opens the iOS setup guide
+- `setup_video_autoplay_started`: fired when the iOS setup video starts autoplaying
+- `setup_video_play_tapped`: fired when the user taps play on the iOS setup video
+- `setup_video_pause_tapped`: fired when the user taps pause on the iOS setup video
+- `setup_video_restart_tapped`: fired when the user restarts the iOS setup video
+- `extension_activated`: fired once when the Safari extension background runtime first starts
+- `extension_popup_opened`: fired when the user opens the Safari extension popup
+- `redirect_setting_changed`: fired when the user toggles Braver Search on or off from the Safari extension popup
 - `search_redirected`: fired only after a Safari search was successfully redirected to Brave Search
 
 Exactly what is tracked:
@@ -112,12 +119,26 @@ Exactly what is tracked:
   - Code: [iOS host app](./Braver%20Search/iOS%20%28App%29/AppDelegate.swift#L140-L143), [macOS host app](./Braver%20Search/macOS%20%28App%29/AppDelegate.swift#L138-L141)
 - `redirect_setting_changed`
   - Purpose: count enable / disable state changes
-  - Fired when the toggle changes in the iOS app or when the extension storage state changes in Safari
+  - Fired when the extension storage state changes in Safari
   - Extra properties sent: `enabled`, `surface`
-  - Code: [iOS app toggle](./Braver%20Search/iOS%20%28App%29/MainView.swift#L35-L46), [Safari background listener](./Braver%20Search/Shared%20%28Extension%29/Resources/background.js#L70-L87)
+  - Code: [Safari background listener](./Braver%20Search/Shared%20%28Extension%29/Resources/background.js#L70-L87)
+- `setup_guide_opened`
+  - Purpose: count users who open the iOS Safari setup instructions
+  - Extra properties sent: `surface`, `extension_runtime_seen`
+- `setup_video_autoplay_started`, `setup_video_play_tapped`, `setup_video_pause_tapped`, `setup_video_restart_tapped`
+  - Purpose: measure whether the video-led Safari setup flow is being seen and used
+  - Extra properties sent: `surface`, `video`
+  - Code: [iOS setup video](./Braver%20Search/iOS%20%28App%29/SetupVideoView.swift)
+- `extension_activated`
+  - Purpose: approximate users whose Safari extension runtime has actually loaded
+  - Fired once from Safari extension storage when the background runtime starts
+  - Extra properties sent: `surface`
+- `extension_popup_opened`
+  - Purpose: count users who can open Braver Search from Safari's extension menu
+  - Extra properties sent: `surface`
 - `search_redirected`
   - Purpose: count successful Braver Search redirects
-  - Fired from the Safari extension before `tabs.update(...)` so analytics never block the redirect
+  - Fired from the Safari extension after `tabs.update(...)` succeeds
   - Extra properties sent: `surface`
   - Code: [Safari background redirect flow](./Braver%20Search/Shared%20%28Extension%29/Resources/background.js#L162-L174)
 
@@ -135,7 +156,7 @@ Anonymous identity:
 - Code: [iOS host app identity setup](./Braver%20Search/iOS%20%28App%29/AppDelegate.swift#L57-L121), [macOS host app identity setup](./Braver%20Search/macOS%20%28App%29/AppDelegate.swift#L57-L121), [Safari extension sender](./Braver%20Search/Shared%20%28Extension%29/SafariWebExtensionHandler.swift#L28-L144)
 
 Minimum data configuration:
-- Braver Search sends only `distinct_id`, event name, and a few coarse properties needed for aggregate counts: `platform`, `source`, `app_version`, `enabled`, and `surface`.
+- Braver Search sends only `distinct_id`, event name, and a few coarse properties needed for aggregate counts: `platform`, `source`, `app_version`, `enabled`, `surface`, and setup status booleans.
 - Braver Search also sends `$process_person_profile: false` so these events stay anonymous and do not create person profiles.
 - PostHog Cloud may still enrich events with IP-derived GeoIP properties by default on the server side.
 - If you want the least possible data collection, disable the GeoIP plugin in your PostHog project so country/city/region data are not added server-side.
@@ -178,10 +199,72 @@ Actual payloads sent by Braver Search:
     "distinct_id": "LOCAL_RANDOM_UUID",
     "$process_person_profile": false,
     "platform": "ios | macos",
-    "source": "host_app | safari_extension",
+    "source": "safari_extension",
     "app_version": "1.1",
     "enabled": true,
-    "surface": "ios_app | extension_storage"
+    "surface": "extension_storage"
+  }
+}
+```
+- `setup_guide_opened`
+```json
+{
+  "api_key": "phc_...",
+  "event": "setup_guide_opened",
+  "properties": {
+    "distinct_id": "LOCAL_RANDOM_UUID",
+    "$process_person_profile": false,
+    "platform": "ios",
+    "source": "host_app",
+    "app_version": "1.1",
+    "surface": "ios_app",
+    "extension_runtime_seen": false
+  }
+}
+```
+- `setup_video_play_tapped`
+```json
+{
+  "api_key": "phc_...",
+  "event": "setup_video_play_tapped",
+  "properties": {
+    "distinct_id": "LOCAL_RANDOM_UUID",
+    "$process_person_profile": false,
+    "platform": "ios",
+    "source": "host_app",
+    "app_version": "1.1",
+    "surface": "ios_app",
+    "video": "braver_search_setup"
+  }
+}
+```
+- `extension_activated`
+```json
+{
+  "api_key": "phc_...",
+  "event": "extension_activated",
+  "properties": {
+    "distinct_id": "LOCAL_RANDOM_UUID",
+    "$process_person_profile": false,
+    "platform": "ios | macos",
+    "source": "safari_extension",
+    "app_version": "1.1",
+    "surface": "background_runtime"
+  }
+}
+```
+- `extension_popup_opened`
+```json
+{
+  "api_key": "phc_...",
+  "event": "extension_popup_opened",
+  "properties": {
+    "distinct_id": "LOCAL_RANDOM_UUID",
+    "$process_person_profile": false,
+    "platform": "ios | macos",
+    "source": "safari_extension",
+    "app_version": "1.1",
+    "surface": "extension_popup"
   }
 }
 ```
