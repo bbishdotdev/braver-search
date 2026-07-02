@@ -41,11 +41,12 @@ struct MainView: View {
                 ScrollView(showsIndicators: false) {
                     VStack(alignment: .leading, spacing: 18) {
                         activationCard
-                        reviewCard
 
                         if monetization.canShowSupport {
                             supportSection
                         }
+
+                        reviewCard
 
                         utilityLinks
                     }
