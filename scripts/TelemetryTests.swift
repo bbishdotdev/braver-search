@@ -104,17 +104,37 @@ final class StubTransport: URLProtocol {
         let id = URLComponents(url: url, resolvingAgainstBaseURL: false)!.queryItems!.first { $0.name == "braver_setup" }!.value!
         require(!SetupCheck.complete(id: UUID().uuidString, analytics: analytics), "Unrelated test accepted")
         require(SetupCheck.snapshot(analytics: analytics)["status"] as? String == "waiting", "Expected waiting")
+        require(SetupCheck.snapshot(analytics: restarted, now: Date().addingTimeInterval(31))["reason"] as? String == "no_extension_response", "No callback must produce an actionable timeout after returning")
+        require(!SetupCheck.recordProgress(id: UUID().uuidString, stage: "redirect_failed", analytics: analytics), "Unrelated progress accepted")
+        require(!SetupCheck.recordProgress(id: id, stage: "invented", analytics: analytics), "Unknown progress accepted")
+        require(SetupCheck.recordProgress(id: id, stage: "extension_seen", enabled: true, analytics: restarted), "Runtime response was lost")
+        require(SetupCheck.recordProgress(id: id, stage: "redirect_requested", analytics: restarted), "Redirect response was lost")
+        require(SetupCheck.snapshot(analytics: analytics)["status"] as? String == "waiting", "An accepted redirect is not completed-page proof")
+        require(SetupCheck.snapshot(analytics: analytics, now: Date().addingTimeInterval(31))["reason"] as? String == "awaiting_brave_confirmation", "Missing destination proof must explain the observed redirect")
         require(SetupCheck.complete(id: id, analytics: analytics), "Matching test should succeed")
         require(SetupCheck.snapshot(analytics: analytics)["status"] as? String == "success", "Success must be local even offline")
+        require(SetupCheck.snapshot(analytics: restarted)["status"] as? String == "success", "A foreground reader must observe proof from another instance")
+        require(SetupCheck.recordProgress(id: id, stage: "redirect_requested", analytics: restarted), "Late progress should be safely accepted")
+        require(SetupCheck.snapshot(analytics: analytics)["status"] as? String == "success", "Late progress must not replace success")
         let newURL = try SetupCheck.start(analytics: analytics)
         let newID = URLComponents(url: newURL, resolvingAgainstBaseURL: false)!.queryItems!.first { $0.name == "braver_setup" }!.value!
         require(!SetupCheck.complete(id: id, analytics: analytics), "Old test must not complete a newer attempt")
+        require(!SetupCheck.recordProgress(id: id, stage: "redirect_failed", analytics: analytics), "Old progress must not affect a newer test")
+        require(SetupCheck.recordProgress(id: newID, stage: "extension_seen", enabled: false, analytics: analytics), "Disabled state was lost")
+        require(SetupCheck.snapshot(analytics: restarted)["reason"] as? String == "redirects_off", "Disabled redirects must be explained immediately")
+        require(SetupCheck.snapshot(analytics: restarted)["status"] as? String == "inconclusive", "Disabled redirect must not stay waiting")
         try analytics.locked { dir in
             let file = dir.appendingPathComponent("setup-check.json")
             try JSONSerialization.data(withJSONObject: ["id": newID, "startedAt": Date().timeIntervalSince1970 - 900]).write(to: file, options: .atomic)
         }
         require(!SetupCheck.complete(id: newID, analytics: analytics), "Expired token accepted")
+        require(!SetupCheck.recordProgress(id: newID, stage: "redirect_requested", analytics: analytics), "Expired progress accepted")
         require(SetupCheck.snapshot(analytics: analytics)["status"] as? String == "inconclusive", "Expired test must be inconclusive")
+        let failedURL = try SetupCheck.start(analytics: analytics)
+        let failedID = URLComponents(url: failedURL, resolvingAgainstBaseURL: false)!.queryItems!.first { $0.name == "braver_setup" }!.value!
+        require(SetupCheck.recordProgress(id: failedID, stage: "redirect_failed", analytics: restarted), "Failed redirect report was lost")
+        require(SetupCheck.snapshot(analytics: analytics)["reason"] as? String == "redirect_failed", "Failed redirects must explain the failure immediately")
+        require(SetupCheck.snapshot(analytics: DurableAnalytics(directory: nil, defaults: defaults))["reason"] as? String == "storage_unavailable", "Unavailable storage must be visible, not silently idle")
         // Wait for all asynchronous persistence before cleanup.
         _ = capture(analytics, event: "barrier")
         print("PASS: durable enqueue, milestone idempotency, identity migration, restart recovery, HTTP retry, stable retry payload, acknowledgement, unavailable storage, setup token matching/expiry, offline proof")
