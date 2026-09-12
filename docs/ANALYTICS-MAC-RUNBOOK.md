@@ -111,6 +111,8 @@ For macOS Safari extension testing, a build without signing is sufficient for co
 
 Use Braver Search project **193615**. Production credentials remain in the existing ignored `AnalyticsSecrets.xcconfig` / CI secret mechanism. Prefer a staging project for debug validation. Never paste API keys into this runbook or logs.
 
+The live baseline dashboards were reorganized on 2026-09-12: [Product health](https://us.posthog.com/project/193615/dashboard/463016) and [Setup and friction](https://us.posthog.com/project/193615/dashboard/2090082). All 14 saved queries were executed successfully. See [POSTHOG-GUIDE.md](POSTHOG-GUIDE.md) for interpretation, mature-cohort filters, saved definitions, and the release follow-up.
+
 Do not replace the old live funnel with new event names before this build emits them. The exact new query definitions are in `docs/posthog-analytics-v2.json`. After validation and release:
 
 1. Verify event/property names and values exist with the PostHog schema tool.
@@ -139,7 +141,7 @@ Fill this with exact commit, Xcode/OS, device/runtime, test counts, screenshots,
 - macOS Xcode test action passed.
 - iOS Xcode test action: 4 tests passed, zero failures/skips.
 - No Apple development signing identities were available on this Mac. Physical-device and signed macOS Safari verification remain required before release.
-- New PostHog queries are prepared but not applied to the live dashboard; schema verification and rollout are described above.
+- Analytics-v2 PostHog queries are prepared but await release and live schema verification. The separate baseline reporting refresh uses existing events and is live; see `POSTHOG-GUIDE.md`.
 - The final iOS design uses a compact warm-accent action above the walkthrough, with inline results only after testing. macOS integrates the same action inside the existing status card.
 - Additional native tests cover competing writers and recovery when a process exits between event persistence and milestone persistence.
 - Simulator UI launch was verified visually; the walkthrough video renders. Real Safari success/permissions and physical-device behavior are still checklist items, not inferred from the unit tests.

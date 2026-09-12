@@ -1,0 +1,282 @@
+{
+  "project_id": 193615,
+  "captured_at": "2026-09-12",
+  "dashboard": {
+    "id": 463016,
+    "name": "My App Dashboard",
+    "description": "",
+    "pinned": true,
+    "filters": {},
+    "variables": {}
+  },
+  "insights": [
+    {
+      "id": 3113597,
+      "short_id": "A0gDqcmP",
+      "name": "Daily active users (DAUs)",
+      "description": "Shows the number of unique users that use your app every day.",
+      "query": {
+        "kind": "InsightVizNode",
+        "source": {
+          "kind": "TrendsQuery",
+          "series": [
+            {
+              "kind": "EventsNode",
+              "math": "dau",
+              "name": "All events"
+            }
+          ],
+          "version": 4,
+          "interval": "day",
+          "dateRange": {
+            "date_from": "-30d",
+            "explicitDate": false
+          },
+          "properties": [],
+          "trendsFilter": {
+            "display": "ActionsLineGraph",
+            "showLegend": false,
+            "yAxisScaleType": "linear",
+            "showValuesOnSeries": false,
+            "smoothingIntervals": 1,
+            "showPercentStackView": false,
+            "aggregationAxisFormat": "numeric",
+            "showAlertThresholdLines": false
+          },
+          "breakdownFilter": {
+            "breakdown_type": "event"
+          },
+          "filterTestAccounts": false
+        }
+      },
+      "dashboards": [
+        463016
+      ]
+    },
+    {
+      "id": 3113598,
+      "short_id": "WzsESwAJ",
+      "name": "Weekly active users (WAUs)",
+      "description": "Shows the number of unique users that use your app every week.",
+      "query": {
+        "kind": "InsightVizNode",
+        "source": {
+          "kind": "TrendsQuery",
+          "series": [
+            {
+              "kind": "EventsNode",
+              "math": "dau",
+              "name": "All events"
+            }
+          ],
+          "version": 4,
+          "interval": "week",
+          "dateRange": {
+            "date_from": "-90d",
+            "explicitDate": false
+          },
+          "properties": [],
+          "trendsFilter": {
+            "display": "ActionsLineGraph",
+            "showLegend": false,
+            "yAxisScaleType": "linear",
+            "showValuesOnSeries": false,
+            "smoothingIntervals": 1,
+            "showPercentStackView": false,
+            "aggregationAxisFormat": "numeric",
+            "showAlertThresholdLines": false
+          },
+          "breakdownFilter": {
+            "breakdown_type": "event"
+          },
+          "filterTestAccounts": false
+        }
+      },
+      "dashboards": [
+        463016
+      ]
+    },
+    {
+      "id": 3113600,
+      "short_id": "bbxBEzKU",
+      "name": "Growth accounting",
+      "description": "How many of your users are new, returning, resurrecting, or dormant each week.",
+      "query": {
+        "kind": "InsightVizNode",
+        "source": {
+          "kind": "LifecycleQuery",
+          "series": [
+            {
+              "kind": "EventsNode",
+              "name": "app_opened",
+              "event": "app_opened"
+            }
+          ],
+          "version": 2,
+          "interval": "week",
+          "dateRange": {
+            "date_from": "-30d",
+            "explicitDate": false
+          },
+          "properties": [],
+          "lifecycleFilter": {
+            "showLegend": false
+          },
+          "filterTestAccounts": false
+        }
+      },
+      "dashboards": [
+        463016
+      ]
+    },
+    {
+      "id": 3113599,
+      "short_id": "Lj8V2TdR",
+      "name": "Retention",
+      "description": "Weekly retention of your users.",
+      "query": {
+        "kind": "InsightVizNode",
+        "source": {
+          "kind": "RetentionQuery",
+          "version": 2,
+          "dateRange": {
+            "date_from": "-7d",
+            "explicitDate": false
+          },
+          "properties": [],
+          "retentionFilter": {
+            "period": "Week",
+            "targetEntity": {
+              "id": "app_opened",
+              "name": "app_opened",
+              "type": "events",
+              "uuid": "faa88483-dbf4-4ad2-8e81-353dbad1813e",
+              "order": 0
+            },
+            "retentionType": "retention_first_time",
+            "totalIntervals": 11,
+            "returningEntity": {
+              "id": "search_redirected",
+              "name": "search_redirected",
+              "type": "events",
+              "uuid": "3b008de5-a481-4cfd-9a60-807e8c1e0ad4",
+              "order": 0
+            }
+          },
+          "filterTestAccounts": false
+        }
+      },
+      "dashboards": [
+        463016
+      ]
+    },
+    {
+      "id": 3113602,
+      "short_id": "LAwi49rA",
+      "name": "Redirect funnel",
+      "description": "How many users have completed setup steps",
+      "query": {
+        "kind": "InsightVizNode",
+        "source": {
+          "kind": "FunnelsQuery",
+          "series": [
+            {
+              "kind": "EventsNode",
+              "name": "first_app_open",
+              "event": "first_app_open",
+              "custom_name": "First page view"
+            },
+            {
+              "kind": "EventsNode",
+              "name": "search_redirected",
+              "event": "search_redirected"
+            }
+          ],
+          "version": 2,
+          "interval": "hour",
+          "dateRange": {
+            "date_from": "-24h",
+            "explicitDate": false
+          },
+          "properties": [],
+          "funnelsFilter": {
+            "layout": "horizontal",
+            "exclusions": [],
+            "funnelVizType": "steps",
+            "funnelOrderType": "ordered",
+            "funnelStepReference": "total",
+            "funnelWindowInterval": 12,
+            "breakdownAttributionType": "first_touch",
+            "funnelWindowIntervalUnit": "hour"
+          },
+          "breakdownFilter": {},
+          "filterTestAccounts": false
+        }
+      },
+      "dashboards": [
+        463016
+      ]
+    },
+    {
+      "id": 7240089,
+      "short_id": "B4ozX12n",
+      "name": null,
+      "description": "Redirect usage",
+      "query": {
+        "kind": "InsightVizNode",
+        "source": {
+          "kind": "TrendsQuery",
+          "series": [
+            {
+              "kind": "EventsNode",
+              "math": "total",
+              "name": "search_redirected",
+              "event": "search_redirected"
+            }
+          ],
+          "version": 4,
+          "trendsFilter": {}
+        }
+      },
+      "dashboards": [
+        463016
+      ]
+    },
+    {
+      "id": 7240103,
+      "short_id": "63a2brUk",
+      "name": "Total # of Braver Searches",
+      "description": "How many total redirects",
+      "query": {
+        "kind": "InsightVizNode",
+        "source": {
+          "kind": "TrendsQuery",
+          "series": [
+            {
+              "kind": "EventsNode",
+              "math": "total",
+              "name": "search_redirected",
+              "event": "search_redirected"
+            }
+          ],
+          "version": 4,
+          "interval": "day",
+          "dateRange": {
+            "date_from": "all",
+            "explicitDate": false
+          },
+          "trendsFilter": {
+            "display": "BoldNumber"
+          }
+        }
+      },
+      "dashboards": [
+        463016
+      ]
+    }
+  ],
+  "notes": [
+    "Snapshot of the seven original insight queries before reporting changes. Source event data is unchanged.",
+    "Restore original insights by id with their queries, names, descriptions and dashboard membership. Newly created insights have separate IDs in posthog-dashboards.json."
+  ]
+}
