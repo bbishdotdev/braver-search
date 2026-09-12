@@ -33,24 +33,84 @@ enum SetupCheck {
         return completedAt != nil
     }
 
-    static func snapshot(analytics: DurableAnalytics = .shared) -> [String: Any] {
-        let state = (try? analytics.locked { root in read(root.appendingPathComponent("setup-check.json")) }) ?? nil
+    /// Persist what the extension actually observed, independently of PostHog delivery.
+    @discardableResult
+    static func recordProgress(id: String, stage: String, enabled: Bool? = nil,
+                               analytics: DurableAnalytics = .shared) -> Bool {
+        guard ["extension_seen", "redirect_requested", "redirect_failed"].contains(stage) else { return false }
+        var accepted = false
+        try? analytics.locked { root in
+            let file = root.appendingPathComponent("setup-check.json")
+            guard var state = read(file), state["id"] as? String == id,
+                  let started = state["startedAt"] as? Double,
+                  (0...lifetime).contains(Date().timeIntervalSince1970 - started) else { return }
+            state[stage] = true
+            if stage == "extension_seen", let enabled { state["redirectsEnabled"] = enabled }
+            try JSONSerialization.data(withJSONObject: state).write(to: file, options: .atomic)
+            accepted = true
+        }
+        if accepted {
+            var properties: [String: Any] = ["test_id": id, "stage": stage]
+            if let enabled { properties["enabled"] = enabled }
+            analytics.capture("setup_test_progress", properties: properties, once: "test_progress_" + id + "_" + stage)
+        }
+        return accepted
+    }
+
+    static func snapshot(analytics: DurableAnalytics = .shared, now: Date = Date()) -> [String: Any] {
+        let state: [String: Any]?
+        do {
+            state = try analytics.locked { root in
+                let file = root.appendingPathComponent("setup-check.json")
+                let saved = read(file)
+                if saved == nil && FileManager.default.fileExists(atPath: file.path) {
+                    throw CocoaError(.fileReadCorruptFile)
+                }
+                return saved
+            }
+        } catch {
+            return ["status": "inconclusive", "title": "Couldn’t read the test result",
+                    "message": "Close and reopen Braver Search, then try again.", "reason": "storage_unavailable"]
+        }
         guard let state, let started = state["startedAt"] as? Double else {
             return ["status": "idle", "message": "Open a test search in Safari, then return here to see the result."]
         }
+        var result: [String: Any] = ["id": state["id"] ?? ""]
+        func response(_ status: String, _ title: String, _ message: String, reason: String) -> [String: Any] {
+            result.merge(["status": status, "title": title, "message": message, "reason": reason]) { _, new in new }
+            return result
+        }
         if state["completedAt"] != nil {
-            return ["status": "success", "id": state["id"] ?? "", "completedAt": state["completedAt"] ?? 0, "message": "Your test reached Brave Search. Redirecting from Google works. Other search engines may need their own website permission."]
+            result["completedAt"] = state["completedAt"]
+            return response("success", "Setup verified", "Your test reached Brave Search. Redirecting from Google works. Other search engines may need their own website permission.", reason: "brave_confirmed")
         }
-        if Date().timeIntervalSince1970 - started < 30 {
-            return ["status": "waiting", "id": state["id"] ?? "", "message": "Waiting for the test in Safari. Return here after the page opens."]
+        if state["redirectsEnabled"] as? Bool == false {
+            return response("inconclusive", "Redirects were off for this test", "Open Braver Search in Safari’s Extensions menu, turn redirects on, then try again.", reason: "redirects_off")
         }
-        return ["status": "inconclusive", "id": state["id"] ?? "", "message": "Couldn’t verify yet. In Safari, turn on Braver Search, allow access to Google and Brave Search, and check that redirects are on in the extension popup. Then retry. This does not necessarily mean the extension is disabled."]
+        if state["redirect_failed"] as? Bool == true {
+            return response("inconclusive", "Safari couldn’t open the redirect", "The extension saw the test, but Safari did not accept the redirect. Start a new test and keep its tab open.", reason: "redirect_failed")
+        }
+        let waiting = now.timeIntervalSince1970 - started < 30
+        if state["redirect_requested"] as? Bool == true {
+            return response(waiting ? "waiting" : "inconclusive", "Redirect detected",
+                            waiting ? "Waiting for Brave Search to finish loading."
+                                    : "Safari accepted the redirect, but Brave Search hasn’t confirmed it finished loading. Check that Braver Search has website access to Brave Search in Safari, then try again.", reason: "awaiting_brave_confirmation")
+        }
+        if state["extension_seen"] as? Bool == true {
+            return response(waiting ? "waiting" : "inconclusive", "Extension responded",
+                            waiting ? "Waiting for Safari to redirect the search."
+                                    : "The extension saw the test, but no redirect was confirmed. Try again and check website access in Safari if this repeats.", reason: "awaiting_redirect")
+        }
+        return response(waiting ? "waiting" : "inconclusive", waiting ? "Checking Safari…" : "No response from Safari",
+                        waiting ? "Return after the search opens."
+                                : "Safari hasn’t sent a result for this test. Make sure the test opened in Safari and Braver Search is enabled with website access to Google and Brave Search.", reason: "no_extension_response")
     }
 
     static func resultShown(_ snapshot: [String: Any], analytics: DurableAnalytics = .shared) {
         guard let id = snapshot["id"] as? String, let status = snapshot["status"] as? String,
               status == "success" || status == "inconclusive" else { return }
-        analytics.capture("setup_test_result_shown", properties: ["test_id": id, "result": status], once: "test_result_" + id + "_" + status)
+        analytics.capture("setup_test_result_shown", properties: ["test_id": id, "result": status,
+            "reason": snapshot["reason"] as? String ?? "unknown"], once: "test_result_" + id + "_" + status)
         // Repair an interrupted extension capture once the host sees the durable success proof.
         if status == "success", let completedAt = snapshot["completedAt"] as? Double {
             analytics.capture("setup_test_redirect_observed", properties: ["test_id": id], once: "test_redirect_" + id, timestamp: Date(timeIntervalSince1970: completedAt))

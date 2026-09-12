@@ -108,6 +108,14 @@ class SafariWebExtensionHandler: NSObject, NSExtensionRequestHandling {
                 debugLog("Braver Search: Message type: \(message.type)")
                 
                 switch message.type {
+                case "setupTestProgress":
+                    let accepted = SetupCheck.recordProgress(
+                        id: message.properties["test_id"] as? String ?? "",
+                        stage: message.properties["stage"] as? String ?? "",
+                        enabled: message.properties["enabled"] as? Bool
+                    )
+                    sendResponse(["ok": accepted], context: context)
+                    return
                 case "setupTestCompleted":
                     let id = message.properties["test_id"] as? String ?? ""
                     sendResponse(["ok": SetupCheck.complete(id: id)], context: context)
