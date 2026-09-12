@@ -41,6 +41,124 @@ describe('Background Script', () => {
         });
     }
 
+    describe('setup wake-up recovery', () => {
+        const id = '12345678-1234-1234-1234-123456789abc';
+        const google = `https://www.google.com/search?q=Braver+Search+setup+check&braver_setup=${id}`;
+        const brave = `https://search.brave.com/search?q=Braver+Search+setup+check&braver_setup=${id}`;
+        const sender = url => ({ frameId: 0, tab: { id: 3 }, url });
+        const pageMessage = (type, pageSender) => {
+            const listener = browser.runtime.onMessage.addListener.mock.calls.at(-1)?.[0];
+            expect(listener).toBeDefined();
+            return listener({ type }, pageSender);
+        };
+
+        beforeEach(() => {
+            browser.runtime.sendNativeMessage.mockResolvedValue({ ok: true, analytics: { durablyQueued: true } });
+            browser.tabs.get.mockResolvedValue({ id: 3, url: google });
+        });
+
+        it('recovers a first test when no before-navigation event arrived', async () => {
+            await loadBackgroundScript();
+            await pageMessage('setupTestPageReady', sender(google));
+            expect(browser.tabs.update).toHaveBeenCalledTimes(1);
+            expect(browser.tabs.update).toHaveBeenCalledWith(3, {
+                url: `https://search.brave.com/search?q=Braver%20Search%20setup%20check&braver_setup=${id}`
+            });
+            expect(browser.runtime.sendNativeMessage.mock.calls.some(([m]) => m.type === 'setupTestCompleted' || m.event === 'search_redirected')).toBe(false);
+        });
+
+        it('does not delay the early redirect for an unanswered diagnostic message', async () => {
+            await loadBackgroundScript();
+            browser.runtime.sendNativeMessage.mockImplementation(m => m.type === 'setupTestProgress' ? new Promise(() => {}) : Promise.resolve({ ok: true }));
+            void navigationListener({ frameId: 0, tabId: 3, url: google });
+            await flushPromises();
+            expect(browser.tabs.update).toHaveBeenCalledTimes(1);
+        });
+
+        it('still redirects if the native diagnostic API throws synchronously', async () => {
+            await loadBackgroundScript();
+            browser.runtime.sendNativeMessage.mockImplementation(m => {
+                if (m.type === 'setupTestProgress') { throw new Error('Native bridge unavailable'); }
+                return Promise.resolve({ ok: true });
+            });
+            await navigationListener({ frameId: 0, tabId: 3, url: google });
+            expect(browser.tabs.update).toHaveBeenCalledTimes(1);
+        });
+
+        it('does not redirect twice when the early event and page message race', async () => {
+            await loadBackgroundScript();
+            await Promise.all([
+                navigationListener({ frameId: 0, tabId: 3, url: google }),
+                pageMessage('setupTestPageReady', sender(google)),
+                pageMessage('setupTestPageReady', sender(google))
+            ]);
+            expect(browser.tabs.update).toHaveBeenCalledTimes(1);
+        });
+
+        it('respects the disabled toggle during recovery', async () => {
+            await loadBackgroundScript({ enabled: false });
+            await pageMessage('setupTestPageReady', sender(google));
+            expect(browser.tabs.update).not.toHaveBeenCalled();
+            expect(browser.runtime.sendNativeMessage).toHaveBeenCalledWith({
+                type: 'setupTestProgress', properties: { test_id: id, stage: 'extension_seen', enabled: false }
+            });
+        });
+
+        it('ignores expired or superseded tests rejected by the native app', async () => {
+            await loadBackgroundScript();
+            browser.runtime.sendNativeMessage.mockResolvedValue({ ok: false });
+            await pageMessage('setupTestPageReady', sender(google));
+            expect(browser.tabs.update).not.toHaveBeenCalled();
+        });
+
+        it('does not pull a tab back after the user navigates away', async () => {
+            await loadBackgroundScript();
+            browser.tabs.get.mockResolvedValue({ id: 3, url: 'https://example.com/' });
+            await pageMessage('setupTestPageReady', sender(google));
+            expect(browser.tabs.update).not.toHaveBeenCalled();
+        });
+
+        it('still recovers when Google adds unrelated URL parameters', async () => {
+            await loadBackgroundScript();
+            browser.tabs.get.mockResolvedValue({ id: 3, url: google + '&sourceid=safari' });
+            await pageMessage('setupTestPageReady', sender(google));
+            expect(browser.tabs.update).toHaveBeenCalledTimes(1);
+        });
+
+        it('recovers while the background is still loading its enabled state', async () => {
+            let resolveEnabled;
+            const enabled = new Promise(resolve => { resolveEnabled = resolve; });
+            await loadBackgroundScript({ storageGetImplementation: key => key === 'enabled' ? enabled : Promise.resolve({}) });
+            const recovery = pageMessage('setupTestPageReady', sender(google));
+            expect(browser.tabs.update).not.toHaveBeenCalled();
+            resolveEnabled({ enabled: true });
+            await recovery;
+            expect(browser.tabs.update).toHaveBeenCalledTimes(1);
+        });
+
+        it('ignores frames, untagged pages, and URLs supplied in the message payload', async () => {
+            await loadBackgroundScript();
+            browser.runtime.sendNativeMessage.mockClear();
+            await pageMessage('setupTestPageReady', { ...sender(google), frameId: 1 });
+            await pageMessage('setupTestPageReady', sender('https://www.google.com/search?q=ordinary'));
+            const listener = browser.runtime.onMessage.addListener.mock.calls.at(-1)[0];
+            await listener({ type: 'setupTestPageReady', url: google }, sender('https://example.com/'));
+            expect(browser.tabs.update).not.toHaveBeenCalled();
+            expect(browser.runtime.sendNativeMessage).not.toHaveBeenCalled();
+        });
+
+        it('accepts the loaded Brave page as completion, never the Google page', async () => {
+            await loadBackgroundScript();
+            browser.runtime.sendNativeMessage.mockClear();
+            await pageMessage('setupTestPageCompleted', sender(google));
+            expect(browser.runtime.sendNativeMessage).not.toHaveBeenCalled();
+            await pageMessage('setupTestPageCompleted', sender(brave));
+            expect(browser.runtime.sendNativeMessage).toHaveBeenCalledWith({
+                type: 'setupTestCompleted', properties: { test_id: id }
+            });
+        });
+    });
+
     describe('enabled state caching', () => {
         it('should track extension activation once when background runtime starts', async () => {
             const storage = { enabled: true };

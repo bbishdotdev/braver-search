@@ -164,6 +164,7 @@
 			membershipExceptions = (
 				Resources/_locales,
 				Resources/background.js,
+				Resources/setup-test.js,
 				Resources/images,
 				Resources/manifest.json,
 				Resources/popup.css,
@@ -178,6 +179,7 @@
 			membershipExceptions = (
 				Resources/_locales,
 				Resources/background.js,
+				Resources/setup-test.js,
 				Resources/images,
 				Resources/manifest.json,
 				Resources/popup.css,
