@@ -1,0 +1,253 @@
+{
+  "dashboard_name": "Setup and search \u2014 analytics v2",
+  "project_id": 193615,
+  "notes": [
+    "Verify schema and test before saving. These are rolling diagnostic views; recent entrants have incomplete follow-up.",
+    "For redirects per user divide the second series by the first within the same week; never sum daily unique users.",
+    "Runtime is a separate diagnostic rather than a required intermediate step; a setup proof itself establishes runtime execution.",
+    "The test-start funnel measures people, not correlated attempts. Use matching test_id and timestamp bounds to analyze attempt-level failures."
+  ],
+  "insights": [
+    {
+      "name": "Setup \u2014 first open to verified test",
+      "query": {
+        "kind": "FunnelsQuery",
+        "series": [
+          {
+            "kind": "EventsNode",
+            "event": "first_app_open"
+          },
+          {
+            "kind": "EventsNode",
+            "event": "setup_test_redirect_observed"
+          }
+        ],
+        "dateRange": {
+          "date_from": "-30d"
+        },
+        "properties": [
+          {
+            "key": "analytics_version",
+            "value": 2,
+            "operator": "exact",
+            "type": "event"
+          },
+          {
+            "key": "environment",
+            "value": [
+              "production"
+            ],
+            "operator": "exact",
+            "type": "event"
+          }
+        ],
+        "funnelsFilter": {
+          "funnelOrderType": "ordered",
+          "funnelWindowInterval": 7,
+          "funnelWindowIntervalUnit": "day",
+          "breakdownAttributionType": "first_touch"
+        },
+        "breakdownFilter": {
+          "breakdown": "platform",
+          "breakdown_type": "event"
+        }
+      }
+    },
+    {
+      "name": "Setup diagnostic \u2014 first open to any extension activity",
+      "query": {
+        "kind": "FunnelsQuery",
+        "series": [
+          {
+            "kind": "EventsNode",
+            "event": "first_app_open"
+          },
+          {
+            "kind": "GroupNode",
+            "operator": "OR",
+            "name": "Extension observed",
+            "nodes": [
+              {
+                "kind": "EventsNode",
+                "event": "extension_runtime_observed"
+              },
+              {
+                "kind": "EventsNode",
+                "event": "extension_activated"
+              },
+              {
+                "kind": "EventsNode",
+                "event": "extension_popup_opened"
+              },
+              {
+                "kind": "EventsNode",
+                "event": "search_redirected"
+              },
+              {
+                "kind": "EventsNode",
+                "event": "setup_test_redirect_observed"
+              }
+            ]
+          }
+        ],
+        "dateRange": {
+          "date_from": "-30d"
+        },
+        "properties": [
+          {
+            "key": "analytics_version",
+            "value": 2,
+            "operator": "exact",
+            "type": "event"
+          },
+          {
+            "key": "environment",
+            "value": [
+              "production"
+            ],
+            "operator": "exact",
+            "type": "event"
+          }
+        ],
+        "funnelsFilter": {
+          "funnelOrderType": "ordered",
+          "funnelWindowInterval": 7,
+          "funnelWindowIntervalUnit": "day",
+          "breakdownAttributionType": "first_touch"
+        },
+        "breakdownFilter": {
+          "breakdown": "platform",
+          "breakdown_type": "event"
+        }
+      }
+    },
+    {
+      "name": "Usage \u2014 first open to first ordinary redirect",
+      "query": {
+        "kind": "FunnelsQuery",
+        "series": [
+          {
+            "kind": "EventsNode",
+            "event": "first_app_open"
+          },
+          {
+            "kind": "EventsNode",
+            "event": "search_redirected"
+          }
+        ],
+        "dateRange": {
+          "date_from": "-30d"
+        },
+        "properties": [
+          {
+            "key": "analytics_version",
+            "value": 2,
+            "operator": "exact",
+            "type": "event"
+          },
+          {
+            "key": "environment",
+            "value": [
+              "production"
+            ],
+            "operator": "exact",
+            "type": "event"
+          }
+        ],
+        "funnelsFilter": {
+          "funnelOrderType": "ordered",
+          "funnelWindowInterval": 7,
+          "funnelWindowIntervalUnit": "day",
+          "breakdownAttributionType": "first_touch"
+        },
+        "breakdownFilter": {
+          "breakdown": "platform",
+          "breakdown_type": "event"
+        }
+      }
+    },
+    {
+      "name": "Setup test \u2014 started to proof",
+      "query": {
+        "kind": "FunnelsQuery",
+        "series": [
+          {
+            "kind": "EventsNode",
+            "event": "setup_test_started"
+          },
+          {
+            "kind": "EventsNode",
+            "event": "setup_test_redirect_observed"
+          }
+        ],
+        "dateRange": {
+          "date_from": "-30d"
+        },
+        "properties": [
+          {
+            "key": "analytics_version",
+            "value": 2,
+            "operator": "exact",
+            "type": "event"
+          },
+          {
+            "key": "environment",
+            "value": [
+              "production"
+            ],
+            "operator": "exact",
+            "type": "event"
+          }
+        ],
+        "funnelsFilter": {
+          "funnelOrderType": "ordered",
+          "funnelWindowInterval": 7,
+          "funnelWindowIntervalUnit": "day",
+          "breakdownAttributionType": "first_touch"
+        },
+        "breakdownFilter": {
+          "breakdown": "platform",
+          "breakdown_type": "event"
+        }
+      }
+    },
+    {
+      "name": "Weekly ordinary search users and redirect volume",
+      "query": {
+        "kind": "TrendsQuery",
+        "dateRange": {
+          "date_from": "-90d"
+        },
+        "interval": "week",
+        "properties": [
+          {
+            "key": "analytics_version",
+            "value": 2,
+            "operator": "exact",
+            "type": "event"
+          },
+          {
+            "key": "environment",
+            "value": [
+              "production"
+            ],
+            "operator": "exact",
+            "type": "event"
+          }
+        ],
+        "series": [
+          {
+            "kind": "EventsNode",
+            "event": "search_redirected",
+            "math": "dau"
+          },
+          {
+            "kind": "EventsNode",
+            "event": "search_redirected",
+            "math": "total"
+          }
+        ]
+      }
+    }
+  ]
+}

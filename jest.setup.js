@@ -9,7 +9,7 @@ beforeEach(() => {
 // Mock browser.storage API
 global.browser = {
     runtime: {
-        sendNativeMessage: jest.fn(() => Promise.resolve({}))
+        sendNativeMessage: jest.fn(() => Promise.resolve({ analytics: { durablyQueued: true } }))
     },
     storage: {
         onChanged: {
@@ -26,6 +26,7 @@ global.browser = {
         update: jest.fn(() => Promise.resolve({}))
     },
     webNavigation: {
+        onCompleted: { addListener: jest.fn() },
         onBeforeNavigate: {
             addListener: jest.fn(),
             removeListener: jest.fn(),
