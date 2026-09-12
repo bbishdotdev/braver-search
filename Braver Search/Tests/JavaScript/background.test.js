@@ -69,6 +69,42 @@ describe('Background Script', () => {
             );
         });
 
+        it('keeps activation retryable when native storage rejects the event', async () => {
+            browser.runtime.sendNativeMessage.mockImplementation(message => Promise.resolve(
+                message.event === 'extension_activated' ? { analytics: { durablyQueued: false } } : {}
+            ));
+            await loadBackgroundScript({ enabled: true });
+            expect(browser.storage.local.set).not.toHaveBeenCalledWith({ hasTrackedExtensionActivated: true });
+            browser.runtime.sendNativeMessage.mockResolvedValue({ analytics: { durablyQueued: true } });
+        });
+
+        it('does not count a setup test as an ordinary search', async () => {
+            await loadBackgroundScript({ enabled: true });
+            const id = '12345678-1234-1234-1234-123456789abc';
+            await navigationListener({ frameId: 0, tabId: 3,
+                url: `https://www.google.com/search?q=Braver+Search+setup+check&braver_setup=${id}` });
+            await flushPromises();
+            expect(browser.tabs.update).toHaveBeenCalledWith(3, {
+                url: `https://search.brave.com/search?q=Braver%20Search%20setup%20check&braver_setup=${id}`
+            });
+            expect(browser.runtime.sendNativeMessage.mock.calls.some(([message]) => message.event === 'search_redirected')).toBe(false);
+            const completed = browser.webNavigation.onCompleted.addListener.mock.calls.at(-1)[0];
+            completed({ frameId: 0, url: `https://search.brave.com/search?q=Braver+Search+setup+check&braver_setup=${id}` });
+            expect(browser.runtime.sendNativeMessage).toHaveBeenCalledWith({
+                type: 'setupTestCompleted', properties: { test_id: id }
+            });
+        });
+
+        it('does not verify unrelated pages or subframes', async () => {
+            await loadBackgroundScript();
+            const completed = browser.webNavigation.onCompleted.addListener.mock.calls.at(-1)[0];
+            browser.runtime.sendNativeMessage.mockClear();
+            completed({ frameId: 1, url: 'https://search.brave.com/search?q=test' });
+            completed({ frameId: 0, url: 'https://www.google.com/search?q=test' });
+            completed({ frameId: 0, url: 'https://search.brave.com/search?q=test' });
+            expect(browser.runtime.sendNativeMessage).not.toHaveBeenCalled();
+        });
+
         it('should redirect when enabled in storage', async () => {
             await loadBackgroundScript({ enabled: true });
 

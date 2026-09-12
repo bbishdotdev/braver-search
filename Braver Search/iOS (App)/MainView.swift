@@ -17,6 +17,10 @@ private enum IOSAnalyticsEvents {
 }
 
 struct MainView: View {
+    @Environment(\.scenePhase) private var scenePhase
+    @State private var setupStatus = SetupCheck.snapshot()
+    @State private var testURL: URL?
+    @State private var setupError: String?
     @State private var isShowingSupportSheet = false
     @State private var selectedDonationIndex = 0
     @StateObject private var monetization = MonetizationManager.shared
@@ -40,6 +44,7 @@ struct MainView: View {
 
                 ScrollView(showsIndicators: false) {
                     VStack(alignment: .leading, spacing: 18) {
+                        setupTestAction
                         activationCard
 
                         if monetization.canShowSupport {
@@ -59,6 +64,12 @@ struct MainView: View {
             .navigationBarTitleDisplayMode(.large)
         }
         .preferredColorScheme(.dark)
+        .onChange(of: scenePhase) { phase in
+            if phase == .active { refreshSetupStatus(); DurableAnalytics.shared.flush() }
+        }
+        .onReceive(Timer.publish(every: 2, on: .main, in: .common).autoconnect()) { _ in
+            if scenePhase == .active { refreshSetupStatus() }
+        }
         .task {
             MonetizationManager.shared.configureIfNeeded()
             await MonetizationManager.shared.resolveUserState()
@@ -73,6 +84,81 @@ struct MainView: View {
         .sheet(isPresented: $isShowingSupportSheet) {
             SupportSheetView()
         }
+    }
+
+    private var setupTestAction: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Button(action: startSetupTest) {
+                HStack(spacing: 12) {
+                    Image(systemName: "checkmark.shield")
+                        .font(.system(size: 20, weight: .medium))
+                        .foregroundStyle(IOSTheme.accentOrange)
+                    Text("Test my setup")
+                        .font(.system(size: 17, weight: .semibold))
+                        .foregroundStyle(.white)
+                    Spacer()
+                    Image(systemName: "arrow.up.forward")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(IOSTheme.accentOrange)
+                }
+                .padding(.horizontal, 18)
+                .padding(.vertical, 16)
+                .background(
+                    RoundedRectangle(cornerRadius: 18, style: .continuous)
+                        .fill(LinearGradient(colors: [Color(red: 0.25, green: 0.14, blue: 0.10), IOSTheme.surface], startPoint: .leading, endPoint: .trailing))
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: 18, style: .continuous)
+                        .stroke(IOSTheme.accentOrange.opacity(0.25), lineWidth: 1)
+                )
+            }
+            .buttonStyle(.plain)
+            .accessibilityHint("Opens a test search. Use Safari, then return for the result.")
+
+            if let setupError {
+                Text(setupError).font(.footnote).foregroundStyle(IOSTheme.secondaryText)
+            } else if setupStatus["status"] as? String != "idle" {
+                HStack(alignment: .top, spacing: 8) {
+                    Image(systemName: setupStatus["status"] as? String == "success" ? "checkmark.circle.fill" : "info.circle")
+                        .foregroundStyle(IOSTheme.accentOrange)
+                    Text(setupStatus["message"] as? String ?? "")
+                        .foregroundStyle(IOSTheme.secondaryText)
+                }
+                .font(.footnote)
+                .padding(.horizontal, 4)
+                .accessibilityElement(children: .combine)
+            }
+            if let testURL, setupStatus["status"] as? String != "success" {
+                ShareLink(item: testURL) {
+                    Label("Opened another browser? Share test link to Safari", systemImage: "square.and.arrow.up")
+                        .font(.footnote)
+                        .foregroundStyle(IOSTheme.secondaryText)
+                }
+                .padding(.horizontal, 4)
+            }
+        }
+    }
+
+    private func startSetupTest() {
+        setupError = nil
+        do {
+            let url = try SetupCheck.start()
+            testURL = url
+            refreshSetupStatus()
+            UIApplication.shared.open(url) { opened in
+                if !opened {
+                    IOSAppAnalytics.track("setup_test_open_failed")
+                    setupError = "Couldn’t open the test. Use Share test link to open it in Safari."
+                }
+            }
+        } catch {
+            setupError = "Couldn’t start the test. Please reopen the app and try again."
+        }
+    }
+
+    private func refreshSetupStatus() {
+        setupStatus = SetupCheck.snapshot()
+        SetupCheck.resultShown(setupStatus)
     }
 
     private var activationCard: some View {

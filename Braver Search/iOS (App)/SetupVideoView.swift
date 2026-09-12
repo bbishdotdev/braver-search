@@ -261,6 +261,15 @@ private final class SetupVideoPlayback: ObservableObject {
 
     private var endObserver: NSObjectProtocol?
     private var timeControlObserver: NSKeyValueObservation?
+    private var progressObserver: Any?
+    private var trackedProgress = Set<Int>()
+
+    private func trackProgress(_ percent: Int) {
+        guard trackedProgress.insert(percent).inserted else { return }
+        IOSAppAnalytics.track(percent == 100 ? "setup_video_completed" : "setup_video_progress", properties: [
+            "video": SetupVideoAsset.name, "percent": percent, "surface": "ios_app"
+        ])
+    }
 
     init() {
         guard let url = Bundle.main.url(
@@ -282,7 +291,15 @@ private final class SetupVideoPlayback: ObservableObject {
             object: item,
             queue: .main
         ) { [weak self] _ in
+            self?.trackProgress(100)
             self?.restart()
+        }
+
+        progressObserver = player.addPeriodicTimeObserver(forInterval: CMTime(seconds: 1, preferredTimescale: 600), queue: .main) { [weak self] time in
+            guard let self, let duration = self.player?.currentItem?.duration.seconds,
+                  duration.isFinite, duration > 0, self.player?.timeControlStatus == .playing else { return }
+            let percent = time.seconds / duration * 100
+            for milestone in [25, 50, 75] where percent >= Double(milestone) { self.trackProgress(milestone) }
         }
 
         timeControlObserver = player.observe(\.timeControlStatus, options: [.new]) { [weak self] player, _ in
@@ -293,6 +310,7 @@ private final class SetupVideoPlayback: ObservableObject {
     }
 
     deinit {
+        if let progressObserver { player?.removeTimeObserver(progressObserver) }
         if let endObserver {
             NotificationCenter.default.removeObserver(endObserver)
         }

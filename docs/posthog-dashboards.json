@@ -1,0 +1,625 @@
+{
+  "project_id": 193615,
+  "updated_at": "2026-09-12",
+  "dashboards": [
+    {
+      "id": 463016,
+      "key": "health",
+      "name": "Braver Search · Product health",
+      "url": "https://us.posthog.com/project/193615/dashboard/463016",
+      "description": "Start here for product usage: active searchers, recorded redirect volume, searches per searcher, repeat search retention, active days, and app-version mix. Activity means search_redirected, not opening the setup app. Counts are anonymous installation IDs, not people across devices. Current charts use existing telemetry across releases; historical delivery gaps cannot be repaired by these views. Compare complete UTC days/weeks and read insight descriptions. New analytics-v2 setup-proof and production-only reporting will be added after release and schema validation. For onboarding diagnostics, use Braver Search · Setup and friction.",
+      "insight_order": [
+        "total",
+        "weekly",
+        "frequency",
+        "retention",
+        "daily",
+        "volume",
+        "habit",
+        "versions"
+      ]
+    },
+    {
+      "id": 2090082,
+      "key": "setup",
+      "name": "Braver Search · Setup and friction",
+      "url": "https://us.posthog.com/project/193615/dashboard/2090082",
+      "description": "Investigate setup with two separate signals: any observed extension activity and an observed search redirect. The main funnels include first opens 30–7 days ago and allow seven days of follow-up through now. Missing events are not confirmed failures: legacy delivery/identity gaps still matter. Keep default rolling dates for those mature-cohort funnels; historical date overrides require changing the first-step timestamp cutoff too. Platform splits, time to search, help engagement, and redirect-toggle changes guide investigation. Video autoplay is not completion; toggle changes are not Safari permissions. The new Test my setup / guide-step / video-completion telemetry is awaiting release; those views are not live yet.",
+      "insight_order": [
+        "first_search",
+        "any_extension",
+        "first_opens",
+        "conversion_time",
+        "help",
+        "toggles"
+      ]
+    }
+  ],
+  "insights": [
+    {
+      "key": "daily",
+      "id": 3113597,
+      "short_id": "A0gDqcmP",
+      "board": "health",
+      "name": "Daily active searchers · iOS / macOS",
+      "description": "Unique installations with search_redirected each day. Opening the host app does not count as search usage. The latest day is partial. Anonymous installation IDs, not people across devices. Historical event delivery can undercount; the new telemetry release cannot backfill lost events.",
+      "query": {
+        "kind": "InsightVizNode",
+        "source": {
+          "kind": "TrendsQuery",
+          "dateRange": {
+            "date_from": "-30d"
+          },
+          "interval": "day",
+          "series": [
+            {
+              "kind": "EventsNode",
+              "event": "search_redirected",
+              "math": "dau"
+            }
+          ],
+          "trendsFilter": {
+            "display": "ActionsLineGraph",
+            "showLegend": true
+          },
+          "breakdownFilter": {
+            "breakdowns": [
+              {
+                "property": "platform",
+                "type": "event"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "key": "weekly",
+      "id": 3113598,
+      "short_id": "WzsESwAJ",
+      "board": "health",
+      "name": "Weekly active searchers · iOS / macOS",
+      "description": "Unique installations with search_redirected within each calendar week, rather than a sum of daily users. The first and latest calendar buckets may be partial; compare complete weeks. Anonymous installation IDs, not people across devices. Historical event delivery can undercount; the new telemetry release cannot backfill lost events.",
+      "query": {
+        "kind": "InsightVizNode",
+        "source": {
+          "kind": "TrendsQuery",
+          "dateRange": {
+            "date_from": "-90d"
+          },
+          "interval": "week",
+          "series": [
+            {
+              "kind": "EventsNode",
+              "event": "search_redirected",
+              "math": "dau"
+            }
+          ],
+          "trendsFilter": {
+            "display": "ActionsLineGraph",
+            "showLegend": true
+          },
+          "breakdownFilter": {
+            "breakdowns": [
+              {
+                "property": "platform",
+                "type": "event"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "key": "habit",
+      "id": 3113600,
+      "short_id": "bbxBEzKU",
+      "board": "health",
+      "name": "Search habit · active days in the last 30 complete days",
+      "description": "Distribution of unique installations by the number of distinct UTC days with search_redirected in the last 30 complete days. Each installation appears in one bar; this measures active days, not search count. It includes existing and new installations, so recent joiners have fewer possible active days. Anonymous installation IDs are not people across devices; legacy delivery can undercount.",
+      "query": {
+        "kind": "InsightVizNode",
+        "source": {
+          "kind": "StickinessQuery",
+          "dateRange": {
+            "date_from": "-30d",
+            "date_to": "-1d"
+          },
+          "interval": "day",
+          "series": [
+            {
+              "kind": "EventsNode",
+              "event": "search_redirected",
+              "name": "search_redirected"
+            }
+          ],
+          "stickinessFilter": {
+            "display": "ActionsBar",
+            "computedAs": "non_cumulative"
+          }
+        }
+      }
+    },
+    {
+      "key": "retention",
+      "id": 3113599,
+      "short_id": "Lj8V2TdR",
+      "board": "health",
+      "name": "Weekly search retention",
+      "description": "For each weekly cohort of active searchers, how many searched again in subsequent weeks? Start and return are both search_redirected; recurring cohorts may contain the same installation. Read completed weeks; future/incomplete cells are not losses. Anonymous installation IDs, not people across devices. Historical event delivery can undercount; the new telemetry release cannot backfill lost events.",
+      "query": {
+        "kind": "InsightVizNode",
+        "source": {
+          "kind": "RetentionQuery",
+          "dateRange": {
+            "date_from": "-8w"
+          },
+          "retentionFilter": {
+            "targetEntity": {
+              "id": "search_redirected",
+              "name": "search_redirected",
+              "type": "events"
+            },
+            "returningEntity": {
+              "id": "search_redirected",
+              "name": "search_redirected",
+              "type": "events"
+            },
+            "period": "Week",
+            "totalIntervals": 8,
+            "retentionType": "retention_recurring",
+            "retentionReference": "total",
+            "cumulative": false,
+            "meanRetentionCalculation": "weighted",
+            "timeWindowMode": "strict_calendar_dates"
+          }
+        }
+      }
+    },
+    {
+      "key": "volume",
+      "id": 7240089,
+      "short_id": "B4ozX12n",
+      "board": "health",
+      "name": "Daily search redirects · iOS / macOS",
+      "description": "Recorded search_redirected events, split by platform. Compare with active searchers to distinguish frequency changes from audience changes. The latest day is partial. Anonymous installation IDs, not people across devices. Historical event delivery can undercount; the new telemetry release cannot backfill lost events.",
+      "query": {
+        "kind": "InsightVizNode",
+        "source": {
+          "kind": "TrendsQuery",
+          "dateRange": {
+            "date_from": "-30d"
+          },
+          "interval": "day",
+          "series": [
+            {
+              "kind": "EventsNode",
+              "event": "search_redirected",
+              "math": "total"
+            }
+          ],
+          "trendsFilter": {
+            "display": "ActionsLineGraph",
+            "showLegend": true
+          },
+          "breakdownFilter": {
+            "breakdowns": [
+              {
+                "property": "platform",
+                "type": "event"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "key": "total",
+      "id": 7240103,
+      "short_id": "63a2brUk",
+      "board": "health",
+      "name": "Search redirects · last 30 complete days",
+      "description": "Recorded search_redirected total for the last 30 complete UTC days, excluding today, compared with the preceding period. This is event volume, not users. Historical delivery can undercount. The date range can be overridden for exploration.",
+      "query": {
+        "kind": "InsightVizNode",
+        "source": {
+          "kind": "TrendsQuery",
+          "dateRange": {
+            "date_from": "-30d",
+            "date_to": "-1d"
+          },
+          "interval": "day",
+          "series": [
+            {
+              "kind": "EventsNode",
+              "event": "search_redirected",
+              "math": "total"
+            }
+          ],
+          "trendsFilter": {
+            "display": "BoldNumber"
+          },
+          "compareFilter": {
+            "compare": true
+          }
+        }
+      }
+    },
+    {
+      "key": "frequency",
+      "id": 11829397,
+      "short_id": "NFOWDObN",
+      "board": "health",
+      "name": "Searches per active searcher · weekly",
+      "description": "Weekly recorded redirects divided by unique searchers in the same week. An average among active installations, not all installs and not a setup conversion rate. The first and latest calendar buckets may be partial; compare complete weeks. Anonymous installation IDs, not people across devices. Historical event delivery can undercount; the new telemetry release cannot backfill lost events.",
+      "query": {
+        "kind": "InsightVizNode",
+        "source": {
+          "kind": "TrendsQuery",
+          "dateRange": {
+            "date_from": "-90d"
+          },
+          "interval": "week",
+          "series": [
+            {
+              "kind": "EventsNode",
+              "event": "search_redirected",
+              "math": "total"
+            },
+            {
+              "kind": "EventsNode",
+              "event": "search_redirected",
+              "math": "dau"
+            }
+          ],
+          "trendsFilter": {
+            "display": "ActionsLineGraph",
+            "formulaNodes": [
+              {
+                "formula": "A / B"
+              }
+            ],
+            "decimalPlaces": 1,
+            "showLegend": false
+          }
+        }
+      }
+    },
+    {
+      "key": "versions",
+      "id": 11829451,
+      "short_id": "zlY2KfcT",
+      "board": "health",
+      "name": "Active searchers by app version · weekly",
+      "description": "Unique active search installations by app version each week. Use this to assess release adoption and investigate regressions. An installation that upgrades can appear under two versions; do not sum versions for unique users. Compare complete weeks. Historical delivery can undercount.",
+      "query": {
+        "kind": "InsightVizNode",
+        "source": {
+          "kind": "TrendsQuery",
+          "dateRange": {
+            "date_from": "-90d"
+          },
+          "interval": "week",
+          "series": [
+            {
+              "kind": "EventsNode",
+              "event": "search_redirected",
+              "math": "dau"
+            }
+          ],
+          "trendsFilter": {
+            "display": "ActionsLineGraph",
+            "showLegend": true
+          },
+          "breakdownFilter": {
+            "breakdowns": [
+              {
+                "property": "app_version",
+                "type": "event"
+              }
+            ],
+            "breakdown_limit": 10
+          }
+        }
+      }
+    },
+    {
+      "key": "first_search",
+      "id": 3113602,
+      "short_id": "LAwi49rA",
+      "board": "setup",
+      "name": "First app open → observed search · mature 7-day cohort",
+      "description": "First opens 30–7 days ago → recorded search_redirected within 7 days. Only step 1 excludes recent entrants; outcomes remain eligible through now. Missing telemetry is not confirmed setup failure. Uses anonymous installation IDs. Keep default rolling dates; historical date overrides require adjusting the first-step cutoff too.",
+      "query": {
+        "kind": "InsightVizNode",
+        "source": {
+          "kind": "FunnelsQuery",
+          "dateRange": {
+            "date_from": "-30d"
+          },
+          "series": [
+            {
+              "kind": "EventsNode",
+              "event": "first_app_open",
+              "custom_name": "First app open (30–7 days ago)",
+              "properties": [
+                {
+                  "type": "hogql",
+                  "key": "timestamp < now() - INTERVAL 7 DAY"
+                }
+              ]
+            },
+            {
+              "kind": "EventsNode",
+              "event": "search_redirected",
+              "custom_name": "Search redirect observed within 7 days"
+            }
+          ],
+          "funnelsFilter": {
+            "funnelOrderType": "ordered",
+            "funnelWindowInterval": 7,
+            "funnelWindowIntervalUnit": "day",
+            "funnelVizType": "steps",
+            "breakdownAttributionType": "first_touch",
+            "layout": "horizontal"
+          },
+          "breakdownFilter": {
+            "breakdown": "platform",
+            "breakdown_type": "event"
+          }
+        }
+      }
+    },
+    {
+      "key": "any_extension",
+      "id": 11829454,
+      "short_id": "TTsBMKaj",
+      "board": "setup",
+      "name": "First app open → any extension activity · mature cohort",
+      "description": "Same mature cohort: first opens 30–7 days ago → activation, popup OR redirect within 7 days. Any signal establishes observed extension activity, not all Safari permissions. Missing telemetry is not confirmed failure. Keep default rolling dates; historical date overrides require adjusting the first-step cutoff too.",
+      "query": {
+        "kind": "InsightVizNode",
+        "source": {
+          "kind": "FunnelsQuery",
+          "dateRange": {
+            "date_from": "-30d"
+          },
+          "series": [
+            {
+              "kind": "EventsNode",
+              "event": "first_app_open",
+              "custom_name": "First app open (30–7 days ago)",
+              "properties": [
+                {
+                  "type": "hogql",
+                  "key": "timestamp < now() - INTERVAL 7 DAY"
+                }
+              ]
+            },
+            {
+              "kind": "GroupNode",
+              "operator": "OR",
+              "name": "Any recorded extension activity",
+              "nodes": [
+                {
+                  "kind": "EventsNode",
+                  "event": "extension_activated"
+                },
+                {
+                  "kind": "EventsNode",
+                  "event": "extension_popup_opened"
+                },
+                {
+                  "kind": "EventsNode",
+                  "event": "search_redirected"
+                }
+              ]
+            }
+          ],
+          "funnelsFilter": {
+            "funnelOrderType": "ordered",
+            "funnelWindowInterval": 7,
+            "funnelWindowIntervalUnit": "day",
+            "funnelVizType": "steps",
+            "breakdownAttributionType": "first_touch",
+            "layout": "horizontal"
+          },
+          "breakdownFilter": {
+            "breakdown": "platform",
+            "breakdown_type": "event"
+          }
+        }
+      }
+    },
+    {
+      "key": "conversion_time",
+      "id": 11829455,
+      "short_id": "2LoPOFzo",
+      "board": "setup",
+      "name": "Time to first observed search · converters only",
+      "description": "Time to search among observed converters from first opens 30–7 days ago, with a 7-day conversion window. Excludes unobserved/non-converting installations; this is not their waiting time. Keep default rolling dates; historical date overrides require adjusting the first-step cutoff too. Legacy telemetry can undercount.",
+      "query": {
+        "kind": "InsightVizNode",
+        "source": {
+          "kind": "FunnelsQuery",
+          "dateRange": {
+            "date_from": "-30d"
+          },
+          "series": [
+            {
+              "kind": "EventsNode",
+              "event": "first_app_open",
+              "custom_name": "First app open (30–7 days ago)",
+              "properties": [
+                {
+                  "type": "hogql",
+                  "key": "timestamp < now() - INTERVAL 7 DAY"
+                }
+              ]
+            },
+            {
+              "kind": "EventsNode",
+              "event": "search_redirected",
+              "custom_name": "Search redirect observed within 7 days"
+            }
+          ],
+          "funnelsFilter": {
+            "funnelOrderType": "ordered",
+            "funnelWindowInterval": 7,
+            "funnelWindowIntervalUnit": "day",
+            "funnelVizType": "time_to_convert",
+            "breakdownAttributionType": "first_touch",
+            "layout": "horizontal"
+          }
+        }
+      }
+    },
+    {
+      "key": "first_opens",
+      "id": 11829456,
+      "short_id": "Glec9wMU",
+      "board": "setup",
+      "name": "First tracked app opens · iOS / macOS",
+      "description": "Unique installations emitting first_app_open daily, split by platform. This is the first tracked app launch, not App Store downloads or extension enablement. Anonymous IDs are not people across devices. The latest day is partial; legacy delivery can undercount.",
+      "query": {
+        "kind": "InsightVizNode",
+        "source": {
+          "kind": "TrendsQuery",
+          "dateRange": {
+            "date_from": "-30d"
+          },
+          "interval": "day",
+          "series": [
+            {
+              "kind": "EventsNode",
+              "event": "first_app_open",
+              "math": "dau"
+            }
+          ],
+          "trendsFilter": {
+            "display": "ActionsLineGraph",
+            "showLegend": true
+          },
+          "breakdownFilter": {
+            "breakdowns": [
+              {
+                "property": "platform",
+                "type": "event"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "key": "help",
+      "id": 11829457,
+      "short_id": "0Zs0f2kN",
+      "board": "setup",
+      "name": "Setup help engagement · weekly users",
+      "description": "Unique installations per week for video autoplay, play/restart taps and guide opens. Autoplay is exposure, not completed viewing. Series overlap and are not causal evidence that help improves setup. Current video tracking is iOS-specific. Compare complete weeks; investigate sustained changes alongside the setup funnels.",
+      "query": {
+        "kind": "InsightVizNode",
+        "source": {
+          "kind": "TrendsQuery",
+          "dateRange": {
+            "date_from": "-90d"
+          },
+          "interval": "week",
+          "series": [
+            {
+              "kind": "EventsNode",
+              "event": "setup_video_autoplay_started",
+              "math": "dau",
+              "custom_name": "Video autoplay started"
+            },
+            {
+              "kind": "EventsNode",
+              "event": "setup_video_play_tapped",
+              "math": "dau",
+              "custom_name": "Video play tapped"
+            },
+            {
+              "kind": "EventsNode",
+              "event": "setup_video_restart_tapped",
+              "math": "dau",
+              "custom_name": "Video restart tapped"
+            },
+            {
+              "kind": "EventsNode",
+              "event": "setup_guide_opened",
+              "math": "dau",
+              "custom_name": "Setup guide opened"
+            }
+          ],
+          "trendsFilter": {
+            "display": "ActionsLineGraph",
+            "showLegend": true
+          }
+        }
+      }
+    },
+    {
+      "key": "toggles",
+      "id": 11829458,
+      "short_id": "m3fg8WvB",
+      "board": "setup",
+      "name": "Redirect setting changes · off / on",
+      "description": "Daily redirect-toggle change events: enabled=false (off) / true (on). These are changes, not current disabled users, uninstalls or Safari permissions. Repeated changes count separately. Investigate sustained increases alongside search usage. Legacy delivery can undercount.",
+      "query": {
+        "kind": "InsightVizNode",
+        "source": {
+          "kind": "TrendsQuery",
+          "dateRange": {
+            "date_from": "-30d"
+          },
+          "interval": "day",
+          "series": [
+            {
+              "kind": "EventsNode",
+              "event": "redirect_setting_changed",
+              "math": "total",
+              "custom_name": "Turned off",
+              "properties": [
+                {
+                  "key": "enabled",
+                  "type": "event",
+                  "operator": "exact",
+                  "value": "false"
+                }
+              ]
+            },
+            {
+              "kind": "EventsNode",
+              "event": "redirect_setting_changed",
+              "math": "total",
+              "custom_name": "Turned on",
+              "properties": [
+                {
+                  "key": "enabled",
+                  "type": "event",
+                  "operator": "exact",
+                  "value": "true"
+                }
+              ]
+            }
+          ],
+          "trendsFilter": {
+            "display": "ActionsLineGraph",
+            "showLegend": true
+          }
+        }
+      }
+    }
+  ],
+  "event_definitions": {
+    "first_app_open": "First tracked launch of the host app, emitted once per local install state. Not an App Store download or proof Safari is enabled. Legacy code marked this milestone before reliable delivery; absent events cannot be backfilled. Analytics v2 preserves existing flags on upgrade.",
+    "app_opened": "Host app launch. The app contains setup and settings; ordinary Safari searches can continue without reopening it. Do not use this event as the definition of an active searcher or as the return event for search retention.",
+    "extension_activated": "Legacy one-time observation of the extension background runtime. Not a Safari permissions check or successful search. Historical delivery could fail after the one-time flag was set. Use only as one of several activity signals; analytics v2 adds recurring extension_runtime_observed.",
+    "extension_popup_opened": "The Safari extension popup was opened. Indicates interaction with the extension, not successful redirection or permission for every search site.",
+    "search_redirected": "The extension's tabs.update request to redirect a normal search to Brave resolved successfully. Main ordinary search usage signal; not proof the destination finished loading. No query text or visited URL is sent. Analytics v2 excludes setup-test searches; setup proof is a separate event.",
+    "redirect_setting_changed": "The extension's stored redirect-enabled setting changed. enabled=true means on; false means off. Counts are setting changes, not current disabled installations, Safari extension permission state, uninstalls or churn.",
+    "setup_video_autoplay_started": "The iOS setup video began automatic playback. Exposure only: it does not mean the user watched or completed it. Analytics v2 adds progress and completion events.",
+    "setup_guide_opened": "The iOS setup guide was opened. Exposure only: it does not mean all steps were read or setup succeeded. Analytics v2 adds guide and step appearance events."
+  }
+}

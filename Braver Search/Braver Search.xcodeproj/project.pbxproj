@@ -7,6 +7,14 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		BBA200000000000000000013 /* SetupCheck.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBA100000000000000000001; };
+		BBA200000000000000000012 /* SetupCheck.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBA100000000000000000001; };
+		BBA200000000000000000011 /* SetupCheck.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBA100000000000000000001; };
+		BBA200000000000000000010 /* SetupCheck.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBA100000000000000000001; };
+		BBA200000000000000000003 /* DurableAnalytics.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBA100000000000000000000; };
+		BBA200000000000000000002 /* DurableAnalytics.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBA100000000000000000000; };
+		BBA200000000000000000001 /* DurableAnalytics.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBA100000000000000000000; };
+		BBA200000000000000000000 /* DurableAnalytics.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBA100000000000000000000; };
 		CE77FAE32D3C8C8000B47EE3 /* Braver Search Extension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = CE77FAE22D3C8C8000B47EE3 /* Braver Search Extension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		CE77FAED2D3C8C8000B47EE3 /* Braver Search Extension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = CE77FAEC2D3C8C8000B47EE3 /* Braver Search Extension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		CE7CB6112F5F2CD8002B9A1E /* StoreKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = CE7CB6102F5F2CD8002B9A1E /* StoreKit.framework */; };
@@ -84,13 +92,15 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		BBA100000000000000000001 /* SetupCheck.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Shared (Telemetry)/SetupCheck.swift"; sourceTree = SOURCE_ROOT; };
+		BBA100000000000000000000 /* DurableAnalytics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Shared (Telemetry)/DurableAnalytics.swift"; sourceTree = SOURCE_ROOT; };
 		CE1A00012E00000100B47EE3 /* AnalyticsConfig.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = AnalyticsConfig.xcconfig; sourceTree = "<group>"; };
 		CE1A00022E00000100B47EE3 /* AnalyticsSecrets.xcconfig.example */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = AnalyticsSecrets.xcconfig.example; sourceTree = "<group>"; };
 		CE77FAC42D3C8C8000B47EE3 /* Braver Search.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Braver Search.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		CE77FAD62D3C8C8000B47EE3 /* Braver Search.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Braver Search.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		CE77FAE22D3C8C8000B47EE3 /* Braver Search Extension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = "Braver Search Extension.appex"; sourceTree = BUILT_PRODUCTS_DIR; };
 		CE77FAEC2D3C8C8000B47EE3 /* Braver Search Extension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = "Braver Search Extension.appex"; sourceTree = BUILT_PRODUCTS_DIR; };
-		CE7CB6102F5F2CD8002B9A1E /* StoreKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = StoreKit.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS26.0.sdk/System/Library/Frameworks/StoreKit.framework; sourceTree = DEVELOPER_DIR; };
+		CE7CB6102F5F2CD8002B9A1E /* StoreKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = StoreKit.framework; path = System/Library/Frameworks/StoreKit.framework; sourceTree = SDKROOT; };
 		CE7CB6122F5F2CEF002B9A1E /* StoreKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = StoreKit.framework; path = System/Library/Frameworks/StoreKit.framework; sourceTree = SDKROOT; };
 		CEE6B2C52D405B95003F51F9 /* Braver Search iOS Tests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "Braver Search iOS Tests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 		CEE6B2D22D405BAE003F51F9 /* Braver Search macOS Tests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "Braver Search macOS Tests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -313,6 +323,8 @@
 		CE77FAA72D3C8C7E00B47EE3 = {
 			isa = PBXGroup;
 			children = (
+				BBA100000000000000000001 /* SetupCheck.swift */,
+				BBA100000000000000000000 /* DurableAnalytics.swift */,
 				CE1A00032E00000100B47EE3 /* Config */,
 				CE77FAAC2D3C8C7F00B47EE3 /* Shared (App) */,
 				CE77FAB52D3C8C7F00B47EE3 /* Shared (Extension) */,
@@ -598,6 +610,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				BBA200000000000000000010 /* SetupCheck.swift in Sources */,
+				BBA200000000000000000000 /* DurableAnalytics.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -605,6 +619,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				BBA200000000000000000011 /* SetupCheck.swift in Sources */,
+				BBA200000000000000000001 /* DurableAnalytics.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -612,6 +628,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				BBA200000000000000000012 /* SetupCheck.swift in Sources */,
+				BBA200000000000000000002 /* DurableAnalytics.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -619,6 +637,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				BBA200000000000000000013 /* SetupCheck.swift in Sources */,
+				BBA200000000000000000003 /* DurableAnalytics.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -78,3 +78,15 @@ function focusSupportSection() {
 }
 
 document.querySelector("button.open-preferences").addEventListener("click", openPreferences);
+
+function updateSetup(payload) {
+    const result = document.getElementById('setup-result');
+    result.textContent = payload.message;
+    result.classList.toggle('hidden', payload.status === 'idle');
+}
+document.getElementById('test-setup').addEventListener('click', () => {
+    webkit.messageHandlers.controller.postMessage({ action: 'test-setup' });
+});
+document.getElementById('setup-help').addEventListener('toggle', event => {
+    if (event.target.open) { webkit.messageHandlers.controller.postMessage({ action: 'setup-help' }); }
+});
