@@ -22,9 +22,10 @@ let installationSteps: [Step] = [
 ]
 
 struct InstallationGuideView: View {
+    @State private var seenSteps = Set<String>()
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 24) {
+            LazyVStack(alignment: .leading, spacing: 24) {
                 VStack(alignment: .leading, spacing: 10) {
                     Text("Turn On Braver Search")
                         .font(.system(size: 26, weight: .bold))
@@ -56,10 +57,16 @@ struct InstallationGuideView: View {
                                     .stroke(Color.gray.opacity(0.5), lineWidth: 1)
                             )
                     }
+                    .onAppear {
+                        if seenSteps.insert(step.imageName).inserted {
+                            IOSAppAnalytics.track("setup_guide_step_viewed", properties: ["step": step.imageName])
+                        }
+                    }
                 }
             }
             .padding()
         }
+        .onAppear { IOSAppAnalytics.track("setup_guide_viewed") }
         .navigationTitle("Installation Guide")
         .navigationBarTitleDisplayMode(.inline)
     }

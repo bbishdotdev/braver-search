@@ -19,6 +19,9 @@ jobs:
       with:
         xcode-version: latest-stable
 
+    - name: Test durable telemetry and setup verification
+      run: bash scripts/test-telemetry.sh
+
     - name: Select iOS Simulator
       id: ios-simulator
       run: |

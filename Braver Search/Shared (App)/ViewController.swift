@@ -16,17 +16,27 @@ import SafariServices
 typealias PlatformViewController = NSViewController
 #endif
 
-let extensionBundleIdentifier = "xyz.bsquared.Braver-Search.Extension"
+let extensionBundleIdentifier: String = {
+    guard let folder = Bundle.main.builtInPlugInsURL,
+          let urls = try? FileManager.default.contentsOfDirectory(at: folder, includingPropertiesForKeys: nil),
+          let url = urls.first(where: { $0.pathExtension == "appex" }),
+          let identifier = Bundle(url: url)?.bundleIdentifier else { return "xyz.bsquared.braversearch.Braver-Search-Extension" }
+    return identifier
+}()
 
 class ViewController: PlatformViewController, WKNavigationDelegate, WKScriptMessageHandler {
 
     @IBOutlet var webView: WKWebView!
 
+    private var setupTimer: Timer?
     private var monetizationObserver: NSObjectProtocol?
     private var supportFlowObserver: NSObjectProtocol?
 
     override func viewDidLoad() {
         super.viewDidLoad()
+        setupTimer = Timer.scheduledTimer(withTimeInterval: 2, repeats: true) { [weak self] _ in
+            self?.updateSetupUI()
+        }
 
         self.webView.navigationDelegate = self
 
@@ -71,6 +81,7 @@ class ViewController: PlatformViewController, WKNavigationDelegate, WKScriptMess
         webView.evaluateJavaScript("show('ios')")
 #elseif os(macOS)
         webView.evaluateJavaScript("show('mac')")
+        updateSetupUI()
 
         SFSafariExtensionManager.getStateOfSafariExtension(withIdentifier: extensionBundleIdentifier) { (state, error) in
             guard let state = state, error == nil else {
@@ -93,6 +104,7 @@ class ViewController: PlatformViewController, WKNavigationDelegate, WKScriptMess
     func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
 #if os(macOS)
         if let action = message.body as? String, action == "open-preferences" {
+            MacAppAnalytics.track("setup_settings_opened")
             SFSafariApplication.showPreferencesForExtension(withIdentifier: extensionBundleIdentifier) { error in
                 guard error == nil else {
                     return
@@ -111,6 +123,20 @@ class ViewController: PlatformViewController, WKNavigationDelegate, WKScriptMess
         }
 
         switch action {
+        case "test-setup":
+            do {
+                let url = try SetupCheck.start()
+                if let safari = NSWorkspace.shared.urlForApplication(withBundleIdentifier: "com.apple.Safari") {
+                    NSWorkspace.shared.open([url], withApplicationAt: safari, configuration: NSWorkspace.OpenConfiguration()) { _, error in
+                        if error != nil { MacAppAnalytics.track("setup_test_open_failed") }
+                    }
+                }
+                updateSetupUI()
+            } catch {
+                webView.evaluateJavaScript("updateSetup({message: 'Couldn’t start the test. Reopen the app and try again.'})")
+            }
+        case "setup-help":
+            MacAppAnalytics.track("setup_help_opened")
         case "open-review":
             NSWorkspace.shared.open(MonetizationConfig.reviewURL)
         case "purchase":
@@ -132,6 +158,7 @@ class ViewController: PlatformViewController, WKNavigationDelegate, WKScriptMess
     }
 
     deinit {
+        setupTimer?.invalidate()
         if let monetizationObserver {
             NotificationCenter.default.removeObserver(monetizationObserver)
         }
@@ -139,6 +166,19 @@ class ViewController: PlatformViewController, WKNavigationDelegate, WKScriptMess
         if let supportFlowObserver {
             NotificationCenter.default.removeObserver(supportFlowObserver)
         }
+    }
+
+    private func updateSetupUI() {
+#if os(macOS)
+        let snapshot = SetupCheck.snapshot()
+        if NSApp.isActive {
+            SetupCheck.resultShown(snapshot)
+            DurableAnalytics.shared.flush()
+        }
+        guard let data = try? JSONSerialization.data(withJSONObject: snapshot),
+              let json = String(data: data, encoding: .utf8) else { return }
+        webView.evaluateJavaScript("updateSetup(\(json))")
+#endif
     }
 
     private func updateMonetizationUI() {

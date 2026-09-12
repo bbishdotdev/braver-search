@@ -172,10 +172,12 @@ async function trackExtensionActivatedOnce() {
             return;
         }
 
-        await browser.storage.local.set({ [EXTENSION_ACTIVATED_STORAGE_KEY]: true });
-        await trackEvent('extension_activated', {
+        const response = await trackEvent('extension_activated', {
             surface: 'background_runtime'
         });
+        if (response?.analytics?.durablyQueued === true) {
+            await browser.storage.local.set({ [EXTENSION_ACTIVATED_STORAGE_KEY]: true });
+        }
     } catch (error) {
         console.error("Braver Search: Failed to track extension activation", error);
     }
@@ -374,12 +376,16 @@ browser.webNavigation.onBeforeNavigate.addListener(async details => {
         return;
     }
 
-    const redirectUrl = BRAVE_SEARCH_URL + encodeURIComponent(searchQuery);
+    const testID = url.searchParams.get('braver_setup');
+    const isSetupTest = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(testID || '');
+    const redirectUrl = BRAVE_SEARCH_URL + encodeURIComponent(searchQuery)
+        + (isSetupTest ? '&braver_setup=' + testID : '');
     debugLog("Braver Search: Attempting redirect", { tabId: details.tabId, redirectUrl });
 
     browser.tabs.update(details.tabId, { url: redirectUrl })
         .then(() => {
             debugLog("Braver Search: Redirect successful");
+            if (isSetupTest) { return; } // Setup checks never inflate ordinary search usage.
             return trackEvent('search_redirected', {
                 surface: 'background_redirect'
             });
@@ -391,3 +397,16 @@ browser.webNavigation.onBeforeNavigate.addListener(async details => {
 
 void loadEnabledState();
 void trackExtensionActivatedOnce();
+
+// onCompleted proves that the destination loaded, not merely that tabs.update accepted a request.
+browser.webNavigation.onCompleted.addListener(details => {
+    if (details.frameId !== 0 || !details.url) { return; }
+    const url = new URL(details.url);
+    const id = url.searchParams.get('braver_setup');
+    if (!isBraveSearchUrl(url) || !/^[0-9a-f-]{36}$/.test(id || '')) { return; }
+    // Native code validates the token against the current, unexpired host-app test.
+    void browser.runtime.sendNativeMessage({ type: 'setupTestCompleted', properties: { test_id: id } })
+        .catch(error => console.error('Braver Search: Setup proof could not be saved', error));
+});
+void browser.runtime.sendNativeMessage({ type: 'runtimeObserved' })
+    .catch(error => console.error('Braver Search: Runtime observation failed', error));
