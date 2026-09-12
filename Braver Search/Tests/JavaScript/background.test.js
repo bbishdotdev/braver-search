@@ -102,7 +102,43 @@ describe('Background Script', () => {
             completed({ frameId: 1, url: 'https://search.brave.com/search?q=test' });
             completed({ frameId: 0, url: 'https://www.google.com/search?q=test' });
             completed({ frameId: 0, url: 'https://search.brave.com/search?q=test' });
+            completed({ frameId: 0, url: 'invalid url' });
             expect(browser.runtime.sendNativeMessage).not.toHaveBeenCalled();
+        });
+
+        it('reports a disabled redirect toggle for the current setup test', async () => {
+            await loadBackgroundScript({ enabled: false });
+            const id = '12345678-1234-1234-1234-123456789abc';
+            await navigationListener({ frameId: 0, tabId: 3,
+                url: `https://www.google.com/search?q=Braver+Search+setup+check&braver_setup=${id}` });
+            expect(browser.runtime.sendNativeMessage).toHaveBeenCalledWith({
+                type: 'setupTestProgress', properties: { test_id: id, stage: 'extension_seen', enabled: false }
+            });
+            expect(browser.tabs.update).not.toHaveBeenCalled();
+        });
+
+        it('reports an accepted redirect without claiming the destination completed', async () => {
+            await loadBackgroundScript();
+            const id = '12345678-1234-1234-1234-123456789abc';
+            await navigationListener({ frameId: 0, tabId: 3,
+                url: `https://www.google.com/search?q=Braver+Search+setup+check&braver_setup=${id}` });
+            await flushPromises();
+            expect(browser.runtime.sendNativeMessage).toHaveBeenCalledWith({
+                type: 'setupTestProgress', properties: { test_id: id, stage: 'redirect_requested' }
+            });
+            expect(browser.runtime.sendNativeMessage.mock.calls.some(([m]) => m.type === 'setupTestCompleted')).toBe(false);
+        });
+
+        it('reports a rejected redirect instead of leaving setup waiting', async () => {
+            await loadBackgroundScript();
+            browser.tabs.update.mockRejectedValueOnce(new Error('Navigation rejected'));
+            const id = '12345678-1234-1234-1234-123456789abc';
+            await navigationListener({ frameId: 0, tabId: 3,
+                url: `https://www.google.com/search?q=Braver+Search+setup+check&braver_setup=${id}` });
+            await flushPromises();
+            expect(browser.runtime.sendNativeMessage).toHaveBeenCalledWith({
+                type: 'setupTestProgress', properties: { test_id: id, stage: 'redirect_failed' }
+            });
         });
 
         it('should redirect when enabled in storage', async () => {

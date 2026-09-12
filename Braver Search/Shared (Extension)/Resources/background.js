@@ -161,6 +161,13 @@ function trackEvent(event, properties = {}) {
     });
 }
 
+function reportSetupProgress(id, stage, enabled) {
+    const properties = { test_id: id, stage };
+    if (typeof enabled === 'boolean') { properties.enabled = enabled; }
+    return browser.runtime.sendNativeMessage({ type: 'setupTestProgress', properties })
+        .catch(error => console.error('Braver Search: Setup progress could not be saved', error));
+}
+
 async function trackExtensionActivatedOnce() {
     if (!browser.storage?.local) {
         return;
@@ -359,7 +366,10 @@ browser.webNavigation.onBeforeNavigate.addListener(async details => {
         return;
     }
 
+    const testID = url.searchParams.get('braver_setup');
+    const isSetupTest = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(testID || '');
     const enabled = await isRedirectEnabledForNavigation();
+    if (isSetupTest) { await reportSetupProgress(testID, 'extension_seen', enabled); }
     if (!enabled) {
         return;
     }
@@ -376,8 +386,6 @@ browser.webNavigation.onBeforeNavigate.addListener(async details => {
         return;
     }
 
-    const testID = url.searchParams.get('braver_setup');
-    const isSetupTest = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(testID || '');
     const redirectUrl = BRAVE_SEARCH_URL + encodeURIComponent(searchQuery)
         + (isSetupTest ? '&braver_setup=' + testID : '');
     debugLog("Braver Search: Attempting redirect", { tabId: details.tabId, redirectUrl });
@@ -385,13 +393,14 @@ browser.webNavigation.onBeforeNavigate.addListener(async details => {
     browser.tabs.update(details.tabId, { url: redirectUrl })
         .then(() => {
             debugLog("Braver Search: Redirect successful");
-            if (isSetupTest) { return; } // Setup checks never inflate ordinary search usage.
+            if (isSetupTest) { return reportSetupProgress(testID, 'redirect_requested'); }
             return trackEvent('search_redirected', {
                 surface: 'background_redirect'
             });
         })
         .catch(error => {
             console.error("Braver Search: Redirect failed", error);
+            if (isSetupTest) { return reportSetupProgress(testID, 'redirect_failed'); }
         });
 });
 
@@ -401,7 +410,8 @@ void trackExtensionActivatedOnce();
 // onCompleted proves that the destination loaded, not merely that tabs.update accepted a request.
 browser.webNavigation.onCompleted.addListener(details => {
     if (details.frameId !== 0 || !details.url) { return; }
-    const url = new URL(details.url);
+    let url;
+    try { url = new URL(details.url); } catch { return; }
     const id = url.searchParams.get('braver_setup');
     if (!isBraveSearchUrl(url) || !/^[0-9a-f-]{36}$/.test(id || '')) { return; }
     // Native code validates the token against the current, unexpired host-app test.
