@@ -81,7 +81,7 @@ document.querySelector("button.open-preferences").addEventListener("click", open
 
 function updateSetup(payload) {
     const result = document.getElementById('setup-result');
-    result.textContent = payload.message;
+    result.textContent = [payload.title, payload.message].filter(Boolean).join('. ');
     result.classList.toggle('hidden', payload.status === 'idle');
 }
 document.getElementById('test-setup').addEventListener('click', () => {

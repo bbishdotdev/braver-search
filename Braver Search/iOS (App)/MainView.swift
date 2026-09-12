@@ -17,7 +17,6 @@ private enum IOSAnalyticsEvents {
 }
 
 struct MainView: View {
-    @Environment(\.scenePhase) private var scenePhase
     @State private var setupStatus = SetupCheck.snapshot()
     @State private var testURL: URL?
     @State private var setupError: String?
@@ -64,11 +63,15 @@ struct MainView: View {
             .navigationBarTitleDisplayMode(.large)
         }
         .preferredColorScheme(.dark)
-        .onChange(of: scenePhase) { phase in
-            if phase == .active { refreshSetupStatus(); DurableAnalytics.shared.flush() }
+        .onAppear(perform: refreshSetupStatus)
+        // This view is hosted by SceneDelegate's UIHostingController, not a SwiftUI App.
+        // Observe UIKit directly; a stale scenePhase must never block result refreshes.
+        .onReceive(NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification)) { _ in
+            refreshSetupStatus()
+            DurableAnalytics.shared.flush()
         }
         .onReceive(Timer.publish(every: 2, on: .main, in: .common).autoconnect()) { _ in
-            if scenePhase == .active { refreshSetupStatus() }
+            if UIApplication.shared.applicationState == .active { refreshSetupStatus() }
         }
         .task {
             MonetizationManager.shared.configureIfNeeded()
@@ -86,61 +89,117 @@ struct MainView: View {
         }
     }
 
-    private var setupTestAction: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Button(action: startSetupTest) {
-                HStack(spacing: 12) {
-                    Image(systemName: "checkmark.shield")
-                        .font(.system(size: 20, weight: .medium))
-                        .foregroundStyle(IOSTheme.accentOrange)
-                    Text("Test my setup")
-                        .font(.system(size: 17, weight: .semibold))
-                        .foregroundStyle(.white)
-                    Spacer()
-                    Image(systemName: "arrow.up.forward")
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundStyle(IOSTheme.accentOrange)
-                }
-                .padding(.horizontal, 18)
-                .padding(.vertical, 16)
-                .background(
-                    RoundedRectangle(cornerRadius: 18, style: .continuous)
-                        .fill(LinearGradient(colors: [Color(red: 0.25, green: 0.14, blue: 0.10), IOSTheme.surface], startPoint: .leading, endPoint: .trailing))
-                )
-                .overlay(
-                    RoundedRectangle(cornerRadius: 18, style: .continuous)
-                        .stroke(IOSTheme.accentOrange.opacity(0.25), lineWidth: 1)
-                )
-            }
-            .buttonStyle(.plain)
-            .accessibilityHint("Opens a test search. Use Safari, then return for the result.")
+    private var isCheckingSetup: Bool {
+        setupError == nil && setupStatus["status"] as? String == "waiting"
+    }
 
-            if let setupError {
-                Text(setupError).font(.footnote).foregroundStyle(IOSTheme.secondaryText)
-            } else if setupStatus["status"] as? String != "idle" {
-                HStack(alignment: .top, spacing: 8) {
-                    Image(systemName: setupStatus["status"] as? String == "success" ? "checkmark.circle.fill" : "info.circle")
-                        .foregroundStyle(IOSTheme.accentOrange)
-                    Text(setupStatus["message"] as? String ?? "")
-                        .foregroundStyle(IOSTheme.secondaryText)
-                }
-                .font(.footnote)
-                .padding(.horizontal, 4)
-                .accessibilityElement(children: .combine)
+    private var isSetupVerified: Bool {
+        setupError == nil && setupStatus["status"] as? String == "success"
+    }
+
+    private var setupActionTitle: String {
+        if isCheckingSetup { return "Checking Safari…" }
+        if isSetupVerified { return "Setup verified" }
+        if setupError != nil || setupStatus["status"] as? String == "inconclusive" { return "Test again" }
+        return "Test my setup"
+    }
+
+    private var setupTestAction: some View {
+        VStack(alignment: .leading, spacing: 2) {
+            if isCheckingSetup {
+                setupActionLabel
+                    .accessibilityElement(children: .combine)
+                    .accessibilityIdentifier("setup-test-pending")
+            } else {
+                Button(action: startSetupTest) { setupActionLabel }
+                    .buttonStyle(.plain)
+                    .accessibilityIdentifier("setup-test-start")
+                    .accessibilityHint(isSetupVerified ? "Test again in Safari." : "Opens a test search. Use Safari, then return for the result.")
             }
-            if let testURL, setupStatus["status"] as? String != "success" {
-                ShareLink(item: testURL) {
-                    Label("Opened another browser? Share test link to Safari", systemImage: "square.and.arrow.up")
-                        .font(.footnote)
-                        .foregroundStyle(IOSTheme.secondaryText)
+
+            if setupError != nil || setupStatus["status"] as? String == "inconclusive" {
+                NavigationLink {
+                    SetupTestDetailsView(
+                        title: setupError == nil ? setupStatus["title"] as? String ?? "Test incomplete" : "Test couldn’t finish",
+                        message: setupError ?? setupStatus["message"] as? String ?? "Please try again.",
+                        testURL: testURL,
+                        onGuideOpened: trackSetupGuideOpened
+                    )
+                } label: {
+                    HStack(spacing: 8) {
+                        Image(systemName: "info.circle")
+                            .font(.system(size: 14))
+                            .fixedSize()
+                        Text(setupError == nil ? setupStatus["title"] as? String ?? "Test incomplete" : "Test couldn’t finish")
+                            .fixedSize(horizontal: false, vertical: true)
+                        Spacer(minLength: 0)
+                        Image(systemName: "chevron.right")
+                            .font(.system(size: 12, weight: .semibold))
+                    }
+                    .font(.footnote)
+                    .foregroundStyle(IOSTheme.secondaryText)
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 8)
+                    .frame(minHeight: 44)
+                    .contentShape(Rectangle())
                 }
-                .padding(.horizontal, 4)
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("setup-test-result")
+                .accessibilityHint("View the test details and next steps.")
             }
         }
     }
 
+    private var setupActionLabel: some View {
+        HStack(spacing: 12) {
+            Group {
+                if isCheckingSetup {
+                    ProgressView()
+                        .tint(IOSTheme.accentOrange)
+                        .dynamicTypeSize(.large)
+                } else {
+                    Image(systemName: isSetupVerified ? "checkmark.shield.fill" : "checkmark.shield")
+                        .font(.system(size: 20, weight: .medium))
+                        .foregroundStyle(IOSTheme.accentOrange)
+                }
+            }
+            .frame(width: 24)
+            .accessibilityHidden(true)
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text(setupActionTitle)
+                    .font(.system(.body, design: .default, weight: .semibold))
+                    .foregroundStyle(.white)
+                if isCheckingSetup || isSetupVerified {
+                    Text(isSetupVerified ? "Google searches redirect to Brave." : "Return after the search opens.")
+                        .font(.footnote)
+                        .foregroundStyle(IOSTheme.secondaryText)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+            Spacer(minLength: 0)
+            if !isCheckingSetup {
+                Image(systemName: isSetupVerified ? "arrow.clockwise" : "arrow.up.forward")
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundStyle(IOSTheme.accentOrange)
+                    .accessibilityHidden(true)
+            }
+        }
+        .padding(.horizontal, 18)
+        .padding(.vertical, 16)
+        .background(
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .fill(LinearGradient(colors: [Color(red: 0.25, green: 0.14, blue: 0.10), IOSTheme.surface], startPoint: .leading, endPoint: .trailing))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .stroke(IOSTheme.accentOrange.opacity(0.25), lineWidth: 1)
+        )
+    }
+
     private func startSetupTest() {
         setupError = nil
+        testURL = nil
         do {
             let url = try SetupCheck.start()
             testURL = url
@@ -148,7 +207,7 @@ struct MainView: View {
             UIApplication.shared.open(url) { opened in
                 if !opened {
                     IOSAppAnalytics.track("setup_test_open_failed")
-                    setupError = "Couldn’t open the test. Use Share test link to open it in Safari."
+                    setupError = "The browser couldn’t open the test. Share the test link to Safari, or go back and try again."
                 }
             }
         } catch {
@@ -158,6 +217,7 @@ struct MainView: View {
 
     private func refreshSetupStatus() {
         setupStatus = SetupCheck.snapshot()
+        if setupStatus["status"] as? String == "success" { setupError = nil }
         SetupCheck.resultShown(setupStatus)
     }
 
@@ -296,6 +356,61 @@ enum IOSTheme {
     static let goldStart = Color(red: 0.96, green: 0.81, blue: 0.47)
     static let goldEnd = Color(red: 0.83, green: 0.60, blue: 0.17)
     static let goldText = Color(red: 0.19, green: 0.10, blue: 0.00)
+}
+
+private struct SetupTestDetailsView: View {
+    let title: String
+    let message: String
+    let testURL: URL?
+    let onGuideOpened: () -> Void
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 24) {
+                VStack(alignment: .leading, spacing: 12) {
+                    Image(systemName: "checkmark.shield")
+                        .font(.system(size: 32, weight: .medium))
+                        .foregroundStyle(IOSTheme.accentOrange)
+                        .accessibilityHidden(true)
+                    Text(title)
+                        .font(.title2.weight(.bold))
+                        .foregroundStyle(.white)
+                    Text(message)
+                        .font(.body)
+                        .foregroundStyle(IOSTheme.secondaryText)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+
+                NavigationLink(destination: InstallationGuideView()) {
+                    IOSOutlineActionLabel(title: "Open setup guide")
+                }
+                .buttonStyle(.plain)
+                .simultaneousGesture(TapGesture().onEnded(onGuideOpened))
+
+                if let testURL {
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text("Did the test open in another browser?")
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(.white)
+                        Text("Share the link to Safari to test its extension.")
+                            .font(.subheadline)
+                            .foregroundStyle(IOSTheme.secondaryText)
+                        ShareLink(item: testURL) {
+                            Label("Share test link", systemImage: "square.and.arrow.up")
+                                .font(.body.weight(.semibold))
+                                .foregroundStyle(IOSTheme.accentOrange)
+                                .frame(minHeight: 44)
+                        }
+                    }
+                }
+            }
+            .padding(20)
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .background(Color.black.ignoresSafeArea())
+        .navigationTitle("Test details")
+        .navigationBarTitleDisplayMode(.inline)
+    }
 }
 
 struct IOSSurfaceCard<Content: View>: View {
