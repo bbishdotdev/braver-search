@@ -166,3 +166,20 @@ Branch: `codex/fix-setup-test-feedback`, based on merged PR #11.
 For a real-device acceptance check, tap **Test my setup**, allow Safari to open the search, and return without force-quitting Braver Search. Expect **Setup verified** when Brave completion is received, without tapping anything to refresh. Otherwise, open the result row: its details should distinguish no extension response, redirects off, redirect failure, or an accepted redirect awaiting Brave confirmation. Verify navigation to the setup guide and back, and the Share test link fallback. Repeat once with redirects switched off, then restore the setting and verify a fresh test succeeds. Check the waiting, verified, and inconclusive layouts at large Dynamic Type sizes.
 
 UIKit lifecycle reference: https://developer.apple.com/documentation/uikit/uiapplication/didbecomeactivenotification
+
+### First-attempt navigation recovery (2026-09-12)
+
+Branch: `codex/fix-first-setup-navigation`, based on merged PR #12.
+
+- Report: an already configured setup sometimes opens Google on the first test, reports no response, and succeeds on the next attempt. The exact device build and cold-versus-warm Safari trigger still need confirmation.
+- The early navigation handler awaited native diagnostic persistence before redirecting. A regression test demonstrates that an unanswered diagnostic message prevented the redirect. It now sends that diagnostic without holding up navigation.
+- Added a narrowly scoped content script on the tagged Google and Brave setup pages. A Google page message wakes the background and recovers the existing attempt if the early navigation event was missed. It requires the native app to accept the current, unexpired test token, respects the redirect toggle, and rechecks the tab before redirecting. Duplicate early/page events produce one redirect; ordinary searches do not send page messages.
+- A Brave page message reports success only after document completion. The existing navigation-completion path remains active, and native proof persistence is idempotent. Neither a Google page load nor an accepted redirect is success.
+- The new script uses existing website permissions. Both Xcode target memberships were updated, and built iOS/macOS extension bundles were checked for the correct script, manifest, and background code.
+- 69 JavaScript tests passed. They model a missed early navigation event, slow enabled-state loading, a stalled or throwing diagnostic bridge, duplicate events, expired/superseded tests, disabled redirects, navigation away, Google-added URL parameters, subframes, and completion timing. These demonstrate the recovery behavior, not the exact cause of the reported Safari event loss on the physical phone.
+
+Remote source/build directory: `/Users/bishop/Work/braver-search-first-navigation-20260912`.
+
+Physical Safari acceptance remains required: with Google/Brave website access allowed and redirects on, test once after Safari has been unused or terminated, then repeat several tests back-to-back using the redo action. Each attempt should reach Brave without starting a second test, and returning to the app should show verified for that attempt. Repeat with redirects off and with website permission denied; neither may verify. Record the TestFlight version/build, iOS/Safari version, and whether the failure occurred after a cold or warm start. Keep development signing access separate from these behavioral results.
+
+Apple background-lifecycle reference: https://developer.apple.com/videos/play/wwdc2021/10027/

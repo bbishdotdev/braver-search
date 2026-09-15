@@ -4,6 +4,7 @@ const DEBUG_LOGGING = false;
 const BANG_REDIRECT_WINDOW_MS = 5000;
 const BRAVE_SEARCH_URL = 'https://search.brave.com/search?q=';
 const EXTENSION_ACTIVATED_STORAGE_KEY = 'hasTrackedExtensionActivated';
+const SETUP_TEST_ID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 
 const SEARCH_ENGINE_HOSTS = new Set([
     'google.com',
@@ -45,6 +46,7 @@ const enabledState = {
 };
 
 const pendingBangRedirects = new Map();
+const pendingSetupRedirects = new Map();
 
 function debugLog(...args) {
     if (DEBUG_LOGGING) {
@@ -161,11 +163,15 @@ function trackEvent(event, properties = {}) {
     });
 }
 
-function reportSetupProgress(id, stage, enabled) {
+async function reportSetupProgress(id, stage, enabled) {
     const properties = { test_id: id, stage };
     if (typeof enabled === 'boolean') { properties.enabled = enabled; }
-    return browser.runtime.sendNativeMessage({ type: 'setupTestProgress', properties })
-        .catch(error => console.error('Braver Search: Setup progress could not be saved', error));
+    try {
+        return await browser.runtime.sendNativeMessage({ type: 'setupTestProgress', properties });
+    } catch (error) {
+        console.error('Braver Search: Setup progress could not be saved', error);
+        return { ok: false };
+    }
 }
 
 async function trackExtensionActivatedOnce() {
@@ -331,7 +337,7 @@ browser.storage.onChanged?.addListener((changes, areaName) => {
     });
 });
 
-browser.webNavigation.onBeforeNavigate.addListener(async details => {
+async function handleSearchNavigation(details, { loadedPage = false } = {}) {
     if (!details.url) {
         return;
     }
@@ -367,9 +373,14 @@ browser.webNavigation.onBeforeNavigate.addListener(async details => {
     }
 
     const testID = url.searchParams.get('braver_setup');
-    const isSetupTest = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(testID || '');
+    const isSetupTest = SETUP_TEST_ID_PATTERN.test(testID || '');
     const enabled = await isRedirectEnabledForNavigation();
-    if (isSetupTest) { await reportSetupProgress(testID, 'extension_seen', enabled); }
+    if (isSetupTest) {
+        const progress = reportSetupProgress(testID, 'extension_seen', enabled);
+        // A page fallback must belong to the current, unexpired app test. The fast
+        // navigation path must never wait for diagnostics before doing its work.
+        if (loadedPage && (await progress)?.ok !== true) { return; }
+    }
     if (!enabled) {
         return;
     }
@@ -386,11 +397,27 @@ browser.webNavigation.onBeforeNavigate.addListener(async details => {
         return;
     }
 
+    if (loadedPage) {
+        // Native/storage reads may finish after the user has left this page.
+        const tab = await browser.tabs.get(details.tabId).catch(() => null);
+        let currentURL;
+        try { currentURL = new URL(tab?.url); } catch { return; }
+        if (currentURL.origin !== url.origin || !isSupportedSearchEngine(currentURL)
+            || currentURL.searchParams.get('braver_setup') !== testID
+            || currentURL.searchParams.get('q') !== searchQuery) { return; }
+    }
+
+    if (isSetupTest) {
+        const pending = pendingSetupRedirects.get(details.tabId);
+        if (pending?.id === testID && pending.expiresAt > Date.now()) { return; }
+        pendingSetupRedirects.set(details.tabId, { id: testID, expiresAt: Date.now() + 600000 });
+    }
+
     const redirectUrl = BRAVE_SEARCH_URL + encodeURIComponent(searchQuery)
         + (isSetupTest ? '&braver_setup=' + testID : '');
     debugLog("Braver Search: Attempting redirect", { tabId: details.tabId, redirectUrl });
 
-    browser.tabs.update(details.tabId, { url: redirectUrl })
+    return browser.tabs.update(details.tabId, { url: redirectUrl })
         .then(() => {
             debugLog("Braver Search: Redirect successful");
             if (isSetupTest) { return reportSetupProgress(testID, 'redirect_requested'); }
@@ -400,12 +427,44 @@ browser.webNavigation.onBeforeNavigate.addListener(async details => {
         })
         .catch(error => {
             console.error("Braver Search: Redirect failed", error);
-            if (isSetupTest) { return reportSetupProgress(testID, 'redirect_failed'); }
+            if (isSetupTest) {
+                if (pendingSetupRedirects.get(details.tabId)?.id === testID) {
+                    pendingSetupRedirects.delete(details.tabId);
+                }
+                return reportSetupProgress(testID, 'redirect_failed');
+            }
         });
+}
+
+browser.webNavigation.onBeforeNavigate.addListener(handleSearchNavigation);
+browser.tabs.onRemoved.addListener(tabId => {
+    pendingSetupRedirects.delete(tabId);
+    pendingBangRedirects.delete(tabId);
 });
 
-void loadEnabledState();
-void trackExtensionActivatedOnce();
+function completeSetupTest(id) {
+    // Native code validates the token against the current, unexpired host-app test.
+    return browser.runtime.sendNativeMessage({ type: 'setupTestCompleted', properties: { test_id: id } })
+        .catch(error => console.error('Braver Search: Setup proof could not be saved', error));
+}
+
+// A content-script message wakes a nonpersistent Safari background page even
+// when it missed the early navigation. Trust the browser's sender, not a URL
+// supplied in the message. This fallback is limited to the tagged setup pages.
+browser.runtime.onMessage.addListener((message, sender) => {
+    if (!['setupTestPageReady', 'setupTestPageCompleted'].includes(message?.type)
+        || sender.frameId !== 0 || !Number.isInteger(sender.tab?.id) || sender.tab.id < 0) { return; }
+    let url;
+    try { url = new URL(sender.url); } catch { return; }
+    const id = url.searchParams.get('braver_setup');
+    if (url.protocol !== 'https:' || !SETUP_TEST_ID_PATTERN.test(id || '')) { return; }
+    if (message.type === 'setupTestPageCompleted' && isBraveSearchUrl(url)) {
+        return completeSetupTest(id);
+    }
+    if (message.type === 'setupTestPageReady' && url.hostname === 'www.google.com' && isSupportedSearchEngine(url)) {
+        return handleSearchNavigation({ frameId: 0, tabId: sender.tab.id, url: sender.url }, { loadedPage: true });
+    }
+});
 
 // onCompleted proves that the destination loaded, not merely that tabs.update accepted a request.
 browser.webNavigation.onCompleted.addListener(details => {
@@ -413,10 +472,11 @@ browser.webNavigation.onCompleted.addListener(details => {
     let url;
     try { url = new URL(details.url); } catch { return; }
     const id = url.searchParams.get('braver_setup');
-    if (!isBraveSearchUrl(url) || !/^[0-9a-f-]{36}$/.test(id || '')) { return; }
-    // Native code validates the token against the current, unexpired host-app test.
-    void browser.runtime.sendNativeMessage({ type: 'setupTestCompleted', properties: { test_id: id } })
-        .catch(error => console.error('Braver Search: Setup proof could not be saved', error));
+    if (!isBraveSearchUrl(url) || !SETUP_TEST_ID_PATTERN.test(id || '')) { return; }
+    void completeSetupTest(id);
 });
+// Keep every wake-up listener registered before starting asynchronous work.
+void loadEnabledState();
+void trackExtensionActivatedOnce();
 void browser.runtime.sendNativeMessage({ type: 'runtimeObserved' })
     .catch(error => console.error('Braver Search: Runtime observation failed', error));

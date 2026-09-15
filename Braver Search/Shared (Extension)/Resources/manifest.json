@@ -19,6 +19,13 @@
         "persistent": false
     },
 
+    "content_scripts": [{
+        "matches": ["https://www.google.com/search*", "https://search.brave.com/search*"],
+        "js": ["setup-test.js"],
+        "run_at": "document_end",
+        "all_frames": false
+    }],
+
     "action": {
         "default_popup": "popup.html",
         "default_icon": {
