@@ -12,6 +12,7 @@ describe('Popup Script', () => {
         // Set up our document body
         document.body.innerHTML = `
             <input type="checkbox" id="toggleButton">
+            <section id="accessCard" class="hidden"><h2 id="accessTitle"></h2><p id="accessMessage"></p></section>
             <a id="reviewLink" href="#"></a>
             <section id="supportCard" class="hidden"></section>
             <a id="supportLink" href="#" class="hidden"><span>Give Thanks!</span></a>
@@ -30,6 +31,20 @@ describe('Popup Script', () => {
     });
     
     describe('Initial state', () => {
+        it('explains expired access even when the redirect toggle is on', async () => {
+            browser.storage.local.get.mockResolvedValue({ enabled: true });
+            browser.runtime.sendNativeMessage.mockResolvedValue({ accessAllowed: false, accessTitle: 'Trial complete', accessMessage: 'Choose your lifetime price.' });
+            document.dispatchEvent(new Event('DOMContentLoaded'));
+            await new Promise(resolve => setTimeout(resolve, 0));
+            expect(document.getElementById('accessCard').classList.contains('hidden')).toBe(false);
+            expect(document.getElementById('accessTitle').textContent).toBe('Trial complete');
+        });
+        it('offers recovery when native access cannot be checked', async () => {
+            browser.runtime.sendNativeMessage.mockRejectedValue(new Error('Native unavailable'));
+            document.dispatchEvent(new Event('DOMContentLoaded'));
+            await new Promise(resolve => setTimeout(resolve, 0));
+            expect(document.getElementById('accessTitle').textContent).toBe('Couldn’t check access');
+        });
         it('should track popup opens', async () => {
             browser.storage.local.get.mockResolvedValue({ enabled: true });
             browser.runtime.sendNativeMessage.mockResolvedValue({});

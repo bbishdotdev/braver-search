@@ -21,6 +21,7 @@ struct MainView: View {
     @State private var testURL: URL?
     @State private var setupError: String?
     @State private var isShowingSupportSheet = false
+    @State private var isShowingLifetime = false
     @State private var selectedDonationIndex = 0
     @StateObject private var monetization = MonetizationManager.shared
     @StateObject private var store = StoreManager.shared
@@ -43,6 +44,9 @@ struct MainView: View {
 
                 ScrollView(showsIndicators: false) {
                     VStack(alignment: .leading, spacing: 18) {
+                        if monetization.access.state != .free {
+                            AccessSummaryButton { isShowingLifetime = true }
+                        }
                         setupTestAction
                         activationCard
 
@@ -69,21 +73,27 @@ struct MainView: View {
         .onReceive(NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification)) { _ in
             refreshSetupStatus()
             DurableAnalytics.shared.flush()
+            Task { await monetization.resolveUserState() }
         }
         .onReceive(Timer.publish(every: 2, on: .main, in: .common).autoconnect()) { _ in
-            if UIApplication.shared.applicationState == .active { refreshSetupStatus() }
+            if UIApplication.shared.applicationState == .active { refreshSetupStatus(); monetization.refreshAccess() }
         }
         .task {
             MonetizationManager.shared.configureIfNeeded()
             await MonetizationManager.shared.resolveUserState()
             await StoreManager.shared.loadProductsIfNeeded()
+            #if DEBUG
+            if ProcessInfo.processInfo.arguments.contains("-show-lifetime") { isShowingLifetime = true }
+            #endif
         }
         .onReceive(NotificationCenter.default.publisher(for: .openSupportFlow)) { _ in
             guard monetization.canShowSupport else {
+                isShowingLifetime = true
                 return
             }
             isShowingSupportSheet = true
         }
+        .sheet(isPresented: $isShowingLifetime) { LifetimeAccessView() }
         .sheet(isPresented: $isShowingSupportSheet) {
             SupportSheetView()
         }

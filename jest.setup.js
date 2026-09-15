@@ -4,6 +4,7 @@ require('jest-webextension-mock');
 // Clear all mocks before each test
 beforeEach(() => {
     jest.clearAllMocks();
+    browser.runtime.sendNativeMessage.mockImplementation(() => Promise.resolve({ allowed: true, analytics: { durablyQueued: true } }));
 });
 
 // Mock browser.storage API

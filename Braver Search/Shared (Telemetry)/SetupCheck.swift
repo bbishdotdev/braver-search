@@ -16,6 +16,15 @@ enum SetupCheck {
         return components.url!
     }
 
+    static func isActive(id: String, analytics: DurableAnalytics = .shared, now: Date = Date()) -> Bool {
+        guard !id.isEmpty else { return false }
+        return (try? analytics.locked { root in
+            guard let saved = read(root.appendingPathComponent("setup-check.json")),
+                  saved["id"] as? String == id, let start = saved["startedAt"] as? Double else { return false }
+            return (0...lifetime).contains(now.timeIntervalSince1970 - start)
+        }) ?? false
+    }
+
     static func complete(id: String, analytics: DurableAnalytics = .shared) -> Bool {
         var completedAt: Double?
         try? analytics.locked { root in
