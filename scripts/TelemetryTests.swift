@@ -102,6 +102,10 @@ final class StubTransport: URLProtocol {
         require(SetupCheck.snapshot(analytics: analytics)["status"] as? String == "idle", "Expected idle")
         let url = try SetupCheck.start(analytics: analytics)
         let id = URLComponents(url: url, resolvingAgainstBaseURL: false)!.queryItems!.first { $0.name == "braver_setup" }!.value!
+        require(SetupCheck.isActive(id: id, analytics: analytics), "Current setup test should be eligible for a diagnostic redirect")
+        require(!SetupCheck.isActive(id: UUID().uuidString, analytics: analytics), "Fabricated setup ID bypassed access")
+        require(!SetupCheck.isActive(id: id, analytics: analytics, now: Date().addingTimeInterval(601)), "Expired setup ID bypassed access")
+        require(!SetupCheck.isActive(id: id, analytics: analytics, now: Date().addingTimeInterval(-60)), "Future setup ID bypassed access")
         require(!SetupCheck.complete(id: UUID().uuidString, analytics: analytics), "Unrelated test accepted")
         require(SetupCheck.snapshot(analytics: analytics)["status"] as? String == "waiting", "Expected waiting")
         require(SetupCheck.snapshot(analytics: restarted, now: Date().addingTimeInterval(31))["reason"] as? String == "no_extension_response", "No callback must produce an actionable timeout after returning")

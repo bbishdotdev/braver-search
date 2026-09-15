@@ -19,6 +19,16 @@
 		CE77FAED2D3C8C8000B47EE3 /* Braver Search Extension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = CE77FAEC2D3C8C8000B47EE3 /* Braver Search Extension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		CE7CB6112F5F2CD8002B9A1E /* StoreKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = CE7CB6102F5F2CD8002B9A1E /* StoreKit.framework */; };
 		CE7CB6132F5F2CEF002B9A1E /* StoreKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = CE7CB6122F5F2CEF002B9A1E /* StoreKit.framework */; };
+		BBA400000000000000000000 /* AccessPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBA300000000000000000000; };
+		BBA400000000000000000001 /* AccessPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBA300000000000000000000; };
+		BBA400000000000000000002 /* AccessPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBA300000000000000000000; };
+		BBA400000000000000000003 /* AccessPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBA300000000000000000000; };
+		BBA400000000000000000010 /* AccessStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBA300000000000000000001; };
+		BBA400000000000000000011 /* AccessStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBA300000000000000000001; };
+		BBA400000000000000000012 /* AccessStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBA300000000000000000001; };
+		BBA400000000000000000013 /* AccessStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBA300000000000000000001; };
+		BBA500000000000000000010 /* AccessStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBA500000000000000000000; };
+		BBA500000000000000000011 /* AccessStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBA500000000000000000000; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -104,6 +114,9 @@
 		CE7CB6122F5F2CEF002B9A1E /* StoreKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = StoreKit.framework; path = System/Library/Frameworks/StoreKit.framework; sourceTree = SDKROOT; };
 		CEE6B2C52D405B95003F51F9 /* Braver Search iOS Tests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "Braver Search iOS Tests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 		CEE6B2D22D405BAE003F51F9 /* Braver Search macOS Tests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "Braver Search macOS Tests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
+		BBA300000000000000000000 /* AccessPolicy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Shared (Access)/AccessPolicy.swift"; sourceTree = SOURCE_ROOT; };
+		BBA300000000000000000001 /* AccessStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Shared (Access)/AccessStore.swift"; sourceTree = SOURCE_ROOT; };
+		BBA500000000000000000000 /* AccessStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Shared (Access)/AccessStoreTests.swift"; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -112,10 +125,12 @@
 			membershipExceptions = (
 				"/Localized: Resources/Main.html",
 				Assets.xcassets,
+				LifetimeAccessView.swift,
 				MonetizationConfig.swift,
 				MonetizationManager.swift,
 				Resources/Icon.png,
 				Resources/Script.js,
+				Resources/Monetization.storekit,
 				Resources/Style.css,
 				StoreManager.swift,
 				SupportSheetView.swift,
@@ -142,10 +157,12 @@
 			membershipExceptions = (
 				"/Localized: Resources/Main.html",
 				Assets.xcassets,
+				LifetimeAccessView.swift,
 				MonetizationConfig.swift,
 				MonetizationManager.swift,
 				Resources/Icon.png,
 				Resources/Script.js,
+				Resources/Monetization.storekit,
 				Resources/Style.css,
 				StoreManager.swift,
 				ViewController.swift,
@@ -326,6 +343,8 @@
 			isa = PBXGroup;
 			children = (
 				BBA100000000000000000001 /* SetupCheck.swift */,
+				BBA300000000000000000001 /* AccessStore.swift */,
+				BBA300000000000000000000 /* AccessPolicy.swift */,
 				BBA100000000000000000000 /* DurableAnalytics.swift */,
 				CE1A00032E00000100B47EE3 /* Config */,
 				CE77FAAC2D3C8C7F00B47EE3 /* Shared (App) */,
@@ -613,6 +632,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				BBA200000000000000000010 /* SetupCheck.swift in Sources */,
+				BBA400000000000000000010 /* AccessStore.swift in Sources */,
+				BBA400000000000000000000 /* AccessPolicy.swift in Sources */,
 				BBA200000000000000000000 /* DurableAnalytics.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -622,6 +643,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				BBA200000000000000000011 /* SetupCheck.swift in Sources */,
+				BBA400000000000000000011 /* AccessStore.swift in Sources */,
+				BBA400000000000000000001 /* AccessPolicy.swift in Sources */,
 				BBA200000000000000000001 /* DurableAnalytics.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -631,6 +654,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				BBA200000000000000000012 /* SetupCheck.swift in Sources */,
+				BBA400000000000000000012 /* AccessStore.swift in Sources */,
+				BBA400000000000000000002 /* AccessPolicy.swift in Sources */,
 				BBA200000000000000000002 /* DurableAnalytics.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -640,6 +665,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				BBA200000000000000000013 /* SetupCheck.swift in Sources */,
+				BBA400000000000000000013 /* AccessStore.swift in Sources */,
+				BBA400000000000000000003 /* AccessPolicy.swift in Sources */,
 				BBA200000000000000000003 /* DurableAnalytics.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -648,6 +675,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				BBA500000000000000000010 /* AccessStoreTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -655,6 +683,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				BBA500000000000000000011 /* AccessStoreTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -872,7 +901,7 @@
 					"@executable_path/../Frameworks",
 					"@executable_path/../../../../Frameworks",
 				);
-				MACOSX_DEPLOYMENT_TARGET = 10.14;
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
 				MARKETING_VERSION = "$(MARKETING_VERSION)";
 				OTHER_LDFLAGS = (
 					"-framework",
@@ -911,7 +940,7 @@
 					"@executable_path/../Frameworks",
 					"@executable_path/../../../../Frameworks",
 				);
-				MACOSX_DEPLOYMENT_TARGET = 10.14;
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
 				MARKETING_VERSION = "$(MARKETING_VERSION)";
 				OTHER_LDFLAGS = (
 					"-framework",

@@ -41,6 +41,12 @@ document.addEventListener('DOMContentLoaded', async function() {
                 type: 'getMonetizationState'
             });
 
+            const accessCard = document.getElementById('accessCard');
+            if (accessCard && response?.accessAllowed === false) {
+                accessCard.classList.remove('hidden');
+                document.getElementById('accessTitle').textContent = response.accessTitle;
+                document.getElementById('accessMessage').textContent = response.accessMessage;
+            }
             if (reviewLink && response?.reviewURL) {
                 reviewLink.href = response.reviewURL;
             }
@@ -52,6 +58,12 @@ document.addEventListener('DOMContentLoaded', async function() {
             }
         } catch (error) {
             console.error("Braver Search: Failed to load monetization state", error);
+            const card = document.getElementById('accessCard');
+            if (card) {
+                card.classList.remove('hidden');
+                document.getElementById('accessTitle').textContent = 'Couldn’t check access';
+                document.getElementById('accessMessage').textContent = 'Open Braver Search to check your access, then try your search again.';
+            }
         }
     }
 
