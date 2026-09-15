@@ -19,6 +19,9 @@ jobs:
       with:
         xcode-version: latest-stable
 
+    - name: Test access policy
+      run: bash scripts/test-access.sh
+
     - name: Test durable telemetry and setup verification
       run: bash scripts/test-telemetry.sh
 
