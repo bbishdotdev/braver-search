@@ -13,6 +13,7 @@ enum AccessConfiguration {
 
 struct AccessRecord: Codable {
     var originalPurchaseDate: Date?
+    var appTransactionEnvironment: String?
     var legacyFirstUse: Date?
     var trialStart: Date?
     var lifetimeProducts: [String] = []
@@ -32,6 +33,28 @@ struct AccessRecord: Codable {
         return effective
     }
 }
+
+#if DEBUG
+/// Local purchase testing changes cohort/time only; it never invents trial or paid transactions.
+struct LocalAccessTest: Codable {
+    enum Cohort: String, Codable { case new, legacy }
+    let cohort: Cohort
+    let cutoff: Date
+    let elapsedDays: Int
+
+    func decision(record: AccessRecord, now: Date) -> AccessDecision {
+        guard ["Sandbox", "Xcode"].contains(record.appTransactionEnvironment),
+              record.originalPurchaseDate != nil else {
+            return AccessDecision(state: .unknown, expiresAt: nil)
+        }
+        var testRecord = record
+        testRecord.originalPurchaseDate = cutoff.addingTimeInterval(cohort == .legacy ? -1 : 0)
+        testRecord.legacyFirstUse = nil
+        return AccessPolicy.evaluate(testRecord, cutoff: cutoff,
+            now: now.addingTimeInterval(Double(elapsedDays) * 86400))
+    }
+}
+#endif
 
 enum AccessState: String, Codable {
     case free, grandfathered, unknown, eligible, trial, expired, lifetime

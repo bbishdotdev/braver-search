@@ -32,6 +32,12 @@ struct LifetimeAccessView: View {
             Color.black.ignoresSafeArea()
             ScrollView {
                 VStack(spacing: 18) {
+                    #if DEBUG
+                    if let test = AccessStore.localTest() {
+                        Text("Local sandbox test · \(test.cohort.rawValue) user · +\(test.elapsedDays) days")
+                            .font(.caption).foregroundStyle(AccessPalette.gold)
+                    }
+                    #endif
                     VStack(spacing: 10) {
                         Text(access.title).font(.system(.largeTitle, design: .rounded, weight: .bold))
                         Text(access.message).font(.body).foregroundStyle(.white.opacity(0.7))

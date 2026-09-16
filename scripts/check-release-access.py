@@ -15,7 +15,7 @@ for argument in sys.argv[1:]:
         info = plistlib.loads((root / 'Info.plist').read_bytes())
         executable = root / 'MacOS' / info['CFBundleExecutable'] if mac else root / info['CFBundleExecutable']
         data = executable.read_bytes()
-        for token in [b'access-preview.json', b'monetization-scenario', b'monetization-tier', b'show-lifetime', b'testPersistence', b'SKTestSession']:
+        for token in [b'access-preview.json', b'monetization-scenario', b'monetization-tier', b'show-lifetime', b'testPersistence', b'SKTestSession', b'access-local-test', b'monetization-test-cohort', b'monetization-test-cutoff', b'monetization-test-elapsed-days']:
             assert token not in data, f"Development-only token in {executable}: {token!r}"
         assert 'PAID_LAUNCH_ISO8601' not in info, 'Obsolete upfront-paid launch setting remains'
         if bundle.suffix == '.appex':

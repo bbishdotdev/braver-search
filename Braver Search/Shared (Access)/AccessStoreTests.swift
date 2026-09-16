@@ -71,4 +71,36 @@ import StoreKitTest
         XCTAssertEqual(AccessStore.decision(now: Date().addingTimeInterval(15 * 86400), cutoff: cutoff).state, .expired)
         try AccessStore.update { $0 = AccessRecord() }
     }
+
+    func testLocalSandboxConfigurationIsIsolatedAndRestorable() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent("local-access-tests-" + UUID().uuidString)
+        AccessStore.testPersistence = DurableAnalytics(directory: root)
+        defer { try? FileManager.default.removeItem(at: root) }
+        AccessStore.configurePreview()
+        AccessStore.configureLocalTest(arguments: [])
+        let original = Date(timeIntervalSince1970: 1_500_000_000)
+        try AccessStore.update { $0.originalPurchaseDate = original; $0.appTransactionEnvironment = "Production" }
+        AccessStore.configureLocalTest(arguments: ["-monetization-test-cohort", "new"])
+        XCTAssertEqual(AccessStore.decision().state, .unknown, "A new test record must not inherit real ownership")
+        let session = try SKTestSession(configurationFileNamed: "Monetization")
+        session.resetToDefaultState()
+        session.disableDialogs = true
+        session.clearTransactions()
+        defer { session.clearTransactions() }
+        await AccessStore.refresh()
+        XCTAssertEqual(AccessStore.decision().state, .eligible, "Verified Xcode app acquisition must support the new-user test cohort")
+        let trial = try await session.buyProduct(identifier: AccessConfiguration.trialID, options: [])
+        try AccessStore.accept(try await verifiedTransaction(id: trial.productID, transactionID: trial.id))
+        XCTAssertEqual(AccessStore.decision().state, .trial)
+        AccessStore.configureLocalTest(arguments: ["-monetization-test-cohort", "new", "-monetization-test-elapsed-days", "15"])
+        XCTAssertEqual(AccessStore.decision().state, .expired)
+        AccessStore.configureLocalTest(arguments: ["-monetization-test-cohort", "legacy"])
+        XCTAssertEqual(AccessStore.decision().state, .grandfathered)
+        AccessStore.configureLocalTest(arguments: [])
+        try AccessStore.update {
+            XCTAssertEqual($0.originalPurchaseDate, original)
+            XCTAssertNil($0.trialStart, "Sandbox testing must not modify the normal access record")
+        }
+        XCTAssertEqual(AccessStore.decision().state, .free, "Local test flags must not activate the production cutoff")
+    }
 }
