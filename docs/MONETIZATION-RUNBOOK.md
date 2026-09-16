@@ -138,3 +138,52 @@ xcodebuild test -project 'Braver Search/Braver Search.xcodeproj' \
 ```
 
 These command-line development signing overrides do not alter the repository's App Store distribution signing configuration. If macOS shows an app-data access dialog during launch, inspect and approve it locally for this development build. The Mac runtime test is not counted as passing until that run actually completes.
+
+## Local sandbox testing (production remains off)
+
+Use a **Debug** build for this procedure. `AccessConfiguration.launchDate` stays nil.
+In Xcode, Product → Scheme → Edit Scheme → Run → Arguments, add each token as a separate enabled argument:
+
+```
+-monetization-test-cohort
+new
+-show-lifetime
+```
+
+This selects a cutoff 24 hours before launch. For a stable explicit cutoff, also pass
+`-monetization-test-cutoff` and an ISO8601 UTC value, for example `2026-09-15T00:00:00Z`.
+Use a timestamp before the test begins, not a proposed public launch date.
+The screen labels this as a local sandbox test.
+
+Unlike `-monetization-scenario` screenshot fixtures, this mode does **not** manufacture
+trial/lifetime ownership or skip StoreKit refresh. Disable all screenshot scenario
+arguments when testing real purchases. Apple's sandbox app acquisition date is fixed
+in 2013; a verified Sandbox/Xcode app transaction is required before the local cohort
+override applies. Missing or Production evidence shows unknown access in test mode.
+The original evidence is preserved; the policy evaluates a copy.
+
+The host and extension share a separate `access-local-test-v1.json` record and local
+configuration. Normal `access-v1.json` is untouched. Do not change the device clock.
+To simulate expiry, add `-monetization-test-elapsed-days` and `15`, relaunch, then search
+in Safari. This advances only the policy evaluation time; it does not rewrite the
+verified transaction or the persisted real clock. A genuine verified lifetime purchase
+still restores access. Change `new` to `legacy` to inspect grandfathered behavior.
+Launching the Debug host without the local test arguments disables this mode for the
+app and extension. These controls and files are not read by Release builds.
+
+For Apple sandbox testing, disable the Xcode scheme's local StoreKit Configuration
+(select None), use a Sandbox Apple Account, and verify the Apple purchase sheet identifies
+the sandbox. The automated XCTest suite uses Monetization.storekit instead and incurs
+no charges. Sandbox purchase history can be reset through App Store Connect's Sandbox
+account controls; resetting it does not reset the local cached record until receipt
+reconciliation. Reinstall alone does not prove a new production customer.
+
+Test on iPhone and Mac with the same sandbox account: fresh trial, ordinary Safari search,
+setup diagnostic, expiry, lifetime purchase, then Restore Purchases on the other device.
+Also test cancellation and refund reconciliation. Legacy fixture success is separate
+from the still-required genuine production upgrade/receipt test.
+
+**TestFlight:** these DEBUG controls are intentionally absent. A review/TestFlight-safe
+sandbox cohort path still needs implementation before an enabled release candidate;
+do not set a modern production cutoff and assume a fresh sandbox account will be new.
+Keep production enforcement disabled until this and the release timing are settled.

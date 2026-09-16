@@ -64,3 +64,25 @@ The Mac now runs macOS 26.6.2 / Xcode 16.4. Both platform configurations compile
 3. Complete the cross-device/legacy-account and real Safari checks from the runbook. Confirm the shared universal App Store record and the zero-price trial's Apple Account experience.
 
 The full [runbook](MONETIZATION-RUNBOOK.md) documents migration evidence, trial start/expiry, offline behavior, redirect enforcement, refund safeguards, product setup, debug fixtures, remote commands, analytics events, and the release sequence.
+
+## Local sandbox follow-up (September 16 UTC)
+
+- Added DEBUG-only new/legacy cohort testing with yesterday's cutoff, separate app/extension
+  access storage, a verified Sandbox/Xcode acquisition requirement, and a policy-only
+  elapsed-days control. Real verified transactions are still required for trial and lifetime.
+- iOS 18.6 / Xcode 16.4: both AccessStore XCTest cases passed, including real local
+  StoreKit transactions, trial/restoration/refund, test-record isolation and expiry;
+  all five XCTest cases plus the existing Swift Testing example passed.
+- 79 JavaScript tests and 20 production policy checks plus 8 local test checks passed.
+- Diagnosed run 34931737619: compilation completed, then no iOS test results were emitted
+  before the six-hour cancellation. macOS never ran. The log does not establish the
+  precise reason the test runner stalled. CI now separates platforms, explicitly boots
+  iOS, disables parallel StoreKit test execution, pins Xcode 16.4/macOS 15, bounds time,
+  and retains logs/results. Remote CI success is not yet claimed.
+- Retried signed Mac testing: codesign still fails with errSecInternalComponent for the
+  development private key. User-local unlock/key access is pending.
+- The user successfully attached older donation artwork in App Store Connect. The new
+  6.9-inch native PNG captures are in the Mac Downloads folder; accepted review imagery
+  still needs to match the offers before submission.
+- Production cutoff remains nil. This DEBUG test mode is not a TestFlight cohort solution,
+  and no real App Store sandbox purchase or cross-device restore is claimed here.

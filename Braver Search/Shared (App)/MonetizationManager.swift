@@ -43,6 +43,7 @@ final class MonetizationManager: ObservableObject {
         #endif
         #if DEBUG
         AccessStore.configurePreview()
+        AccessStore.configureLocalTest()
         #endif
 
         if defaults.object(forKey: MonetizationDefaultsKey.firstUseDate) == nil {

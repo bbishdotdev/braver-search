@@ -39,6 +39,26 @@ import Foundation
         precondition(clock.advanceClock(now: now.addingTimeInterval(-86400), uptime: 1) == now.addingTimeInterval(60))
         let restored = try! JSONDecoder().decode(AccessRecord.self, from: JSONEncoder().encode(fresh))
         expect(restored, .expired, at: now.addingTimeInterval(20 * 86400))
+        #if DEBUG
+        let test = LocalAccessTest(cohort: .new, cutoff: cutoff, elapsedDays: 0)
+        let legacyTest = LocalAccessTest(cohort: .legacy, cutoff: cutoff, elapsedDays: 0)
+        var sandbox = AccessRecord(originalPurchaseDate: Date(timeIntervalSince1970: 1375340400), appTransactionEnvironment: "Sandbox")
+        precondition(test.decision(record: sandbox, now: now).state == .eligible)
+        precondition(legacyTest.decision(record: sandbox, now: now).state == .grandfathered)
+        precondition(test.decision(record: AccessRecord(), now: now).state == .unknown)
+        var production = sandbox
+        production.appTransactionEnvironment = "Production"
+        precondition(test.decision(record: production, now: now).state == .unknown)
+        precondition(AccessPolicy.evaluate(sandbox, cutoff: cutoff, now: now).state == .grandfathered,
+            "Test evaluation must not alter production acquisition evidence")
+        sandbox.trialStart = now
+        precondition(test.decision(record: sandbox, now: now).state == .trial)
+        let expiredTest = LocalAccessTest(cohort: .new, cutoff: cutoff, elapsedDays: 15)
+        precondition(expiredTest.decision(record: sandbox, now: now).state == .expired)
+        sandbox.lifetimeProducts = [AccessConfiguration.lifetimeIDs[0]]
+        precondition(expiredTest.decision(record: sandbox, now: now).state == .lifetime)
+        print("Local sandbox cohort: 8 isolation, verification, real entitlement and expiry checks passed.")
+        #endif
         print("Access policy: \(checks) cohort, boundary, restoration, entitlement and expiry checks passed; rollback checks passed.")
     }
 }

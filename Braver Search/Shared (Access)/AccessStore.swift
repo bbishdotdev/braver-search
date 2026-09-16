@@ -13,11 +13,17 @@ enum AccessStore {
         #endif
         return .shared
     }
-    private static let filename = "access-v1.json"
+    private static var filename: String {
+        #if DEBUG
+        if localTest() != nil { return "access-local-test-v1.json" }
+        #endif
+        return "access-v1.json"
+    }
 
     static func update(_ change: (inout AccessRecord) -> Void) throws {
+        let recordFilename = filename // Read test configuration before acquiring the record lock.
         try persistence.locked { root in
-            let url = root.appendingPathComponent(filename)
+            let url = root.appendingPathComponent(recordFilename)
             var record = (try? JSONDecoder().decode(AccessRecord.self, from: Data(contentsOf: url))) ?? AccessRecord()
             change(&record)
             try JSONEncoder().encode(record).write(to: url, options: .atomic)
@@ -29,6 +35,7 @@ enum AccessStore {
         if let preview = previewRecord() {
             return AccessPolicy.evaluate(preview, cutoff: Date(timeIntervalSince1970: 1), now: now)
         }
+        let test = localTest()
         #endif
         var decision = AccessDecision(state: cutoff == nil ? .free : .unknown, expiresAt: nil)
         do {
@@ -38,6 +45,12 @@ enum AccessStore {
                     if timestamp > 0 { record.legacyFirstUse = Date(timeIntervalSince1970: timestamp) }
                 }
                 let effective = record.advanceClock(now: now, uptime: ProcessInfo.processInfo.systemUptime)
+                #if DEBUG
+                if let test {
+                    decision = test.decision(record: record, now: effective)
+                    return
+                }
+                #endif
                 decision = AccessPolicy.evaluate(record, cutoff: cutoff, now: effective)
             }
         } catch { /* storage failure never grants paid access */ }
@@ -51,7 +64,10 @@ enum AccessStore {
         #endif
         if #available(iOS 16.0, macOS 13.0, *) {
             if let result = try? await AppTransaction.shared, case .verified(let app) = result {
-                try? update { $0.originalPurchaseDate = app.originalPurchaseDate }
+                try? update {
+                    $0.originalPurchaseDate = app.originalPurchaseDate
+                    $0.appTransactionEnvironment = app.environment.rawValue
+                }
             }
         }
         var revision = 0
@@ -104,6 +120,33 @@ enum AccessStore {
     }
 
     #if DEBUG
+    static func localTest() -> LocalAccessTest? {
+        try? persistence.locked { root in
+            try JSONDecoder().decode(LocalAccessTest.self,
+                from: Data(contentsOf: root.appendingPathComponent("access-local-test-config.json")))
+        }
+    }
+
+    /// Called by the host only; the extension reads the same config and isolated record.
+    static func configureLocalTest(arguments: [String] = ProcessInfo.processInfo.arguments, now: Date = Date()) {
+        func value(_ key: String) -> String? {
+            guard let i = arguments.firstIndex(of: key), arguments.indices.contains(i + 1) else { return nil }
+            return arguments[i + 1]
+        }
+        var config: LocalAccessTest?
+        if let name = value("-monetization-test-cohort"), let cohort = LocalAccessTest.Cohort(rawValue: name) {
+            let cutoff = value("-monetization-test-cutoff").flatMap { ISO8601DateFormatter().date(from: $0) }
+                ?? now.addingTimeInterval(-86400)
+            let days = min(30, max(0, Int(value("-monetization-test-elapsed-days") ?? "0") ?? 0))
+            config = LocalAccessTest(cohort: cohort, cutoff: cutoff, elapsedDays: days)
+        }
+        try? persistence.locked { root in
+            let url = root.appendingPathComponent("access-local-test-config.json")
+            if let config { try JSONEncoder().encode(config).write(to: url, options: .atomic) }
+            else if FileManager.default.fileExists(atPath: url.path) { try FileManager.default.removeItem(at: url) }
+        }
+    }
+
     // Explicit UI fixtures on a development build only. They never create a StoreKit transaction.
     static func configurePreview() {
         let args = ProcessInfo.processInfo.arguments
