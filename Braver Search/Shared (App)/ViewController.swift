@@ -35,6 +35,7 @@ class ViewController: PlatformViewController, WKNavigationDelegate, WKScriptMess
 
     override func viewDidLoad() {
         super.viewDidLoad()
+        guard !DurableAnalytics.isUnitTestHost else { return }
         setupTimer = Timer.scheduledTimer(withTimeInterval: 2, repeats: true) { [weak self] _ in
             self?.updateSetupUI()
         }

@@ -5,6 +5,17 @@ import StoreKitTest
 
 /// Real Xcode StoreKit transactions. These never contact the production App Store or charge money.
 @MainActor final class AccessStoreTests: XCTestCase {
+    private func restoredDecision(_ expected: AccessState, cutoff: Date) async throws -> AccessDecision {
+        // StoreKit Test updates its entitlement inventory asynchronously after delivery/refund.
+        for _ in 0..<50 {
+            await AccessStore.refresh()
+            try AccessStore.update { $0.originalPurchaseDate = Date() }
+            let decision = AccessStore.decision(cutoff: cutoff)
+            if decision.state == expected { return decision }
+            try await Task.sleep(nanoseconds: 100_000_000)
+        }
+        return AccessStore.decision(cutoff: cutoff)
+    }
     private func verifiedTransaction(id: String, transactionID: UInt64, revoked: Bool = false) async throws -> Transaction {
         // StoreKit Test publishes to the receipt asynchronously after buyProduct returns.
         for _ in 0..<50 {
@@ -46,9 +57,9 @@ import StoreKitTest
         await trial.finish()
         // Simulate loss of the local cache on reinstall; receipt restores the original trial date.
         try AccessStore.update { $0 = AccessRecord() }
-        await AccessStore.refresh()
-        try AccessStore.update { $0.originalPurchaseDate = Date() }
-        XCTAssertEqual(AccessStore.decision(cutoff: cutoff).expiresAt, trial.originalPurchaseDate.addingTimeInterval(14 * 86400))
+        let restoredTrial = try await restoredDecision(.trial, cutoff: cutoff)
+        XCTAssertEqual(restoredTrial.state, .trial)
+        XCTAssertEqual(restoredTrial.expiresAt, trial.originalPurchaseDate.addingTimeInterval(14 * 86400))
 
         let paid = try await session.buyProduct(identifier: AccessConfiguration.lifetimeIDs[1], options: [])
         let verifiedPaid = try await verifiedTransaction(id: paid.productID, transactionID: paid.id)
@@ -56,16 +67,14 @@ import StoreKitTest
         XCTAssertEqual(AccessStore.decision(cutoff: cutoff).state, .lifetime)
         await paid.finish()
         try AccessStore.update { $0 = AccessRecord() }
-        await AccessStore.refresh()
-        try AccessStore.update { $0.originalPurchaseDate = Date() }
-        XCTAssertEqual(AccessStore.decision(cutoff: cutoff).state, .lifetime)
+        let restoredLifetime = try await restoredDecision(.lifetime, cutoff: cutoff)
+        XCTAssertEqual(restoredLifetime.state, .lifetime)
 
         try session.refundTransaction(identifier: UInt(paid.id))
         let refunded = try await verifiedTransaction(id: paid.productID, transactionID: paid.id, revoked: true)
         try AccessStore.accept(refunded)
-        await AccessStore.refresh()
-        try AccessStore.update { $0.originalPurchaseDate = Date() }
-        XCTAssertEqual(AccessStore.decision(cutoff: cutoff).state, .trial, "Refund must remove lifetime access while retaining a valid trial")
+        let afterRefund = try await restoredDecision(.trial, cutoff: cutoff)
+        XCTAssertEqual(afterRefund.state, .trial, "Refund must remove lifetime access while retaining a valid trial")
         await AccessStore.refreshExtension()
         XCTAssertEqual(AccessStore.decision(cutoff: cutoff).state, .trial, "Extension reconciliation must not revive the refunded transaction")
         XCTAssertEqual(AccessStore.decision(now: Date().addingTimeInterval(15 * 86400), cutoff: cutoff).state, .expired)
@@ -87,6 +96,9 @@ import StoreKitTest
         session.disableDialogs = true
         session.clearTransactions()
         defer { session.clearTransactions() }
+        // Initialize the local StoreKit catalog before requesting the app transaction on a cold simulator.
+        let products = try await Product.products(for: [AccessConfiguration.trialID])
+        XCTAssertEqual(products.count, 1)
         await AccessStore.refresh()
         XCTAssertEqual(AccessStore.decision().state, .eligible, "Verified Xcode app acquisition must support the new-user test cohort")
         let trial = try await session.buyProduct(identifier: AccessConfiguration.trialID, options: [])

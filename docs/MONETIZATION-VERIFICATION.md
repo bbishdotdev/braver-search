@@ -86,3 +86,17 @@ The full [runbook](MONETIZATION-RUNBOOK.md) documents migration evidence, trial 
   still needs to match the offers before submission.
 - Production cutoff remains nil. This DEBUG test mode is not a TestFlight cohort solution,
   and no real App Store sandbox purchase or cross-device restore is claimed here.
+
+The bounded CI rerun exposed a specific iOS timeout inside the first StoreKit test,
+with an App Store authentication-context error during host startup. Mac CI passed.
+Unit-test hosts now skip normal app startup/StoreKit work and use isolated preferences;
+local Mac tests now run instead of waiting on shared preferences. Receipt-restoration
+assertions poll the asynchronous StoreKit inventory for up to five seconds. All six
+Mac XCTest cases plus its Swift Testing example passed locally with ad-hoc signing;
+this is not a developer-signed Safari runtime pass. The cold-simulator test initializes
+its local StoreKit catalog before asking for AppTransaction.
+
+The setup dashboard now has two validated release-build views (Debug excluded;
+TestFlight still included): outcomes by result and a 30-minute start→success funnel.
+Purchase/access events are absent from the live schema, so monetization views remain
+pending real event validation. See docs/LOCAL-PURCHASE-TESTING.md for the user walkthrough.
