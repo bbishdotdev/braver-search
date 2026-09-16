@@ -8,7 +8,7 @@ The six non-consumables have since been created in App Store Connect, with US pr
 
 Promotional references to “Brave” have been removed from the shared purchase/trial copy. The headlines are now “Meet your search companion,” “Your 14 free days are underway,” “Keep your searches flowing,” and “Yours for good.” The $24.99 tier is “Big-hearted lion.” Product IDs, prices and access behavior are unchanged. Factual destination/website-permission references and the existing non-affiliation disclaimer remain. The existing 20 native policy checks and rollback checks pass after the change.
 
-The screenshots below document the earlier design and still contain the previous wording; recapture them before using them as current release assets. The implementation-time results and outstanding checks below are preserved as the original verification record.
+Fresh [in-app purchase review captures](monetization/review-screenshots/README.md) now show the updated copy and all five selected prices, captured directly from an iPhone 13 Pro Max simulator at 1284 × 2778. The older screenshots below document the earlier design and still contain the previous wording. The implementation-time results and outstanding checks below are preserved as the original verification record.
 
 **Implemented, with production enforcement intentionally disabled pending Apple setup and an announced grandfathering cutoff.** No App Store products were created, no real money was charged, and this work has not been merged or deployed to TestFlight.
 
