@@ -2,85 +2,94 @@ name: Tests
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
-    branches: [ main ]
+    branches: [main]
+
+concurrency:
+  group: tests-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   test-swift:
-    name: Swift Tests
-    runs-on: macos-latest
-
+    name: Swift Tests (${{ matrix.platform }})
+    runs-on: macos-15
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: [iOS, macOS]
     steps:
-    - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+      - name: Set up Xcode
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: '16.4'
+      - name: Test access policy
+        run: bash scripts/test-access.sh
+      - name: Test durable telemetry and setup verification
+        run: bash scripts/test-telemetry.sh
+      - name: Boot iOS Simulator
+        if: matrix.platform == 'iOS'
+        id: ios-simulator
+        timeout-minutes: 5
+        run: |
+          SIMULATOR_ID=$(xcrun simctl list devices available -j | python3 -c 'import json,sys; d=json.load(sys.stdin); print(next(x["udid"] for devices in d["devices"].values() for x in devices if x["name"].startswith("iPhone")))')
+          echo "device_id=$SIMULATOR_ID" >> "$GITHUB_OUTPUT"
+          xcrun simctl boot "$SIMULATOR_ID"
+          xcrun simctl bootstatus "$SIMULATOR_ID" -b
+      - name: Build and Test
+        timeout-minutes: 15
+        env:
+          PLATFORM: ${{ matrix.platform }}
+          SIMULATOR_ID: ${{ steps.ios-simulator.outputs.device_id }}
+        run: |
+          set -o pipefail
+          mkdir -p test-results
+          if [ "$PLATFORM" = iOS ]; then
+            destination="id=$SIMULATOR_ID"
+          else
+            destination='platform=macOS,arch=arm64'
+          fi
+          xcodebuild test \
+            -project 'Braver Search/Braver Search.xcodeproj' \
+            -scheme "Braver Search ($PLATFORM)" \
+            -destination "$destination" \
+            -destination-timeout 60 \
+            -parallel-testing-enabled NO \
+            -test-timeouts-enabled YES \
+            -default-test-execution-time-allowance 180 \
+            -maximum-test-execution-time-allowance 180 \
+            -resultBundlePath "test-results/$PLATFORM.xcresult" \
+            -enableCodeCoverage YES \
+            CODE_SIGN_STYLE=Automatic CODE_SIGN_IDENTITY=- \
+            PROVISIONING_PROFILE_SPECIFIER='' PROVISIONING_PROFILE='' \
+            | tee "test-results/$PLATFORM.log"
+      - name: Collect failure diagnostics
+        if: failure()
+        run: |
+          mkdir -p test-results
+          xcrun simctl list devices > test-results/simulators.txt
+          ps -axo pid,etime,command > test-results/processes.txt
+          for pid in $(pgrep -f '/Braver Search.app/|xcodebuild' || true); do
+            sample "$pid" 2 -file "test-results/sample-$pid.txt" || true
+          done
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: tests-${{ matrix.platform }}
+          path: test-results/
+          if-no-files-found: warn
 
-    - name: Set up Xcode
-      uses: maxim-lobanov/setup-xcode@v1
-      with:
-        xcode-version: latest-stable
-
-    - name: Test durable telemetry and setup verification
-      run: bash scripts/test-telemetry.sh
-
-    - name: Select iOS Simulator
-      id: ios-simulator
-      run: |
-        SIMULATOR_ID=$(xcrun simctl list devices available | awk -F '[()]' '/iPhone/ { print $2; exit }')
-        SIMULATOR_NAME=$(xcrun simctl list devices available | awk -F '[()]' '/iPhone/ { print $1; exit }' | xargs)
-
-        if [ -z "$SIMULATOR_ID" ]; then
-          echo "No available iPhone simulators found on the runner."
-          xcrun simctl list devices available
-          exit 1
-        fi
-
-        echo "Using simulator: $SIMULATOR_NAME ($SIMULATOR_ID)"
-        echo "device_id=$SIMULATOR_ID" >> "$GITHUB_OUTPUT"
-      
-    - name: Build and Test iOS
-      run: |
-        cd "Braver Search"
-        xcodebuild test \
-          -project "Braver Search.xcodeproj" \
-          -scheme "Braver Search (iOS)" \
-          -destination "id=${{ steps.ios-simulator.outputs.device_id }}" \
-          -enableCodeCoverage YES
-          
-    - name: Build and Test macOS
-      run: |
-        cd "Braver Search"
-        xcodebuild test \
-          -project "Braver Search.xcodeproj" \
-          -scheme "Braver Search (macOS)" \
-          -destination 'platform=macOS,arch=arm64' \
-          -enableCodeCoverage YES \
-          CODE_SIGN_IDENTITY="-" \
-          CODE_SIGNING_REQUIRED=NO
-          
-    - name: Upload Coverage
-      uses: codecov/codecov-action@v3
-      with:
-        xcode: true
-        
   test-javascript:
     name: JavaScript Tests
     runs-on: ubuntu-latest
-    
+    timeout-minutes: 10
     steps:
-    - uses: actions/checkout@v4
-    
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '20'
-        
-    - name: Install Dependencies
-      run: npm install
-      
-    - name: Run Tests
-      run: npm test
-      
-    - name: Upload Coverage
-      uses: codecov/codecov-action@v3
-      with:
-        directory: ./coverage
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - run: npm ci
+      - run: npm test -- --runInBand

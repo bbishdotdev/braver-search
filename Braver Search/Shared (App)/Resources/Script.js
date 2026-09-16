@@ -22,6 +22,12 @@ function openPreferences() {
 }
 
 function updateMonetization(payload) {
+    const access = document.getElementById("access-summary");
+    if (access) {
+        access.classList.toggle("hidden", payload.accessState === "free");
+        access.textContent = `${payload.accessTitle} · ${payload.accessMessage}`;
+        access.onclick = () => webkit.messageHandlers.controller.postMessage({ action: "open-lifetime" });
+    }
     const supportSection = document.querySelector(".support-section");
     const supportProducts = document.querySelector(".support-products");
     const reviewButton = document.querySelector(".review-button");

@@ -31,6 +31,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     var window: UIWindow?
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
+        guard !DurableAnalytics.isUnitTestHost else { return true }
         IOSAppAnalytics.initializeSharedState()
         IOSAppAnalytics.trackFirstAppOpenIfNeeded()
         IOSAppAnalytics.track("app_opened")

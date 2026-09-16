@@ -1,0 +1,107 @@
+{
+  "identifier": "a9824e97-ea75-4ada-9438-acc205758636",
+  "nonRenewingSubscriptions": [],
+  "products": [
+    {
+      "displayPrice": "0",
+      "familyShareable": false,
+      "internalID": "c5ae12ba-35ed-4814-9451-27e529802ea3",
+      "localizations": [
+        {
+          "description": "14 days of search redirects. No renewal.",
+          "displayName": "14-day Trial",
+          "locale": "en_US"
+        }
+      ],
+      "productID": "braversearch.trial.14day",
+      "referenceName": "14-day Trial",
+      "type": "NonConsumable"
+    },
+    {
+      "displayPrice": "4.99",
+      "familyShareable": false,
+      "internalID": "09410a82-419b-427c-97d7-4875f8fd4480",
+      "localizations": [
+        {
+          "description": "All redirects, with a single lifetime purchase.",
+          "displayName": "Lifetime \u00b7 A little love",
+          "locale": "en_US"
+        }
+      ],
+      "productID": "braversearch.lifetime.coffee",
+      "referenceName": "Lifetime \u00b7 A little love",
+      "type": "NonConsumable"
+    },
+    {
+      "displayPrice": "9.99",
+      "familyShareable": false,
+      "internalID": "aad7a8e8-8078-49aa-a18d-d47c0f62040f",
+      "localizations": [
+        {
+          "description": "All redirects, with a single lifetime purchase.",
+          "displayName": "Lifetime \u00b7 A happy lion",
+          "locale": "en_US"
+        }
+      ],
+      "productID": "braversearch.lifetime.supporter",
+      "referenceName": "Lifetime \u00b7 A happy lion",
+      "type": "NonConsumable"
+    },
+    {
+      "displayPrice": "24.99",
+      "familyShareable": false,
+      "internalID": "b5868512-858c-430c-9f77-d38015b17f64",
+      "localizations": [
+        {
+          "description": "All redirects, with a single lifetime purchase.",
+          "displayName": "Lifetime \u00b7 Big-hearted lion",
+          "locale": "en_US"
+        }
+      ],
+      "productID": "braversearch.lifetime.champion",
+      "referenceName": "Lifetime \u00b7 Big-hearted lion",
+      "type": "NonConsumable"
+    },
+    {
+      "displayPrice": "49.99",
+      "familyShareable": false,
+      "internalID": "db5e97f7-a043-4ec0-9215-5dbdaf541eed",
+      "localizations": [
+        {
+          "description": "All redirects, with a single lifetime purchase.",
+          "displayName": "Lifetime \u00b7 Lionhearted",
+          "locale": "en_US"
+        }
+      ],
+      "productID": "braversearch.lifetime.hero",
+      "referenceName": "Lifetime \u00b7 Lionhearted",
+      "type": "NonConsumable"
+    },
+    {
+      "displayPrice": "99.99",
+      "familyShareable": false,
+      "internalID": "89b757a9-df38-4ffb-a578-675ba886defd",
+      "localizations": [
+        {
+          "description": "All redirects, with a single lifetime purchase.",
+          "displayName": "Lifetime \u00b7 Legend",
+          "locale": "en_US"
+        }
+      ],
+      "productID": "braversearch.lifetime.legend",
+      "referenceName": "Lifetime \u00b7 Legend",
+      "type": "NonConsumable"
+    }
+  ],
+  "settings": {
+    "_failTransactionsEnabled": false,
+    "_locale": "en_US",
+    "_storefront": "USA",
+    "_storeKitErrors": []
+  },
+  "subscriptionGroups": [],
+  "version": {
+    "major": 3,
+    "minor": 0
+  }
+}

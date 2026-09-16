@@ -44,7 +44,7 @@ struct SupportSheetView: View {
                                 .foregroundStyle(IOSTheme.secondaryText)
                         }
 
-                        Text("Optional tips are available only for users who downloaded Braver Search before it became a paid app.")
+                        Text("Your existing access stays free. Tips are always optional.")
                             .font(.system(size: 13, weight: .medium))
                             .foregroundStyle(IOSTheme.tertiaryText)
                             .fixedSize(horizontal: false, vertical: true)
