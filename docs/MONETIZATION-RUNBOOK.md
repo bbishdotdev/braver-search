@@ -59,7 +59,7 @@ Use App Store Connect → My Apps → Braver Search → Monetization → In-App 
 | `braversearch.trial.14day` | 14-day Trial | Free / price tier 0 |
 | `braversearch.lifetime.coffee` | Lifetime · A little love | $4.99 |
 | `braversearch.lifetime.supporter` | Lifetime · A happy lion | $9.99 |
-| `braversearch.lifetime.champion` | Lifetime · Big-hearted Brave | $24.99 |
+| `braversearch.lifetime.champion` | Lifetime · Big-hearted lion | $24.99 |
 | `braversearch.lifetime.hero` | Lifetime · Lionhearted | $49.99 |
 | `braversearch.lifetime.legend` | Lifetime · Legend | $99.99 |
 

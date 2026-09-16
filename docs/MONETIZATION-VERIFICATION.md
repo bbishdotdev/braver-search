@@ -2,6 +2,14 @@
 
 Branch: `codex/lifetime-unlock`. Verification date: September 15, 2026.
 
+## Follow-up: catalog and independent product copy
+
+The six non-consumables have since been created in App Store Connect, with US prices of $0.00, $4.99, $9.99, $24.99, $49.99 and $99.99, worldwide availability, English localization and review notes. They remain drafts. Screenshot uploads were unsuccessful; none were attached. Both iOS and macOS are visible under the same app record. The user reports completing the local Mac signing step; signed runtime validation still needs a fresh successful run.
+
+Promotional references to “Brave” have been removed from the shared purchase/trial copy. The headlines are now “Meet your search companion,” “Your 14 free days are underway,” “Keep your searches flowing,” and “Yours for good.” The $24.99 tier is “Big-hearted lion.” Product IDs, prices and access behavior are unchanged. Factual destination/website-permission references and the existing non-affiliation disclaimer remain. The existing 20 native policy checks and rollback checks pass after the change.
+
+The screenshots below document the earlier design and still contain the previous wording; recapture them before using them as current release assets. The implementation-time results and outstanding checks below are preserved as the original verification record.
+
 **Implemented, with production enforcement intentionally disabled pending Apple setup and an announced grandfathering cutoff.** No App Store products were created, no real money was charged, and this work has not been merged or deployed to TestFlight.
 
 ## What is built
