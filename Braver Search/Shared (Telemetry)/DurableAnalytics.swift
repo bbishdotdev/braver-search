@@ -7,7 +7,8 @@ final class DurableAnalytics {
     /// Hosted unit tests must not open personal App Group preferences or launch App Store work.
     static var isUnitTestHost: Bool {
         #if DEBUG
-        return ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil
+        return ProcessInfo.processInfo.environment["BRAVER_UNIT_TEST_HOST"] == "1"
+            || ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil
             || ProcessInfo.processInfo.environment["XCTestBundlePath"] != nil
             || NSClassFromString("XCTestCase") != nil
         #else
