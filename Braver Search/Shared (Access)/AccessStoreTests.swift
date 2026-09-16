@@ -6,6 +6,7 @@ import StoreKitTest
 /// Real Xcode StoreKit transactions. These never contact the production App Store or charge money.
 @MainActor final class AccessStoreTests: XCTestCase {
     private func restoredDecision(_ expected: AccessState, cutoff: Date) async throws -> AccessDecision {
+        print("StoreKit test: restoring \(expected)")
         // StoreKit Test updates its entitlement inventory asynchronously after delivery/refund.
         for _ in 0..<50 {
             await AccessStore.refresh()
@@ -31,23 +32,27 @@ import StoreKitTest
         throw NSError(domain: "AccessStoreTests.receiptTimeout", code: 1)
     }
     func testTrialLifetimeRestorationAndRefund() async throws {
+        print("StoreKit test: preparing lifetime session")
         let root = FileManager.default.temporaryDirectory.appendingPathComponent("access-tests-" + UUID().uuidString)
         AccessStore.testPersistence = DurableAnalytics(directory: root)
         // Keep late StoreKit callbacks isolated until the test host exits, too.
         defer { try? FileManager.default.removeItem(at: root) }
         AccessStore.configurePreview() // Clear any previous launch-only UI fixture.
         let session = try SKTestSession(configurationFileNamed: "Monetization")
+        print("StoreKit test: lifetime session ready")
         session.resetToDefaultState()
         session.disableDialogs = true
         session.clearTransactions()
         defer { session.clearTransactions() }
         let ids = AccessConfiguration.lifetimeIDs + [AccessConfiguration.trialID]
         let products = try await Product.products(for: ids)
+        print("StoreKit test: lifetime catalog loaded, \(products.count) products")
         XCTAssertEqual(products.count, 6)
         XCTAssertTrue(products.allSatisfy { $0.type == .nonConsumable })
         XCTAssertEqual(products.first { $0.id == AccessConfiguration.trialID }?.price, 0)
 
         let trial = try await session.buyProduct(identifier: AccessConfiguration.trialID, options: [])
+        print("StoreKit test: trial delivered")
         let verifiedTrial = try await verifiedTransaction(id: trial.productID, transactionID: trial.id)
         try AccessStore.accept(verifiedTrial)
         try AccessStore.update { $0.originalPurchaseDate = Date(); $0.legacyFirstUse = nil }
@@ -82,6 +87,7 @@ import StoreKitTest
     }
 
     func testLocalSandboxConfigurationIsIsolatedAndRestorable() async throws {
+        print("StoreKit test: preparing local cohort session")
         let root = FileManager.default.temporaryDirectory.appendingPathComponent("local-access-tests-" + UUID().uuidString)
         AccessStore.testPersistence = DurableAnalytics(directory: root)
         defer { try? FileManager.default.removeItem(at: root) }
@@ -92,14 +98,17 @@ import StoreKitTest
         AccessStore.configureLocalTest(arguments: ["-monetization-test-cohort", "new"])
         XCTAssertEqual(AccessStore.decision().state, .unknown, "A new test record must not inherit real ownership")
         let session = try SKTestSession(configurationFileNamed: "Monetization")
+        print("StoreKit test: cohort session ready")
         session.resetToDefaultState()
         session.disableDialogs = true
         session.clearTransactions()
         defer { session.clearTransactions() }
         // Initialize the local StoreKit catalog before requesting the app transaction on a cold simulator.
         let products = try await Product.products(for: [AccessConfiguration.trialID])
+        print("StoreKit test: cohort catalog loaded, \(products.count) products")
         XCTAssertEqual(products.count, 1)
         await AccessStore.refresh()
+        print("StoreKit test: cohort acquisition refreshed")
         XCTAssertEqual(AccessStore.decision().state, .eligible, "Verified Xcode app acquisition must support the new-user test cohort")
         let trial = try await session.buyProduct(identifier: AccessConfiguration.trialID, options: [])
         try AccessStore.accept(try await verifiedTransaction(id: trial.productID, transactionID: trial.id))
