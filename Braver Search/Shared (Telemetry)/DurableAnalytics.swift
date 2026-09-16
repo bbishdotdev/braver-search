@@ -4,6 +4,16 @@ import Darwin
 
 /// Shared by the host and native extension. No search text or visited URLs are collected.
 final class DurableAnalytics {
+    /// Hosted unit tests must not open personal App Group preferences or launch App Store work.
+    static var isUnitTestHost: Bool {
+        #if DEBUG
+        return ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil
+            || ProcessInfo.processInfo.environment["XCTestBundlePath"] != nil
+            || NSClassFromString("XCTestCase") != nil
+        #else
+        return false
+        #endif
+    }
     static let groupIdentifier: String = {
         #if os(macOS)
         if let task = SecTaskCreateFromSelf(nil),
@@ -12,9 +22,10 @@ final class DurableAnalytics {
         #endif
         return "group.xyz.bsquared.braversearch"
     }()
-    static let defaults = UserDefaults(suiteName: groupIdentifier)!
+    static let defaults = UserDefaults(suiteName: isUnitTestHost ? "braver-unit-tests-\(UUID().uuidString)" : groupIdentifier)!
     static let shared = DurableAnalytics(
-        directory: FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: groupIdentifier)?
+        directory: isUnitTestHost ? FileManager.default.temporaryDirectory.appendingPathComponent("braver-unit-tests-\(UUID().uuidString)")
+            : FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: groupIdentifier)?
             .appendingPathComponent("Telemetry-v2", isDirectory: true)
     )
 

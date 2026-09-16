@@ -29,6 +29,7 @@ enum MacAppAnalytics {
 class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        guard !DurableAnalytics.isUnitTestHost else { return }
         MacAppAnalytics.initializeSharedState()
         MacAppAnalytics.trackFirstAppOpenIfNeeded()
         MacAppAnalytics.track("app_opened")
@@ -40,6 +41,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationDidBecomeActive(_ notification: Notification) {
+        guard !DurableAnalytics.isUnitTestHost else { return }
         Task { await MonetizationManager.shared.resolveUserState() }
     }
 
