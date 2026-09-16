@@ -106,7 +106,7 @@ final class StoreManager: ObservableObject {
             try AccessStore.accept(transaction)
             MonetizationManager.shared.refreshAccess()
             let revoked = transaction.revocationDate != nil
-            purchaseMessage = revoked ? "This purchase is no longer active. Restore purchases to check your access." : (transaction.productID == AccessConfiguration.trialID ? "Your 14 days start now. Enjoy your Brave side." : "You’re unlocked for good. Thank you!")
+            purchaseMessage = revoked ? "This purchase is no longer active. Restore purchases to check your access." : (transaction.productID == AccessConfiguration.trialID ? "Your 14 free days start now. Happy searching!" : "You’re unlocked for good. Thank you!")
             DurableAnalytics.shared.capture(revoked ? "access_revoked" : "access_purchase_verified", properties: ["product_id": transaction.productID], once: "access_" + String(transaction.id) + (revoked ? "_revoked" : ""))
         }
     }

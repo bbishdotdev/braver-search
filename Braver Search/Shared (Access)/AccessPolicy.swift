@@ -49,10 +49,10 @@ struct AccessDecision: Equatable {
         case .free: return "Free access"
         case .grandfathered: return "Yours to keep"
         case .unknown: return "Let’s check your access"
-        case .eligible: return "Find your Brave side"
-        case .trial: return "Your Brave days have begun"
-        case .expired: return "Keep your Brave side"
-        case .lifetime: return "Brave for good"
+        case .eligible: return "Meet your search companion"
+        case .trial: return "Your 14 free days are underway"
+        case .expired: return "Keep your searches flowing"
+        case .lifetime: return "Yours for good"
         }
     }
     var message: String {

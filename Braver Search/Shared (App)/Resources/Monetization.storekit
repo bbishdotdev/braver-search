@@ -54,12 +54,12 @@
       "localizations": [
         {
           "description": "All redirects, with a single lifetime purchase.",
-          "displayName": "Lifetime \u00b7 Big-hearted Brave",
+          "displayName": "Lifetime \u00b7 Big-hearted lion",
           "locale": "en_US"
         }
       ],
       "productID": "braversearch.lifetime.champion",
-      "referenceName": "Lifetime \u00b7 Big-hearted Brave",
+      "referenceName": "Lifetime \u00b7 Big-hearted lion",
       "type": "NonConsumable"
     },
     {
