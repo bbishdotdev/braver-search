@@ -129,6 +129,8 @@ class ViewController: PlatformViewController, WKNavigationDelegate, WKScriptMess
         }
 
         switch action {
+        case "retry-access":
+            Task { await MonetizationManager.shared.resolveUserState(forceRefresh: true) }
         case "open-lifetime":
             showLifetime()
         case "test-setup":
@@ -195,6 +197,8 @@ class ViewController: PlatformViewController, WKNavigationDelegate, WKScriptMess
     private func updateMonetizationUI() {
 #if os(macOS)
         let payload: [String: Any] = [
+            "accessVerificationMessage": MonetizationManager.shared.accessVerificationMessage ?? "",
+            "isVerifyingAccess": MonetizationManager.shared.isVerifyingAccess,
             "accessState": MonetizationManager.shared.access.state.rawValue,
             "accessAllowed": MonetizationManager.shared.access.allowsRedirects,
             "accessTitle": MonetizationManager.shared.access.title,

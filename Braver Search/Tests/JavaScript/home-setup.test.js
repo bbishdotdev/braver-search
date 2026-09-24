@@ -49,4 +49,19 @@ describe('Mac home setup access presentation', () => {
         context.updateSetup({ status: 'inconclusive', title: 'Test incomplete', message: 'Check Safari permissions' });
         expect(document.getElementById('setup-result').textContent).toBe('Test incomplete. Check Safari permissions');
     });
+    it('exposes verification failure and an explicit retry even when the access policy remains free', () => {
+        context.updateMonetization({ ...payload('free', true), accessVerificationMessage: 'Apple verification failed (StoreKit 2)' });
+        expect(document.getElementById('access-verification').classList.contains('hidden')).toBe(false);
+        expect(document.getElementById('access-verification-message').textContent).toContain('StoreKit 2');
+        document.getElementById('retry-access').click();
+        expect(postMessage).toHaveBeenCalledWith({ action: 'retry-access' });
+        context.updateMonetization({ ...payload('free', true), isVerifyingAccess: true });
+        expect(document.getElementById('retry-access').disabled).toBe(true);
+        document.getElementById('retry-access').click();
+        expect(postMessage).toHaveBeenCalledTimes(1);
+        context.updateMonetization(payload('eligible', false));
+        expect(document.getElementById('access-verification').classList.contains('hidden')).toBe(true);
+        expect(document.getElementById('access-summary').classList.contains('hidden')).toBe(false);
+        expect(document.querySelector('.support-section').classList.contains('hidden')).toBe(true);
+    });
 });
