@@ -118,7 +118,9 @@ import StoreKitTest
         // before it has created a receipt. Seed a real test purchase first; cohort-only
         // eligible behavior is covered separately by the pure policy tests.
         let trial = try await session.buyProduct(identifier: AccessConfiguration.trialID, options: [])
+        print("StoreKit test: cohort trial delivered")
         _ = try await verifiedTransaction(id: trial.productID, transactionID: trial.id)
+        print("StoreKit test: cohort receipt verified")
         await AccessStore.refresh()
         print("StoreKit test: cohort acquisition refreshed")
         XCTAssertEqual(AccessStore.decision().state, .trial, "Verified Xcode acquisition and receipt must restore the trial in the new-user cohort")
