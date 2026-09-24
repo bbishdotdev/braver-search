@@ -41,12 +41,7 @@ document.addEventListener('DOMContentLoaded', async function() {
                 type: 'getMonetizationState'
             });
 
-            const accessCard = document.getElementById('accessCard');
-            if (accessCard && response?.accessAllowed === false) {
-                accessCard.classList.remove('hidden');
-                document.getElementById('accessTitle').textContent = response.accessTitle;
-                document.getElementById('accessMessage').textContent = response.accessMessage;
-            }
+            showAccessState(response);
             if (reviewLink && response?.reviewURL) {
                 reviewLink.href = response.reviewURL;
             }
@@ -58,12 +53,39 @@ document.addEventListener('DOMContentLoaded', async function() {
             }
         } catch (error) {
             console.error("Braver Search: Failed to load monetization state", error);
-            const card = document.getElementById('accessCard');
-            if (card) {
-                card.classList.remove('hidden');
-                document.getElementById('accessTitle').textContent = 'Couldn’t check access';
-                document.getElementById('accessMessage').textContent = 'Open Braver Search to check your access, then try your search again.';
-            }
+            showAccessState({ accessAllowed: false, userState: 'unknown' });
+        }
+    }
+
+    function showAccessState(response) {
+        const blocked = response?.accessAllowed === false;
+        document.getElementById('redirectToggle').classList.toggle('hidden', blocked);
+        document.getElementById('accessCard').classList.toggle('hidden', !blocked);
+        // Preserve the saved switch preference. Access, not a switch change, pauses redirects.
+        document.getElementById('redirectTitle').textContent = blocked ? 'Redirects paused' : 'Redirect Search';
+        const description = document.getElementById('redirectDescription');
+        if (!blocked) {
+            description.textContent = 'Redirect Safari searches to Brave Search.';
+            return;
+        }
+        const title = document.getElementById('accessTitle');
+        const message = document.getElementById('accessMessage');
+        const link = document.getElementById('accessLink');
+        if (response.userState === 'eligible') {
+            description.textContent = 'Start your free trial to enable Safari search redirects.';
+            title.textContent = 'Try it free for 14 days';
+            message.textContent = 'No automatic charge. Buy once to continue after your trial.';
+            link.textContent = 'Start free trial in app';
+        } else if (response.userState === 'expired') {
+            description.textContent = 'Your free trial has ended. Unlock lifetime access to resume redirects.';
+            title.textContent = 'Choose your lifetime price';
+            message.textContent = 'Every price unlocks the full app. One purchase, no subscription.';
+            link.textContent = 'See lifetime prices';
+        } else {
+            description.textContent = 'Open the app to check your access before redirecting searches.';
+            title.textContent = 'Check your access';
+            message.textContent = 'Restore an existing purchase or check your trial eligibility in the app.';
+            link.textContent = 'Open Braver Search';
         }
     }
 

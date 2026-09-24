@@ -329,3 +329,25 @@ for finished transactions. Apple-side reset/account/cache reconciliation remains
 unresolved. Do not force-clear payment evidence to claim a successful reset test.
 Mac log: `/tmp/braver-reset-device.log`; successful signed build log:
 `/tmp/braver-reset-iphone.log`. Logs exclude receipts, account details, and transaction IDs.
+
+## Redirect enforcement test and popup clarity — September 24
+
+Brenden confirmed on the physical iPhone that ordinary Safari searches did not
+redirect before trial activation, and did redirect after activating the real
+sandbox trial. After sandbox reset/sign-out/sign-in and reconciliation, the app
+returned to the trial offer. The phone has now been relaunched with the real
+new-user cohort and `-monetization-test-elapsed-days 15` to check expiry, followed
+by a lifetime purchase. Expired blocking and post-purchase resumption in that
+sequence are awaiting his results; they are not established by the launch alone.
+
+The popup previously showed the saved green switch even when access was blocked,
+which made the trial requirement unclear. It now hides the switch while access
+is blocked and says **Redirects paused**, with distinct explanations and app links
+for an unstarted trial, an expired trial, and an access check. It preserves the
+saved enabled preference instead of disabling redirects in storage, so paid/trial
+activation can resume the user's chosen behavior. The ordinary switch remains
+available for users with access. All 80 JavaScript tests passed, including checks
+that blocked-state presentation never writes the saved switch preference.
+Signed iPhone and Mac builds also passed (`/tmp/braver-paused-popup-iOS.log` and
+`/tmp/braver-paused-popup-macOS.log` on the Mac). The popup build is ready; it has
+not replaced the phone app during the user's in-progress expiry/purchase test.

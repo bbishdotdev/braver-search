@@ -10,11 +10,11 @@
       <section class="hero-card">
         <div class="hero-top">
           <div class="hero-copy">
-            <h1>Redirect Search</h1>
-            <p>Redirect Safari searches to Brave Search.</p>
+            <h1 id="redirectTitle">Redirect Search</h1>
+            <p id="redirectDescription">Redirect Safari searches to Brave Search.</p>
           </div>
-          <label class="toggle">
-            <input type="checkbox" id="toggleButton" />
+          <label id="redirectToggle" class="toggle">
+            <input type="checkbox" id="toggleButton" aria-label="Redirect Safari searches" />
             <span class="slider"></span>
           </label>
         </div>
@@ -23,7 +23,7 @@
       <section id="accessCard" class="support-card hidden">
         <h2 id="accessTitle"></h2>
         <p id="accessMessage" class="support-description"></p>
-        <a href="braversearch://support" class="support-link">Open Braver Search</a>
+        <a id="accessLink" href="braversearch://support" class="support-link">Open Braver Search</a>
       </section>
 
       <section class="action-grid">

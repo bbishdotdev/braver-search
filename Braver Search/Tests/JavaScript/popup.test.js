@@ -11,7 +11,9 @@ describe('Popup Script', () => {
     beforeEach(() => {
         // Set up our document body
         document.body.innerHTML = `
-            <input type="checkbox" id="toggleButton">
+            <h1 id="redirectTitle"></h1><p id="redirectDescription"></p>
+            <label id="redirectToggle"><input type="checkbox" id="toggleButton"></label>
+            <a id="accessLink"></a>
             <section id="accessCard" class="hidden"><h2 id="accessTitle"></h2><p id="accessMessage"></p></section>
             <a id="reviewLink" href="#"></a>
             <section id="supportCard" class="hidden"></section>
@@ -33,17 +35,31 @@ describe('Popup Script', () => {
     describe('Initial state', () => {
         it('explains expired access even when the redirect toggle is on', async () => {
             browser.storage.local.get.mockResolvedValue({ enabled: true });
-            browser.runtime.sendNativeMessage.mockResolvedValue({ accessAllowed: false, accessTitle: 'Trial complete', accessMessage: 'Choose your lifetime price.' });
+            browser.runtime.sendNativeMessage.mockResolvedValue({ accessAllowed: false, userState: 'expired' });
             document.dispatchEvent(new Event('DOMContentLoaded'));
             await new Promise(resolve => setTimeout(resolve, 0));
             expect(document.getElementById('accessCard').classList.contains('hidden')).toBe(false);
-            expect(document.getElementById('accessTitle').textContent).toBe('Trial complete');
+            expect(document.getElementById('redirectTitle').textContent).toBe('Redirects paused');
+            expect(document.getElementById('accessLink').textContent).toBe('See lifetime prices');
+            expect(document.getElementById('redirectToggle').classList.contains('hidden')).toBe(true);
+            expect(browser.storage.local.set).not.toHaveBeenCalled();
+        });
+        it('explains the trial requirement without changing the saved redirect preference', async () => {
+            browser.storage.local.get.mockResolvedValue({ enabled: true });
+            browser.runtime.sendNativeMessage.mockResolvedValue({ accessAllowed: false, userState: 'eligible' });
+            document.dispatchEvent(new Event('DOMContentLoaded'));
+            await new Promise(resolve => setTimeout(resolve, 0));
+            expect(document.getElementById('redirectDescription').textContent).toContain('Start your free trial to enable');
+            expect(document.getElementById('accessLink').textContent).toBe('Start free trial in app');
+            expect(document.getElementById('redirectToggle').classList.contains('hidden')).toBe(true);
+            expect(toggleButton.checked).toBe(true);
+            expect(browser.storage.local.set).not.toHaveBeenCalled();
         });
         it('offers recovery when native access cannot be checked', async () => {
             browser.runtime.sendNativeMessage.mockRejectedValue(new Error('Native unavailable'));
             document.dispatchEvent(new Event('DOMContentLoaded'));
             await new Promise(resolve => setTimeout(resolve, 0));
-            expect(document.getElementById('accessTitle').textContent).toBe('Couldn’t check access');
+            expect(document.getElementById('accessTitle').textContent).toBe('Check your access');
         });
         it('should track popup opens', async () => {
             browser.storage.local.get.mockResolvedValue({ enabled: true });
