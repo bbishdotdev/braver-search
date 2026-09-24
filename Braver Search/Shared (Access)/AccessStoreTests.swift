@@ -5,6 +5,57 @@ import StoreKitTest
 
 /// Real Xcode StoreKit transactions. These never contact the production App Store or charge money.
 @MainActor final class AccessStoreTests: XCTestCase {
+    func testExistingProductionUsersKeepAccessWhenAppleVerificationFails() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent("legacy-upgrade-tests-" + UUID().uuidString)
+        AccessStore.testPersistence = DurableAnalytics(directory: root)
+        AccessStore.configureLocalTest(arguments: [])
+        AccessStore.configurePreview()
+        let defaults = DurableAnalytics.defaults
+        let key = "monetization.firstUseDate"
+        let previous = defaults.object(forKey: key)
+        defer {
+            if let previous { defaults.set(previous, forKey: key) } else { defaults.removeObject(forKey: key) }
+            try? FileManager.default.removeItem(at: root)
+        }
+        let now = Date()
+        let cutoff = now.addingTimeInterval(-86400)
+        let oldDownload = cutoff.addingTimeInterval(-86400)
+        let fail: () async throws -> (Date, String) = {
+            throw NSError(domain: "StoreKit.StoreKitError", code: 2)
+        }
+
+        // Upgrade from the donation-era app: no access record yet, but its original
+        // first-use preference exists. No network or new purchase is required.
+        defaults.set(oldDownload.timeIntervalSince1970, forKey: key)
+        _ = await AccessStore.verifyAcquisition(using: fail)
+        XCTAssertEqual(AccessStore.decision(cutoff: cutoff).state, .grandfathered)
+        XCTAssertTrue(AccessStore.decision(cutoff: cutoff).allowsRedirects)
+
+        // A previously verified App Store download remains grandfathered offline.
+        _ = await AccessStore.verifyAcquisition { (oldDownload, "Production") }
+        _ = await AccessStore.verifyAcquisition(using: fail)
+        XCTAssertEqual(AccessStore.decision(cutoff: cutoff).state, .grandfathered)
+
+        defaults.removeObject(forKey: key)
+        try AccessStore.update { $0 = AccessRecord() }
+        _ = await AccessStore.verifyAcquisition(using: fail)
+        XCTAssertEqual(AccessStore.decision().state, .free, "The public rollout is still disabled")
+        XCTAssertEqual(AccessStore.decision(cutoff: cutoff).state, .unknown,
+                       "Missing evidence after rollout must ask to verify existing access, not classify someone as a new payer")
+
+        _ = await AccessStore.verifyAcquisition { (cutoff, "Production") }
+        try AccessStore.update { $0.lifetimeProducts = [AccessConfiguration.thanksLifetimeID] }
+        _ = await AccessStore.verifyAcquisition(using: fail)
+        XCTAssertEqual(AccessStore.decision(cutoff: cutoff).state, .lifetime)
+        try AccessStore.update {
+            $0.lifetimeProducts = []
+            $0.trialStart = now.addingTimeInterval(-15 * 86400)
+        }
+        _ = await AccessStore.verifyAcquisition(using: fail)
+        XCTAssertEqual(AccessStore.decision(cutoff: cutoff).state, .expired,
+                       "Protecting existing users must not extend an expired trial")
+    }
+
     func testAcquisitionFailureAndRecoveryPreserveVerifiedAccess() async throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent("acquisition-tests-" + UUID().uuidString)
         AccessStore.testPersistence = DurableAnalytics(directory: root)
