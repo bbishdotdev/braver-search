@@ -44,14 +44,13 @@ struct LifetimeAccessView: View {
                         lion("TipCheers", size: 156)
                         heading("Try it in Safari", detail: "14 days of Safari search redirects.")
                         Label("No automatic charge", systemImage: "checkmark.circle")
-                            .font(.subheadline).foregroundStyle(AccessPalette.gold)
+                            .font(.subheadline).foregroundStyle(.white.opacity(0.7))
                     } else if page == .lifetime {
-                        heading("Make it yours", detail: "Choose your price. Same full app, forever.")
                         if access.state == .expired {
-                            Text("Your free trial has ended.").font(.subheadline).foregroundStyle(.white.opacity(0.65))
+                            Text("Your free trial has ended.").font(.caption).foregroundStyle(.white.opacity(0.65))
                         } else if let expires = access.expiresAt, access.state == .trial {
                             Text("Your trial is free until \(expires.formatted(date: .abbreviated, time: .omitted))")
-                                .font(.subheadline).foregroundStyle(AccessPalette.gold)
+                                .font(.caption).foregroundStyle(AccessPalette.gold)
                         }
                         pricePicker
                     } else {
@@ -127,11 +126,20 @@ struct LifetimeAccessView: View {
                 Text("Buy once to continue after the trial.")
                     .font(.caption).foregroundStyle(.white.opacity(0.6)).multilineTextAlignment(.center)
                     .fixedSize(horizontal: false, vertical: true)
-                Button("See lifetime prices →") { choseLifetime = true }
-                    .buttonStyle(.plain).foregroundStyle(AccessPalette.gold).frame(minHeight: 44)
+                Button { choseLifetime = true } label: {
+                    HStack(spacing: 6) {
+                        Text("See lifetime prices").underline()
+                        Image(systemName: "arrow.right").font(.caption)
+                    }
+                    .font(.subheadline.weight(.medium))
+                    .foregroundStyle(.white.opacity(0.85)).frame(minHeight: 44)
+                }
+                    .buttonStyle(.plain)
                     .disabled(busy).accessibilityIdentifier("see-lifetime-prices")
             } else if page == .lifetime {
                 availabilityMessage(for: option.id)
+                Text("Every price unlocks the full app.")
+                    .font(.caption).foregroundStyle(.white.opacity(0.65))
                 primaryButton("Unlock forever · \(price)", id: "lifetime-purchase", disabled: !store.isAvailable(option.id)) {
                     await store.purchase(id: option.id)
                 }
@@ -146,14 +154,28 @@ struct LifetimeAccessView: View {
                 primaryButton("Done", id: "access-done", disabled: false) { dismiss() }
             }
             if access.state != .unknown {
-                Button(store.isRestoring ? "Checking purchases…" : "Restore purchases") { Task { await store.restore() } }
-                    .buttonStyle(.plain).font(.caption).foregroundStyle(.white.opacity(0.6))
-                    .frame(minHeight: 44).disabled(busy)
+                Divider().overlay(.white.opacity(0.08)).padding(.bottom, 4)
+                Button { Task { await store.restore() } } label: {
+                    HStack(spacing: 8) {
+                        if store.isRestoring {
+                            ProgressView().tint(.white.opacity(0.7))
+                        } else {
+                            Image(systemName: "arrow.clockwise")
+                        }
+                        Text(store.isRestoring ? "Checking purchases…" : "Restore purchases")
+                    }
+                    .font(.subheadline.weight(.medium)).foregroundStyle(.white.opacity(0.7))
+                    .padding(.horizontal, 16).frame(minHeight: 44)
+                    .background(.white.opacity(0.04), in: Capsule())
+                    .overlay(Capsule().stroke(.white.opacity(0.18), lineWidth: 1))
+                }
+                .buttonStyle(.plain).disabled(busy).opacity(busy ? 0.6 : 1)
+                .accessibilityIdentifier("restore-purchases")
             }
             #if DEBUG
             if let test = AccessStore.localTest() {
                 Text("Sandbox · \(test.cohort.rawValue) user" + (test.elapsedDays == 0 ? "" : " · +\(test.elapsedDays) days"))
-                    .font(.caption2).foregroundStyle(AccessPalette.gold)
+                    .font(.caption2).foregroundStyle(.white.opacity(0.5))
             }
             #endif
         }
@@ -162,17 +184,20 @@ struct LifetimeAccessView: View {
     }
 
     private var pricePicker: some View {
-        VStack(spacing: 10) {
-            lion(option.assetName, size: 80)
+        VStack(spacing: 14) {
+            lion(option.assetName, size: 120)
                 .id(option.id).transition(.opacity)
                 .animation(reduceMotion ? nil : .easeInOut(duration: 0.18), value: index)
             // All tier labels participate in sizing, even with larger text settings.
             ZStack(alignment: .top) {
                 ForEach(MonetizationConfig.lifetimeOptions) { tier in
-                    Text(tier.displayName).font(.headline)
-                        .fixedSize(horizontal: false, vertical: true)
-                        .opacity(tier.id == option.id ? 1 : 0)
-                        .accessibilityHidden(tier.id != option.id)
+                    VStack(spacing: 6) {
+                        Text(tier.displayName).font(.title3.bold())
+                        Text(tier.description).font(.subheadline).foregroundStyle(.white.opacity(0.65))
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    .opacity(tier.id == option.id ? 1 : 0)
+                    .accessibilityHidden(tier.id != option.id)
                 }
             }.multilineTextAlignment(.center)
             VStack(spacing: 3) {
@@ -199,7 +224,7 @@ struct LifetimeAccessView: View {
                 }.font(.caption).foregroundStyle(.white.opacity(0.55))
             }
         }
-        .padding(16).frame(maxWidth: .infinity)
+        .padding(20).frame(maxWidth: .infinity)
         .background(LinearGradient(colors: [Color(red: 0.20, green: 0.13, blue: 0.11), Color(red: 0.105, green: 0.095, blue: 0.12)], startPoint: .topLeading, endPoint: .bottomTrailing), in: RoundedRectangle(cornerRadius: 28))
         .overlay(RoundedRectangle(cornerRadius: 28).stroke(AccessPalette.gold.opacity(0.20), lineWidth: 1))
     }

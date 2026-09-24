@@ -128,12 +128,17 @@ pending real event validation. See docs/LOCAL-PURCHASE-TESTING.md for the user w
 - The trial introduction explains Safari address-bar search redirection, states the
   duration once, and places "No automatic charge" above the action. A verified trial
   activation dismisses the offer; cancellation/pending approval does not grant access.
-- The lifetime picker uses smaller artwork and no tier descriptions. Tier titles
-  reserve consistent space, and the entire card no longer animates on each selection.
+- The lifetime page omits the large introductory heading to give its lion artwork
+  and playful tier descriptions more room. Tier text reserves consistent space,
+  and the entire card no longer animates on each selection.
   The iOS control uses a continuous drag without haptic calls; VoiceOver adjustments
   still select discrete prices. macOS retains its native slider.
 - The primary action stays outside the scrolling content. The sandbox cohort footer
   exists only in DEBUG local-test mode and has no production replacement.
+- Gold emphasizes the primary trial action. Reassurance is neutral, lifetime pricing
+  is an underlined secondary link, and a divider separates purchase restoration.
+- Restore purchases uses an outlined neutral secondary button with a restore icon,
+  a 44-point minimum target, and a progress indicator while checking with Apple.
 - Signed iPhone and Mac builds and a simulator build passed with Xcode 26.6. The
   device build was installed and launched on Brenden's iPhone for manual sandbox QA.
   Simulator images exercise visual fixtures, not actual purchases; physical haptic
