@@ -25,6 +25,18 @@ function openPreferences() {
 }
 
 function updateMonetization(payload) {
+    const verification = document.getElementById("access-verification");
+    const verifying = payload.isVerifyingAccess === true;
+    const verificationMessage = payload.accessVerificationMessage || "";
+    verification.classList.toggle("hidden", !verifying && !verificationMessage);
+    document.getElementById("access-verification-title").textContent = verifying
+        ? "Checking App Store access…" : "Check your App Store access";
+    document.getElementById("access-verification-message").textContent = verifying
+        ? "Checking your saved trial and lifetime access with Apple." : verificationMessage;
+    const retry = document.getElementById("retry-access");
+    retry.disabled = verifying;
+    retry.textContent = verifying ? "Checking…" : "Retry verification";
+    retry.onclick = () => webkit.messageHandlers.controller.postMessage({ action: "retry-access" });
     setupAccess = { allowed: payload.accessAllowed === true, state: payload.accessState };
     const controls = document.getElementById("setup-test-controls");
     const destination = document.getElementById(setupAccess.allowed ? "setup-test-primary" : "setup-help");

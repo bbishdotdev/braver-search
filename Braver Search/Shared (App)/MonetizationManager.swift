@@ -6,6 +6,8 @@ final class MonetizationManager: ObservableObject {
     static let shared = MonetizationManager()
 
     @Published private(set) var access = AccessStore.decision()
+    @Published private(set) var accessVerificationMessage: String?
+    @Published private(set) var isVerifyingAccess = false
     @Published private(set) var userState: MonetizationUserState
     @Published private(set) var hasDonated: Bool
     @Published private(set) var donationPurchaseCount: Int
@@ -24,7 +26,7 @@ final class MonetizationManager: ObservableObject {
     }
 
     var canShowSupport: Bool {
-        access.state.canTip
+        access.state.canTip && accessVerificationMessage == nil && !isVerifyingAccess
     }
 
     func configureIfNeeded() {
@@ -67,10 +69,15 @@ final class MonetizationManager: ObservableObject {
         lastDonationProductID = defaults.string(forKey: MonetizationDefaultsKey.lastDonationProductID)
     }
 
-    func resolveUserState() async {
+    func resolveUserState(forceRefresh: Bool = false) async {
+        guard !isVerifyingAccess else { return }
         configureIfNeeded()
-        await AccessStore.refresh()
+        isVerifyingAccess = true
+        notifyChange()
+        accessVerificationMessage = await AccessStore.refresh(forceRefresh: forceRefresh)
         refreshAccess()
+        isVerifyingAccess = false
+        notifyChange() // The Mac view also needs updates when the access decision is unchanged.
     }
 
     func refreshAccess() {
