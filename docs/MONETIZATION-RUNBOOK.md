@@ -1,3 +1,5 @@
+> September 24 update: TestFlight/Apple Sandbox now uses verified sandbox acquisition evidence to exercise the new-user flow with real purchases. Production activation remains disabled. See [current verification](MONETIZATION-VERIFICATION.md) and the [App Review audit](APP-REVIEW-READINESS.md) before acting on historical troubleshooting below.
+
 # Braver Search: 14-day trial and lifetime access
 
 Implementation branch: `codex/lifetime-unlock`. Production enforcement is deliberately OFF: `AccessConfiguration.launchDate == nil`. The app remains a free download. Seven Apple products are now configured separately in App Store Connect; local catalog edits do not publish or approve them. See the [current verification status](MONETIZATION-VERIFICATION.md#current-status--september-23).
@@ -186,9 +188,7 @@ setup diagnostic, expiry, lifetime purchase, then Restore Purchases on the other
 Also test cancellation and refund reconciliation. Legacy fixture success is separate
 from the still-required genuine production upgrade/receipt test.
 
-**TestFlight:** these DEBUG controls are intentionally absent. A review/TestFlight-safe
-sandbox cohort path still needs implementation before an enabled release candidate;
-do not set a modern production cutoff and assume a fresh sandbox account will be new.
+**TestFlight:** these DEBUG controls are intentionally absent. Verified Sandbox app acquisitions now use the new-user flow automatically, with real StoreKit purchases and the full 14-day duration. The public acquisition cutoff is applied only to production; see LOCAL-PURCHASE-TESTING.md.
 Keep production enforcement disabled until this and the release timing are settled.
 
 ## Remote Mac signing from SSH

@@ -1,3 +1,13 @@
+## TestFlight builds (September 24 update)
+
+Release builds now recognize Apple's **verified Sandbox app transaction** and show the new-user flow automatically, despite Apple's fixed 2013 original acquisition date. No Xcode launch arguments are needed. Existing sandbox purchases are restored, so use a fresh sandbox tester or clear its purchase history and sign out/in if you need to start over.
+
+Both platforms use the same policy. Trial and lifetime access still require genuine verified Apple sandbox transactions; expiry remains **14 real days**. TestFlight has no time-shift or free-unlock controls. The Debug instructions below remain useful for accelerated expiry and legacy scenarios. Production stays free while `launchDate` is nil; sandbox testing does not set the public cutoff.
+
+On Mac, install the new build from TestFlight, enable Braver Search in Safari Settings → Extensions, allow the supported search provider, and open the app once so it reads its receipt. Check blocked-before-trial, active trial, lifetime purchase and Restore purchases. To verify cross-device ownership, use the same sandbox purchasing account on iPhone and Mac, purchase once and restore on the other device. Do not clear purchase history between the purchase and restore.
+
+Apple uses sandbox transactions for TestFlight, with no real charge. For a specifically configured sandbox tester, follow [Apple's current sandbox sign-in instructions](https://developer.apple.com/documentation/storekit/testing-in-app-purchases-with-sandbox); do not assume TestFlight automatically uses the tester selected for an Xcode-installed build. Confirm the account/environment shown in Apple's purchase sheet.
+
 # Local purchase testing: steps for Brenden
 
 Production remains free. Yesterday's cutoff is used only in Debug local-test mode.

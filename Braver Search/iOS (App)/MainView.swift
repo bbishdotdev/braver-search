@@ -359,6 +359,10 @@ struct MainView: View {
             }
             .buttonStyle(.plain)
 
+            Link("Privacy Policy", destination: URL(string: "https://www.bbish.dev/braver-search/privacy")!)
+                .font(.system(size: 14, weight: .medium))
+                .tint(IOSTheme.tertiaryText)
+
             Text(.init("Not affiliated with Brave Software Inc. [About Brave Search](https://search.brave.com)"))
                 .font(.system(size: 14, weight: .medium))
                 .foregroundStyle(IOSTheme.tertiaryText)

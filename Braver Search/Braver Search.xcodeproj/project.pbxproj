@@ -7,6 +7,10 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		BBA600000000000000000000 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = BBA600000000000000000010; };
+		BBA600000000000000000001 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = BBA600000000000000000010; };
+		BBA600000000000000000002 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = BBA600000000000000000010; };
+		BBA600000000000000000003 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = BBA600000000000000000010; };
 		BBA200000000000000000013 /* SetupCheck.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBA100000000000000000001; };
 		BBA200000000000000000012 /* SetupCheck.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBA100000000000000000001; };
 		BBA200000000000000000011 /* SetupCheck.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBA100000000000000000001; };
@@ -102,6 +106,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		BBA600000000000000000010 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = SOURCE_ROOT; };
 		BBA100000000000000000001 /* SetupCheck.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Shared (Telemetry)/SetupCheck.swift"; sourceTree = SOURCE_ROOT; };
 		BBA100000000000000000000 /* DurableAnalytics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Shared (Telemetry)/DurableAnalytics.swift"; sourceTree = SOURCE_ROOT; };
 		CE1A00012E00000100B47EE3 /* AnalyticsConfig.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = AnalyticsConfig.xcconfig; sourceTree = "<group>"; };
@@ -586,6 +591,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				BBA600000000000000000000 /* PrivacyInfo.xcprivacy in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -593,6 +599,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				BBA600000000000000000001 /* PrivacyInfo.xcprivacy in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -600,6 +607,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				BBA600000000000000000002 /* PrivacyInfo.xcprivacy in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -607,6 +615,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				BBA600000000000000000003 /* PrivacyInfo.xcprivacy in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

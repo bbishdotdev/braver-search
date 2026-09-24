@@ -1,31 +1,18 @@
 # Monetization implementation and verification
 
-Branch: `codex/lifetime-unlock`. Latest verification: September 23, 2026.
+Branch: `codex/lifetime-unlock`. Latest verification: September 24, 2026.
 
-## Current status — September 23
+## Current status — September 24
 
-This summary and the September 23 follow-ups supersede the historical implementation
-record below. In particular, the old missing-products, signing, and uninstalled-phone
-notes are not current blockers.
+This summary supersedes older dated blockers below.
 
-- Seven non-consumables are configured in App Store Connect: one free 14-day trial
-  and six lifetime tiers at $2.99, $4.99, $9.99, $24.99, $49.99, and $99.99 US.
-  The new `braversearch.lifetime.thanks` entry is Apple ID **6815506243**, at $2.99
-  with worldwide availability. All seven products show **Ready for Review** in the
-  existing draft submission. All six lifetime products have updated native review
-  screenshots and six-tier review notes; this is not Apple approval or submission.
-- The six-tier app has new matching High five! and Now that’s love! artwork, with
-  $9.99 Cheers! suggested. Signed iPhone and Mac builds passed; the app is installed
-  and launched on Brenden's iPhone for manual testing.
-- Final local StoreKit suites passed: iOS **5 XCTest + 1 Swift Testing** and macOS
-  **6 XCTest + 1 Swift Testing**, including the new $2.99 restoration/refund case.
-  A verified-transaction fallback fixes a reproduced missing entitlement-inventory
-  edge. Detailed evidence and Mac log paths appear in the last section.
-- Real Apple sandbox purchases, cross-device restoration, signed Safari runtime,
-  genuine legacy upgrades, and the no-payment-method account experience are not
-  established by these local tests. Apple review and a public activation cutoff
-  remain outstanding. `AccessConfiguration.launchDate` is still nil; production
-  monetization enforcement is off.
+- All seven non-consumables are configured and **Ready for Review**, with current native review screenshots. The trial screenshot and six-tier review notes were updated September 24 and restored to the same seven-item draft. No final Apple review submission was made.
+- The owner confirmed real iPhone sandbox trial and lifetime purchases, plus ordinary Safari redirects blocked before trial, allowed during trial, blocked after accelerated Debug expiry, and resumed after lifetime purchase.
+- Actual iOS Safari popup screenshots cover not-started, expired and lifetime states. These images use explicit Debug visual fixtures; they are not additional purchase evidence.
+- Release now supports real sandbox new-user testing without Debug flags. Apple's fixed sandbox acquisition date cannot grandfather testers. Environment switches clear cached trial/lifetime state, and reconciliation filters transactions to the acquisition environment.
+- September 24 local iOS suite: 5 XCTest + 1 Swift Testing passed. Policy checks pass in Debug and Release; 89 JavaScript tests pass. Final CI status must be read live.
+- Signed Mac compilation and signature verification pass. Native hosted tests stall before application code in macOS sandbox initialization; Mac Safari behavior and cross-device sandbox restoration remain manual checks.
+- Public enforcement remains off (`launchDate == nil`). **Do not publish this as the monetization launch** without product approval and a final cutoff build. The [App Review audit](APP-REVIEW-READINESS.md) also identifies stale public privacy declarations and policy text that need owner updates.
 
 Current native simulator screenshots (visual fixtures, not live purchases):
 [Trial](monetization/six-tier-flow/trial.png),
@@ -452,3 +439,13 @@ Verified visually in the actual simulator Safari popup and updated
 copy in the Mac Downloads folder. All 89 JavaScript tests and signed generic-iOS,
 Mac, and simulator builds passed. The physical iPhone was unavailable as an Xcode
 destination, so this last popup copy update has not been installed there yet.
+
+## September 24 release preparation
+
+- Trial review image: `monetization/six-tier-flow/trial.png` saved in App Store Connect for `braversearch.trial.14day`, visually confirmed after reload. Product restored to the existing seven-item draft; final submission untouched.
+- iOS StoreKit local suite passed after seeding the cold Xcode test receipt before acquisition checks: `/tmp/braver-release-ios-tests.log`.
+- Debug and Release policy executables each passed 21 core checks plus 12 sandbox/environment checks; Debug additionally passed 8 local cohort checks.
+- Release builds passed for signed native Mac and iOS Simulator: `/tmp/braver-release-mac-build.log`, `/tmp/braver-release-ios-build.log`. Shared privacy manifests bundled in both apps and extensions.
+- Mac hosted test runner failed before connecting, stalled in `_libsecinit_appsandbox` during dyld initialization. Sample: `/tmp/braver-release-mac-sample.txt`. Owner reported no permission prompt visible. This does not establish a release-app crash or passing Safari runtime behavior. CI Mac tests passed separately.
+- No native Mac Safari automation surface is available in this session. Manual Mac TestFlight purchase/restore/Safari validation remains necessary.
+- Public App Privacy still says Data Not Collected; policy at `https://www.bbish.dev/braver-search/privacy` is reachable but describes older telemetry. Owner must update those public disclosures before submission; see APP-REVIEW-READINESS.md.
