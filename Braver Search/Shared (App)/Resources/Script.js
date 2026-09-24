@@ -52,17 +52,28 @@ function updateMonetization(payload) {
     if (access) {
         access.classList.toggle("hidden", payload.accessState === "free");
         const expired = payload.accessState === "expired";
+        const eligible = payload.accessState === "eligible";
         access.classList.toggle("access-expired", expired);
-        const summary = document.getElementById("access-summary-default");
-        summary.textContent = `${payload.accessTitle} · ${payload.accessMessage}`;
-        summary.classList.toggle("hidden", expired);
-        document.getElementById("access-summary-expired").classList.toggle("hidden", !expired);
+        access.classList.toggle("access-needs-action", expired || eligible);
+        document.getElementById("access-summary-badge").classList.toggle("hidden", !expired);
+        document.getElementById("access-summary-title").textContent = expired
+            ? "Safari redirects are paused" : eligible ? "Start your free trial to enable Safari redirects" : payload.accessTitle;
+        document.getElementById("access-summary-message").textContent = expired
+            ? "Your trial has ended. Pay once to turn redirects back on."
+            : eligible ? "Try it for 14 days. No automatic charge." : payload.accessMessage;
+        document.getElementById("access-summary-action").textContent = eligible ? "Start free trial"
+            : expired ? "Unlock lifetime access" : payload.accessState === "trial" ? "See lifetime prices"
+            : payload.accessState === "unknown" ? "Check my access" : "View access";
         access.onclick = () => webkit.messageHandlers.controller.postMessage({ action: "open-lifetime" });
     }
     const supportSection = document.querySelector(".support-section");
     const supportProducts = document.querySelector(".support-products");
-    const reviewButton = document.querySelector(".review-button");
+    const reviewButton = document.querySelector(".review-card .review-button");
     const reviewIcon = document.querySelector(".review-icon");
+
+    if (reviewButton) {
+        reviewButton.onclick = () => webkit.messageHandlers.controller.postMessage({ action: "open-review" });
+    }
 
     if (!supportSection || !supportProducts || !reviewButton) {
         return;
@@ -100,9 +111,6 @@ function updateMonetization(payload) {
         supportProducts.appendChild(card);
     });
 
-    reviewButton.onclick = () => {
-        webkit.messageHandlers.controller.postMessage({ action: "open-review" });
-    };
 }
 
 function focusSupportSection() {

@@ -22,13 +22,12 @@
       <button id="retry-access" class="review-button" type="button">Retry verification</button>
     </section>
     <button id="access-summary" class="setup-action hidden" type="button">
-      <span id="access-summary-default"></span>
-      <span id="access-summary-expired" class="hidden">
-        <span class="expiry-badge"><span aria-hidden="true">⏸</span> TRIAL EXPIRED</span>
-        <span class="expiry-title">Safari redirects are paused</span>
-        <span class="expiry-message">Choose a one-time purchase to turn them back on.</span>
-        <span class="expiry-cta">Unlock lifetime access <span aria-hidden="true">→</span></span>
+      <span class="access-summary-copy">
+        <span id="access-summary-badge" class="hidden">TRIAL EXPIRED</span>
+        <span id="access-summary-title"></span>
+        <span id="access-summary-message"></span>
       </span>
+      <span class="access-summary-cta"><span id="access-summary-action"></span><span aria-hidden="true">→</span></span>
     </button>
     <section class="summary-grid">
       <article class="summary-card status-card">
