@@ -238,7 +238,7 @@ class ViewController: PlatformViewController, WKNavigationDelegate, WKScriptMess
 #if os(macOS)
     private func showLifetime() {
         guard presentedViewControllers?.isEmpty != false else { return }
-        presentAsSheet(NSHostingController(rootView: LifetimeAccessView()))
+        presentAsSheet(LifetimeAccessView.makeSheetController())
     }
 
     private func configureWindowLayout() {

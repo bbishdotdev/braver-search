@@ -9,6 +9,8 @@ private enum AccessPalette {
 
 /// Trial introduction and lifetime pricing are separate pages in the same sheet.
 struct LifetimeAccessView: View {
+    // AppKit owns Mac presentation; iOS sheets use their SwiftUI environment.
+    var closeSheet: (() -> Void)? = nil
     private enum Page { case trial, lifetime, status }
     @Environment(\.dismiss) private var dismiss
     @Environment(\.scenePhase) private var scenePhase
@@ -96,7 +98,7 @@ struct LifetimeAccessView: View {
         }
         .onChange(of: access.state) { state in
             // Also handles a trial approved later through Transaction.updates.
-            if state == .trial && !choseLifetime { dismiss() }
+            if state == .trial && !choseLifetime { close() }
         }
         .onChange(of: index) { _ in
             DurableAnalytics.shared.capture("lifetime_tier_selected", properties: ["product_id": option.id])
@@ -131,11 +133,15 @@ struct LifetimeAccessView: View {
                     .foregroundStyle(AccessPalette.gold)
             }
             Spacer()
-            Button { dismiss() } label: {
+            Button { close() } label: {
                 Image(systemName: "xmark").font(.system(size: 13, weight: .semibold))
                     .foregroundStyle(.white.opacity(0.7)).frame(width: 44, height: 44)
                     .background(.white.opacity(0.08), in: Circle())
             }.buttonStyle(.plain).accessibilityLabel("Close")
+                .accessibilityIdentifier("close-access")
+                #if os(macOS)
+                .keyboardShortcut(.cancelAction)
+                #endif
         }.padding(.horizontal, 24).padding(.top, 12).padding(.bottom, 4).background(page == .trial ? Color.clear : Color.black)
     }
 
@@ -149,7 +155,7 @@ struct LifetimeAccessView: View {
                 if store.isAvailable(AccessConfiguration.trialID) {
                     primaryButton("Start free trial", id: "start-free-trial", disabled: false) {
                         await store.purchase(id: AccessConfiguration.trialID)
-                        if monetization.access.state == .trial { dismiss() }
+                        if monetization.access.state == .trial { close() }
                     }
                 } else {
                     catalogRetry(for: AccessConfiguration.trialID)
@@ -185,7 +191,7 @@ struct LifetimeAccessView: View {
                 }
                 primaryButton("Check my access", id: "check-access", disabled: false) { await store.restore() }
             } else {
-                primaryButton("Done", id: "access-done", disabled: false) { dismiss() }
+                primaryButton("Done", id: "access-done", disabled: false) { close() }
             }
             if access.state != .unknown {
                 Divider().overlay(.white.opacity(0.08)).padding(.bottom, 4)
@@ -216,6 +222,22 @@ struct LifetimeAccessView: View {
         .padding(.horizontal, 24).padding(.top, 12).padding(.bottom, 12)
         .frame(maxWidth: 480).frame(maxWidth: .infinity).background(.black)
     }
+
+    private func close() {
+        if let closeSheet { closeSheet() } else { dismiss() }
+    }
+
+    #if os(macOS)
+    @MainActor
+    static func makeSheetController() -> NSHostingController<LifetimeAccessView> {
+        let controller = NSHostingController(rootView: LifetimeAccessView())
+        controller.rootView.closeSheet = { [weak controller] in
+            guard let controller, let presenter = controller.presentingViewController else { return }
+            presenter.dismiss(controller)
+        }
+        return controller
+    }
+    #endif
 
     private var pricePicker: some View {
         VStack(spacing: 14) {
