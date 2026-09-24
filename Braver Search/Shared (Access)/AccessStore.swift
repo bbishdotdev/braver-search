@@ -81,6 +81,9 @@ enum AccessStore {
             if AccessConfiguration.lifetimeIDs.contains(transaction.productID) { lifetime.append((transaction.productID, transaction.id)) }
             if transaction.productID == AccessConfiguration.trialID { trialStart = transaction.originalPurchaseDate; trialTransactionID = transaction.id }
         }
+        #if DEBUG
+        print("Access refresh: inventory lifetime=\(lifetime.map { $0.0 }.sorted()) trial=\(trialStart != nil)")
+        #endif
         // The entitlement inventory can lag a finished purchase even when its individual
         // signed transaction is already available. Recover only verified, unrevoked
         // non-consumables; keep their original dates and the same revision/revocation guards.
@@ -97,6 +100,9 @@ enum AccessStore {
                 lifetime.append((id, transaction.id))
             }
         }
+        #if DEBUG
+        print("Access refresh: reconciled lifetime=\(lifetime.map { $0.0 }.sorted()) trial=\(trialStart != nil)")
+        #endif
         // No verified inventory or individual transaction means no payment evidence.
         try? update { record in
             guard record.entitlementRevision == revision else { return } // A purchase/refund delivered during this scan wins.

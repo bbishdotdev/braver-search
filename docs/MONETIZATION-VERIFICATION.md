@@ -311,3 +311,21 @@ availability boundary and rejects an unconfigured ID. Logs on the Mac:
 iPhone. Native simulator fixture capture:
 [Missing-price recovery](monetization/six-tier-flow/missing-price.png).
 Production monetization remains inactive; no release or merge occurred.
+
+## Physical sandbox reset investigation — September 24
+
+Brenden reported successful real sandbox trial activation followed by a successful
+lifetime purchase and smooth UI transitions. Redirect enforcement before trial,
+after expiry, and after payment is still awaiting physical-device validation.
+
+After clearing sandbox history and using Restore, the phone still showed lifetime
+access. A newly signed development build added DEBUG-only logs of product IDs and
+trial presence before and after the individual-transaction fallback. On the actual
+phone, `Transaction.currentEntitlements` itself returned
+`braversearch.lifetime.legend` and the trial on three refreshes. Reconciliation
+returned the same results. Thus the continued unlock is backed by StoreKit's
+current inventory, rather than solely by an old app record or the fallback added
+for finished transactions. Apple-side reset/account/cache reconciliation remains
+unresolved. Do not force-clear payment evidence to claim a successful reset test.
+Mac log: `/tmp/braver-reset-device.log`; successful signed build log:
+`/tmp/braver-reset-iphone.log`. Logs exclude receipts, account details, and transaction IDs.
