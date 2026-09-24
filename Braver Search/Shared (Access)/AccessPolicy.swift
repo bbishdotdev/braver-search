@@ -30,6 +30,20 @@ struct AccessRecord: Codable {
     var lastObservedAt: Date?
     var lastUptime: TimeInterval?
 
+    /// Switching between TestFlight and the App Store must not carry test purchases across.
+    mutating func setVerifiedAcquisition(date: Date, environment: String) {
+        if appTransactionEnvironment != environment {
+            trialStart = nil
+            lifetimeProducts = []
+            revokedTransactionIDs = []
+            lastObservedAt = nil
+            lastUptime = nil
+            entitlementRevision += 1
+        }
+        originalPurchaseDate = date
+        appTransactionEnvironment = environment
+    }
+
     /// Resist wall-clock rollback within a boot and across normal launches. This is not a server clock.
     mutating func advanceClock(now: Date, uptime: TimeInterval) -> Date {
         var effective = max(now, lastObservedAt ?? now)
@@ -100,6 +114,20 @@ struct AccessDecision: Equatable {
 }
 
 enum AccessPolicy {
+    /// Apple gives sandbox acquisitions a fixed 2013 date. TestFlight/App Review therefore
+    /// exercise the new-user flow using real transactions, independently of the public cutoff.
+    /// This never changes stored acquisition evidence or fabricates a purchase.
+    static func evaluateForStore(_ record: AccessRecord, cutoff: Date?, now: Date) -> AccessDecision {
+        guard record.appTransactionEnvironment == "Sandbox", record.originalPurchaseDate != nil else {
+            return evaluate(record, cutoff: cutoff, now: now)
+        }
+        var sandbox = record
+        let sandboxCutoff = Date(timeIntervalSince1970: 1)
+        sandbox.originalPurchaseDate = sandboxCutoff
+        sandbox.legacyFirstUse = nil
+        return evaluate(sandbox, cutoff: sandboxCutoff, now: now)
+    }
+
     static func evaluate(_ record: AccessRecord, cutoff: Date?, now: Date) -> AccessDecision {
         func result(_ state: AccessState, _ expires: Date? = nil) -> AccessDecision { AccessDecision(state: state, expiresAt: expires) }
         guard let cutoff, now >= cutoff else { return result(.free) }

@@ -5,3 +5,5 @@ access_test_dir=$(mktemp -d)
 trap 'rm -rf "$access_test_dir"' EXIT
 xcrun swiftc -D DEBUG -swift-version 5 'Braver Search/Shared (Access)/AccessPolicy.swift' scripts/AccessPolicyTests.swift -o "$access_test_dir/access-tests"
 "$access_test_dir/access-tests"
+xcrun swiftc -swift-version 5 'Braver Search/Shared (Access)/AccessPolicy.swift' scripts/AccessPolicyTests.swift -o "$access_test_dir/access-release-tests"
+"$access_test_dir/access-release-tests"
