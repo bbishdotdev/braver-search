@@ -7,7 +7,7 @@
 - **Public release is not ready:** the production activation/grandfathering cutoff is unset.
 - **Privacy disclosure needs correction:** live App Store Connect says Data Not Collected, contrary to the shipped PostHog event transport.
 - The live privacy policy is reachable, but its four-event list and statement that access status stays on-device are outdated.
-- Add required-reason privacy declarations for UserDefaults and system uptime, and direct privacy links in both apps.
+- Added required-reason privacy declarations for UserDefaults and system uptime, and direct privacy links in both apps; all four Release bundle manifests validate.
 - TestFlight/App Review sandbox acquisitions need a new-user path because Apple supplies a fixed 2013 acquisition date. This branch now implements it using verified StoreKit evidence.
 - iPhone sandbox purchase/enforcement lifecycle was confirmed by the owner. Mac Safari and cross-device restoration still need actual runtime verification.
 
@@ -53,7 +53,7 @@ No app-hosted UGC/messaging service is present. Search results open in Safari. T
 
 ### Technical stability
 
-The iOS CI timeout occurred while obtaining AppTransaction on a cold StoreKit test session before a receipt existed. The test now creates a real test transaction before acquisition/restore checks. Local iOS tests pass; CI results must be checked on the final commit. Signed Mac compilation passes, but a hosted test is stalled inside OS sandbox initialization before application code, so this is not Mac Safari verification.
+The iOS CI StoreKit test repeatedly exceeded its 180-second limit on Xcode 16.4/iOS 18.5 after loading the catalog. Seeding a real test purchase before acquisition checks did not resolve CI; the exact stalled operation was not established by those logs. The same suite passes locally on Xcode 26.6/iOS 18.6, including on a newly created simulator. CI now uses deployment's Xcode 26.3 toolchain and explicitly selects iOS 26.2; final results must still be checked. Signed Mac compilation passes, but a hosted test stalled inside OS sandbox initialization before application code, so this is not Mac Safari verification.
 
 ### UX and reviewability
 
