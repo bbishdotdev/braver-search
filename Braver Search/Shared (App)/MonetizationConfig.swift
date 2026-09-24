@@ -23,12 +23,16 @@ enum MonetizationConfig {
     static let supportURL = URL(string: "braversearch://support")!
     static let reviewURL = URL(string: "https://apps.apple.com/app/id6740840706?action=write-review")!
     static let lifetimeOptions: [DonationOption] = [
-        DonationOption(id: AccessConfiguration.lifetimeIDs[0], displayName: "A little love", fallbackPrice: "$4.99", description: "A small kindness. A big smile.", assetName: "TipThanks"),
-        DonationOption(id: AccessConfiguration.lifetimeIDs[1], displayName: "A happy lion", fallbackPrice: "$9.99", description: "A little boost for this little app.", assetName: "TipCheers"),
-        DonationOption(id: AccessConfiguration.lifetimeIDs[2], displayName: "Big-hearted lion", fallbackPrice: "$24.99", description: "Helping this little app grow.", assetName: "TipLifesaver"),
-        DonationOption(id: AccessConfiguration.lifetimeIDs[3], displayName: "Lionhearted", fallbackPrice: "$49.99", description: "You’re making this lion’s day.", assetName: "TipLifesaver"),
-        DonationOption(id: AccessConfiguration.lifetimeIDs[4], displayName: "You’re a legend", fallbackPrice: "$99.99", description: "Little lion. Enormous gratitude.", assetName: "TipMax")
+        DonationOption(id: AccessConfiguration.thanksLifetimeID, displayName: "Thanks!", fallbackPrice: "$2.99", description: "A little kindness goes a long way.", assetName: "TipThanks"),
+        DonationOption(id: AccessConfiguration.highFiveLifetimeID, displayName: "High five!", fallbackPrice: "$4.99", description: "Paws up. You made my day!", assetName: "TipHighFive"),
+        DonationOption(id: AccessConfiguration.cheersLifetimeID, displayName: "Cheers!", fallbackPrice: "$9.99", description: "A coffee for me. A little joy from you.", assetName: "TipCheers"),
+        DonationOption(id: AccessConfiguration.lifesaverLifetimeID, displayName: "You’re a lifesaver!", fallbackPrice: "$24.99", description: "A helping paw that means so much.", assetName: "TipLifesaver"),
+        DonationOption(id: AccessConfiguration.loveLifetimeID, displayName: "Now that’s love!", fallbackPrice: "$49.99", description: "Sending a great big hug right back.", assetName: "TipLove"),
+        DonationOption(id: AccessConfiguration.gratitudeLifetimeID, displayName: "I can’t thank you enough!", fallbackPrice: "$99.99", description: "Your generosity means the world to me.", assetName: "TipMax")
     ]
+    static var suggestedLifetimeIndex: Int {
+        lifetimeOptions.firstIndex { $0.id == AccessConfiguration.suggestedLifetimeID } ?? 0
+    }
 
     static let donationOptions: [DonationOption] = [
         DonationOption(

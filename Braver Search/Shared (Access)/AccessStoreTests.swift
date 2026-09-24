@@ -47,7 +47,10 @@ import StoreKitTest
         let ids = AccessConfiguration.lifetimeIDs + [AccessConfiguration.trialID]
         let products = try await Product.products(for: ids)
         print("StoreKit test: lifetime catalog loaded, \(products.count) products")
-        XCTAssertEqual(products.count, 6)
+        XCTAssertEqual(Set(products.map(\.id)), Set(ids))
+        XCTAssertEqual(MonetizationConfig.lifetimeOptions.map(\.id), AccessConfiguration.lifetimeIDs)
+        XCTAssertEqual(MonetizationConfig.lifetimeOptions[MonetizationConfig.suggestedLifetimeIndex].id, AccessConfiguration.suggestedLifetimeID)
+        XCTAssertEqual(products.first { $0.id == AccessConfiguration.thanksLifetimeID }?.price, Decimal(string: "2.99"))
         XCTAssertTrue(products.allSatisfy { $0.type == .nonConsumable })
         XCTAssertEqual(products.first { $0.id == AccessConfiguration.trialID }?.price, 0)
 
@@ -66,7 +69,7 @@ import StoreKitTest
         XCTAssertEqual(restoredTrial.state, .trial)
         XCTAssertEqual(restoredTrial.expiresAt, trial.originalPurchaseDate.addingTimeInterval(14 * 86400))
 
-        let paid = try await session.buyProduct(identifier: AccessConfiguration.lifetimeIDs[1], options: [])
+        let paid = try await session.buyProduct(identifier: AccessConfiguration.thanksLifetimeID, options: [])
         let verifiedPaid = try await verifiedTransaction(id: paid.productID, transactionID: paid.id)
         try AccessStore.accept(verifiedPaid)
         XCTAssertEqual(AccessStore.decision(cutoff: cutoff).state, .lifetime)

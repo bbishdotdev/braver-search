@@ -81,7 +81,23 @@ enum AccessStore {
             if AccessConfiguration.lifetimeIDs.contains(transaction.productID) { lifetime.append((transaction.productID, transaction.id)) }
             if transaction.productID == AccessConfiguration.trialID { trialStart = transaction.originalPurchaseDate; trialTransactionID = transaction.id }
         }
-        // StoreKit caches current entitlements offline. An empty verified inventory is not payment.
+        // The entitlement inventory can lag a finished purchase even when its individual
+        // signed transaction is already available. Recover only verified, unrevoked
+        // non-consumables; keep their original dates and the same revision/revocation guards.
+        let missingIDs = AccessConfiguration.lifetimeIDs.filter { id in !lifetime.contains { $0.0 == id } }
+            + (trialStart == nil ? [AccessConfiguration.trialID] : [])
+        for id in missingIDs {
+            guard let result = await Transaction.latest(for: id), case .verified(let transaction) = result,
+                  transaction.productType == .nonConsumable, transaction.revocationDate == nil,
+                  !transaction.isUpgraded else { continue }
+            if id == AccessConfiguration.trialID {
+                trialStart = transaction.originalPurchaseDate
+                trialTransactionID = transaction.id
+            } else {
+                lifetime.append((id, transaction.id))
+            }
+        }
+        // No verified inventory or individual transaction means no payment evidence.
         try? update { record in
             guard record.entitlementRevision == revision else { return } // A purchase/refund delivered during this scan wins.
             record.entitlementRevision += 1
@@ -162,7 +178,7 @@ enum AccessStore {
         if scenario == "grandfathered" { record.originalPurchaseDate = Date(timeIntervalSince1970: 0) }
         if scenario == "trial" { record.trialStart = Date().addingTimeInterval(-86400) }
         if scenario == "expired" { record.trialStart = Date().addingTimeInterval(-15 * 86400) }
-        if scenario == "lifetime" { record.lifetimeProducts = [AccessConfiguration.lifetimeIDs[1]] }
+        if scenario == "lifetime" { record.lifetimeProducts = [AccessConfiguration.suggestedLifetimeID] }
         if scenario == "unknown" { record.originalPurchaseDate = nil }
         try? persistence.locked { root in
             try JSONEncoder().encode(record).write(to: root.appendingPathComponent("access-preview.json"), options: .atomic)

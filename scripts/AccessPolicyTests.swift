@@ -33,6 +33,10 @@ import Foundation
         for id in AccessConfiguration.lifetimeIDs {
             expect(AccessRecord(lifetimeProducts: [id]), .lifetime)
         }
+        for state in [AccessState.eligible, .trial, .expired, .lifetime, .unknown] {
+            precondition(!state.canTip, "Monetized and unverified users must not see donations")
+        }
+        precondition(AccessState.grandfathered.canTip)
         var clock = AccessRecord()
         precondition(clock.advanceClock(now: now, uptime: 100) == now)
         precondition(clock.advanceClock(now: now.addingTimeInterval(-86400), uptime: 160) == now.addingTimeInterval(60))

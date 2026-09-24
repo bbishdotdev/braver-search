@@ -7,8 +7,16 @@ enum AccessConfiguration {
     static let launchDate: Date? = nil
     static let trialDuration: TimeInterval = 14 * 24 * 60 * 60
     static let trialID = "braversearch.trial.14day"
-    static let lifetimeIDs = ["braversearch.lifetime.coffee", "braversearch.lifetime.supporter",
-                              "braversearch.lifetime.champion", "braversearch.lifetime.hero", "braversearch.lifetime.legend"]
+    static let thanksLifetimeID = "braversearch.lifetime.thanks"
+    static let highFiveLifetimeID = "braversearch.lifetime.coffee"
+    static let cheersLifetimeID = "braversearch.lifetime.supporter"
+    static let lifesaverLifetimeID = "braversearch.lifetime.champion"
+    static let loveLifetimeID = "braversearch.lifetime.hero"
+    static let gratitudeLifetimeID = "braversearch.lifetime.legend"
+    static let suggestedLifetimeID = cheersLifetimeID
+    // Existing identifiers stay stable even when the customer-facing names change.
+    static let lifetimeIDs = [thanksLifetimeID, highFiveLifetimeID, cheersLifetimeID,
+                              lifesaverLifetimeID, loveLifetimeID, gratitudeLifetimeID]
 }
 
 struct AccessRecord: Codable {
