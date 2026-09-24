@@ -103,6 +103,10 @@ function focusSupportSection() {
 }
 
 document.querySelector("button.open-preferences").addEventListener("click", openPreferences);
+document.getElementById("privacy-policy")?.addEventListener("click", event => {
+    event.preventDefault();
+    webkit.messageHandlers.controller.postMessage({ action: "open-privacy" });
+});
 
 function updateSetup(payload) {
     lastSetupSnapshot = payload;

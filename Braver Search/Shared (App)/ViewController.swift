@@ -147,6 +147,8 @@ class ViewController: PlatformViewController, WKNavigationDelegate, WKScriptMess
             MacAppAnalytics.track("setup_help_opened")
         case "open-review":
             NSWorkspace.shared.open(MonetizationConfig.reviewURL)
+        case "open-privacy":
+            NSWorkspace.shared.open(URL(string: "https://www.bbish.dev/braver-search/privacy")!)
         case "purchase":
             guard let productID = payload["productId"] as? String,
                   let option = MonetizationConfig.donationOptions.first(where: { $0.id == productID }) else {
