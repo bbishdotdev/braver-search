@@ -417,3 +417,24 @@ The new build installed on the phone; initial launch was blocked by its lock scr
 Mac native visual/runtime review remains outstanding.
 [Active trial with the normal setup action](monetization/six-tier-flow/trial-setup-action.png)
 was also captured and visually checked in the simulator.
+
+## Actual Safari popup captures — September 24
+
+Captured the installed extension's actual popup in Mobile Safari on the iPhone
+16 Pro simulator (iOS 18.6), using the existing DEBUG access scenarios. Safari was
+controlled through a live serve-sim browser mirror; native PNGs were captured with
+`simctl io screenshot`. These are real Safari-hosted extension views with native
+access responses, not browser mockups or screenshots of the app's setup video.
+The access states are fixtures, not newly purchased sandbox entitlements.
+
+- [Trial not started](monetization/safari-popup/not-started.png): Redirects paused,
+  trial requirement, Start free trial in app; no misleading enabled switch.
+- [Trial expired](monetization/safari-popup/expired.png): Redirects paused, expiry
+  explanation, See lifetime prices; no misleading enabled switch.
+- [Lifetime unlocked](monetization/safari-popup/lifetime.png): normal redirect
+  switch, enabled for this capture; no purchase prompt or donation request.
+
+All three views fit within Safari's modal without clipped copy or CTAs. Enabled
+the development extension in this simulator and allowed its Google page access
+for one day to open the popup. No settings on the physical iPhone were changed.
+Copies are on the Mac in `/Users/bishop/Downloads/Braver-Safari-Popup-States/`.
