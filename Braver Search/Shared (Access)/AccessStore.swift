@@ -51,7 +51,7 @@ enum AccessStore {
                     return
                 }
                 #endif
-                decision = AccessPolicy.evaluate(record, cutoff: cutoff, now: effective)
+                decision = AccessPolicy.evaluateForStore(record, cutoff: cutoff, now: effective)
             }
         } catch { /* storage failure never grants paid access */ }
         return decision
@@ -65,19 +65,20 @@ enum AccessStore {
         if #available(iOS 16.0, macOS 13.0, *) {
             if let result = try? await AppTransaction.shared, case .verified(let app) = result {
                 try? update {
-                    $0.originalPurchaseDate = app.originalPurchaseDate
-                    $0.appTransactionEnvironment = app.environment.rawValue
+                    $0.setVerifiedAcquisition(date: app.originalPurchaseDate, environment: app.environment.rawValue)
                 }
             }
         }
         var revision = 0
-        try? update { revision = $0.entitlementRevision }
+        var environment: String?
+        try? update { revision = $0.entitlementRevision; environment = $0.appTransactionEnvironment }
         var lifetime: [(String, UInt64)] = []
         var trialTransactionID: UInt64?
         var trialStart: Date?
         for await result in Transaction.currentEntitlements {
             guard case .verified(let transaction) = result, transaction.revocationDate == nil,
-                  !transaction.isUpgraded, transaction.productType == .nonConsumable else { continue }
+                  !transaction.isUpgraded, transaction.productType == .nonConsumable,
+                  matchesEnvironment(transaction, environment) else { continue }
             if AccessConfiguration.lifetimeIDs.contains(transaction.productID) { lifetime.append((transaction.productID, transaction.id)) }
             if transaction.productID == AccessConfiguration.trialID { trialStart = transaction.originalPurchaseDate; trialTransactionID = transaction.id }
         }
@@ -92,7 +93,7 @@ enum AccessStore {
         for id in missingIDs {
             guard let result = await Transaction.latest(for: id), case .verified(let transaction) = result,
                   transaction.productType == .nonConsumable, transaction.revocationDate == nil,
-                  !transaction.isUpgraded else { continue }
+                  !transaction.isUpgraded, matchesEnvironment(transaction, environment) else { continue }
             if id == AccessConfiguration.trialID {
                 trialStart = transaction.originalPurchaseDate
                 trialTransactionID = transaction.id
@@ -127,6 +128,7 @@ enum AccessStore {
     static func accept(_ transaction: Transaction) throws {
         guard transaction.productType == .nonConsumable else { return }
         try update { record in
+            guard matchesEnvironment(transaction, record.appTransactionEnvironment) else { return }
             record.entitlementRevision += 1
             if transaction.revocationDate != nil && !record.revokedTransactionIDs.contains(transaction.id) {
                 record.revokedTransactionIDs.append(transaction.id)
@@ -139,6 +141,13 @@ enum AccessStore {
                 record.trialStart = transaction.revocationDate == nil && !record.revokedTransactionIDs.contains(transaction.id) ? transaction.originalPurchaseDate : nil
             }
         }
+    }
+
+    private static func matchesEnvironment(_ transaction: Transaction, _ environment: String?) -> Bool {
+        if #available(iOS 16.0, macOS 13.0, *), let environment {
+            return transaction.environment.rawValue == environment
+        }
+        return true
     }
 
     #if DEBUG

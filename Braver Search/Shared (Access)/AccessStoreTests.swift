@@ -114,10 +114,14 @@ import StoreKitTest
         let products = try await Product.products(for: [AccessConfiguration.trialID])
         print("StoreKit test: cohort catalog loaded, \(products.count) products")
         XCTAssertEqual(products.count, 1)
+        // A cold Xcode StoreKit session can wait indefinitely for AppTransaction.shared
+        // before it has created a receipt. Seed a real test purchase first; cohort-only
+        // eligible behavior is covered separately by the pure policy tests.
+        let trial = try await session.buyProduct(identifier: AccessConfiguration.trialID, options: [])
+        _ = try await verifiedTransaction(id: trial.productID, transactionID: trial.id)
         await AccessStore.refresh()
         print("StoreKit test: cohort acquisition refreshed")
-        XCTAssertEqual(AccessStore.decision().state, .eligible, "Verified Xcode app acquisition must support the new-user test cohort")
-        let trial = try await session.buyProduct(identifier: AccessConfiguration.trialID, options: [])
+        XCTAssertEqual(AccessStore.decision().state, .trial, "Verified Xcode acquisition and receipt must restore the trial in the new-user cohort")
         try AccessStore.accept(try await verifiedTransaction(id: trial.productID, transactionID: trial.id))
         XCTAssertEqual(AccessStore.decision().state, .trial)
         AccessStore.configureLocalTest(arguments: ["-monetization-test-cohort", "new", "-monetization-test-elapsed-days", "15"])

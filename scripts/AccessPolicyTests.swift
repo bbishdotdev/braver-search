@@ -43,6 +43,30 @@ import Foundation
         precondition(clock.advanceClock(now: now.addingTimeInterval(-86400), uptime: 1) == now.addingTimeInterval(60))
         let restored = try! JSONDecoder().decode(AccessRecord.self, from: JSONEncoder().encode(fresh))
         expect(restored, .expired, at: now.addingTimeInterval(20 * 86400))
+        // These assertions also run without DEBUG: TestFlight uses signed sandbox evidence,
+        // never a launch argument, a fixed sandbox acquisition date, or a preview entitlement.
+        var beta = AccessRecord(originalPurchaseDate: Date(timeIntervalSince1970: 1375340400),
+                                appTransactionEnvironment: "Sandbox", legacyFirstUse: cutoff.addingTimeInterval(-1))
+        precondition(AccessPolicy.evaluateForStore(beta, cutoff: nil, now: now).state == .eligible)
+        precondition(AccessPolicy.evaluateForStore(beta, cutoff: cutoff, now: now).state == .eligible)
+        beta.trialStart = now
+        precondition(AccessPolicy.evaluateForStore(beta, cutoff: nil, now: now).state == .trial)
+        precondition(AccessPolicy.evaluateForStore(beta, cutoff: nil, now: now.addingTimeInterval(14 * 86400)).state == .expired)
+        beta.lifetimeProducts = [AccessConfiguration.thanksLifetimeID]
+        precondition(AccessPolicy.evaluateForStore(beta, cutoff: nil, now: now).state == .lifetime)
+        beta.setVerifiedAcquisition(date: now, environment: "Production")
+        precondition(beta.trialStart == nil && beta.lifetimeProducts.isEmpty)
+        precondition(AccessPolicy.evaluateForStore(beta, cutoff: nil, now: now).state == .free)
+        precondition(AccessPolicy.evaluateForStore(beta, cutoff: cutoff, now: now).state == .eligible)
+        beta.setVerifiedAcquisition(date: cutoff.addingTimeInterval(-1), environment: "Production")
+        precondition(AccessPolicy.evaluateForStore(beta, cutoff: cutoff, now: now).state == .grandfathered)
+        precondition(AccessPolicy.evaluateForStore(AccessRecord(), cutoff: cutoff, now: now).state == .unknown)
+        beta.trialStart = now
+        beta.setVerifiedAcquisition(date: beta.originalPurchaseDate!, environment: "Production")
+        precondition(beta.trialStart == now, "Refreshing the same environment preserves purchases")
+        beta.setVerifiedAcquisition(date: now, environment: "Sandbox")
+        precondition(beta.trialStart == nil, "Production access must not bypass sandbox purchase testing")
+        print("Release sandbox: 12 real-entitlement, expiry, environment-switch and production-isolation checks passed.")
         #if DEBUG
         let test = LocalAccessTest(cohort: .new, cutoff: cutoff, elapsedDays: 0)
         let legacyTest = LocalAccessTest(cohort: .legacy, cutoff: cutoff, elapsedDays: 0)
