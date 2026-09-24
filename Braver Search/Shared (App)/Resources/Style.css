@@ -292,3 +292,7 @@ body > section { flex-shrink: 0; }
 #access-summary { width: min(var(--content-width), 100%); box-sizing: border-box; flex-shrink: 0; }
 #access-summary.hidden { display: none; }
 #access-summary span { cursor: pointer; }
+
+#setup-test-primary, #setup-test-controls { width: 100%; }
+#setup-test-controls .setup-result { margin-top: 10px; }
+#setup-help #test-setup { background: transparent; border-color: var(--setup-help-border, rgba(128,128,128,0.3)); }

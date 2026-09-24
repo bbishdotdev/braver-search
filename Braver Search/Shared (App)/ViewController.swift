@@ -194,6 +194,7 @@ class ViewController: PlatformViewController, WKNavigationDelegate, WKScriptMess
 #if os(macOS)
         let payload: [String: Any] = [
             "accessState": MonetizationManager.shared.access.state.rawValue,
+            "accessAllowed": MonetizationManager.shared.access.allowsRedirects,
             "accessTitle": MonetizationManager.shared.access.title,
             "accessMessage": MonetizationManager.shared.access.message,
             "canTip": MonetizationManager.shared.canShowSupport,

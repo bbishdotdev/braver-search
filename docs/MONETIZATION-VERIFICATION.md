@@ -388,3 +388,32 @@ remains outstanding. All 80 existing JavaScript tests passed.
 
 Signed iPhone and Mac builds passed; logs on the Mac:
 `/tmp/braver-expiry-home-iOS.log` and `/tmp/braver-expiry-home-macOS.log`.
+
+## Access-aware setup help — September 24
+
+On both iOS and Mac, active access keeps **Test my setup** in its normal prominent
+position. Before starting a trial, after expiry, or while access is unknown, the
+same diagnostic moves under collapsed **Setup help** and is labeled **Check
+extension setup**. It remains a bounded permissions/extension check, not an unlock.
+A successful blocked-state check says **Extension setup verified** and explains
+that the user must start the trial or unlock lifetime access to enable searches;
+expired users are directed specifically to lifetime access. Unknown access asks
+for an access check. Diagnostic failures retain their actual troubleshooting result.
+
+The Mac presentation uses the native `accessAllowed` decision and preserves the
+same button/listeners when moving the controls. Existing results are re-rendered
+when access changes, so a previous successful diagnostic cannot imply that an
+expired trial still permits ordinary redirects. Native policy and the bounded
+setup exception were not changed.
+
+Validation: 89 JavaScript tests passed, including real Mac home HTML/script
+coverage for blocked and active states, expiry/purchase transitions, diagnostic
+click handling, and failure-message preservation. Signed iPhone and Mac builds,
+plus the simulator build, passed. Logs on the Mac:
+`/tmp/braver-setup-help-iOS.log`, `/tmp/braver-setup-help-macOS.log`, and
+`/tmp/braver-setup-help-sim.log`. Simulator screenshot:
+[Expired home with collapsed setup help](monetization/six-tier-flow/expired-setup-help.png).
+The new build installed on the phone; initial launch was blocked by its lock screen.
+Mac native visual/runtime review remains outstanding.
+[Active trial with the normal setup action](monetization/six-tier-flow/trial-setup-action.png)
+was also captured and visually checked in the simulator.

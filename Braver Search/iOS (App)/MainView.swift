@@ -20,6 +20,7 @@ struct MainView: View {
     @State private var setupStatus = SetupCheck.snapshot()
     @State private var testURL: URL?
     @State private var setupError: String?
+    @State private var isSetupHelpExpanded = false
     @State private var isShowingSupportSheet = false
     @State private var isShowingLifetime = false
     @State private var selectedDonationIndex = 0
@@ -47,7 +48,22 @@ struct MainView: View {
                         if monetization.access.state != .free {
                             AccessSummaryButton { isShowingLifetime = true }
                         }
-                        setupTestAction
+                        if monetization.access.allowsRedirects {
+                            setupTestAction
+                        } else {
+                            DisclosureGroup("Setup help", isExpanded: $isSetupHelpExpanded) {
+                                VStack(alignment: .leading, spacing: 10) {
+                                    Text("Check Safari permissions without starting your trial or unlocking searches.")
+                                        .font(.footnote).foregroundStyle(IOSTheme.secondaryText)
+                                        .fixedSize(horizontal: false, vertical: true)
+                                    setupTestAction
+                                }.padding(.top, 12)
+                            }
+                            .font(.subheadline.weight(.medium)).foregroundStyle(.white)
+                            .tint(IOSTheme.secondaryText).padding(16)
+                            .background(IOSTheme.surface, in: RoundedRectangle(cornerRadius: 18))
+                            .accessibilityIdentifier("setup-help")
+                        }
                         activationCard
 
                         if monetization.canShowSupport {
@@ -109,9 +125,9 @@ struct MainView: View {
 
     private var setupActionTitle: String {
         if isCheckingSetup { return "Checking Safari…" }
-        if isSetupVerified { return "Setup verified" }
+        if isSetupVerified { return monetization.access.allowsRedirects ? "Setup verified" : "Extension setup verified" }
         if setupError != nil || setupStatus["status"] as? String == "inconclusive" { return "Test again" }
-        return "Test my setup"
+        return monetization.access.allowsRedirects ? "Test my setup" : "Check extension setup"
     }
 
     private var setupTestAction: some View {
@@ -181,7 +197,7 @@ struct MainView: View {
                     .font(.system(.body, design: .default, weight: .semibold))
                     .foregroundStyle(.white)
                 if isCheckingSetup || isSetupVerified {
-                    Text(isSetupVerified ? "Google searches redirect to Brave." : "Return after the search opens.")
+                    Text(isSetupVerified ? setupVerifiedMessage : "Return after the search opens.")
                         .font(.footnote)
                         .foregroundStyle(IOSTheme.secondaryText)
                         .fixedSize(horizontal: false, vertical: true)
@@ -199,12 +215,21 @@ struct MainView: View {
         .padding(.vertical, 16)
         .background(
             RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .fill(LinearGradient(colors: [Color(red: 0.25, green: 0.14, blue: 0.10), IOSTheme.surface], startPoint: .leading, endPoint: .trailing))
+                .fill(LinearGradient(colors: monetization.access.allowsRedirects ? [Color(red: 0.25, green: 0.14, blue: 0.10), IOSTheme.surface] : [IOSTheme.surface, IOSTheme.surface], startPoint: .leading, endPoint: .trailing))
         )
         .overlay(
             RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .stroke(IOSTheme.accentOrange.opacity(0.25), lineWidth: 1)
+                .stroke(IOSTheme.accentOrange.opacity(monetization.access.allowsRedirects ? 0.25 : 0), lineWidth: 1)
         )
+    }
+
+    private var setupVerifiedMessage: String {
+        if monetization.access.allowsRedirects { return "Google searches redirect to Brave." }
+        switch monetization.access.state {
+        case .eligible: return "Start your trial or unlock lifetime access to enable searches."
+        case .expired: return "Your trial has ended. Unlock lifetime access to enable searches."
+        default: return "Check your access in the app to enable searches."
+        }
     }
 
     private func startSetupTest() {
