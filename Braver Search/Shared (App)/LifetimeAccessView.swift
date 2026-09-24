@@ -7,18 +7,26 @@ private enum AccessPalette {
     static let ink = Color(red: 0.19, green: 0.10, blue: 0)
 }
 
-/// Shared native price picker on iPhone, iPad, and Mac. The artwork and gold CTA match Give Thanks.
+/// Trial introduction and lifetime pricing are separate pages in the same sheet.
 struct LifetimeAccessView: View {
+    private enum Page { case trial, lifetime, status }
     @Environment(\.dismiss) private var dismiss
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @ObservedObject private var monetization = MonetizationManager.shared
     @ObservedObject private var store = StoreManager.shared
     @State private var selection = 1.0
+    @State private var choseLifetime = false
     private var index: Int { min(4, max(0, Int(selection.rounded()))) }
     private var option: DonationOption { MonetizationConfig.lifetimeOptions[index] }
     private var access: AccessDecision { monetization.access }
-    private var unlocked: Bool { [.grandfathered, .lifetime, .free].contains(access.state) }
     private var busy: Bool { store.activePurchaseProductID != nil || store.isRestoring }
+    private var page: Page {
+        switch access.state {
+        case .eligible: return choseLifetime ? .lifetime : .trial
+        case .trial, .expired: return .lifetime
+        default: return .status
+        }
+    }
     private var price: String {
         if let product = store.productsByID[option.id] { return product.displayPrice }
         #if DEBUG
@@ -31,119 +39,31 @@ struct LifetimeAccessView: View {
         ZStack {
             Color.black.ignoresSafeArea()
             ScrollView {
-                VStack(spacing: 18) {
-                    #if DEBUG
-                    if let test = AccessStore.localTest() {
-                        Text("Local sandbox test · \(test.cohort.rawValue) user · +\(test.elapsedDays) days")
-                            .font(.caption).foregroundStyle(AccessPalette.gold)
+                VStack(spacing: page == .lifetime ? 16 : 24) {
+                    if page == .trial {
+                        lion("TipCheers", size: 156)
+                        heading("Try it in Safari", detail: "14 days of Safari search redirects.")
+                        Label("No automatic charge", systemImage: "checkmark.circle")
+                            .font(.subheadline).foregroundStyle(AccessPalette.gold)
+                    } else if page == .lifetime {
+                        heading("Make it yours", detail: "Choose your price. Same full app, forever.")
+                        if access.state == .expired {
+                            Text("Your free trial has ended.").font(.subheadline).foregroundStyle(.white.opacity(0.65))
+                        } else if let expires = access.expiresAt, access.state == .trial {
+                            Text("Your trial is free until \(expires.formatted(date: .abbreviated, time: .omitted))")
+                                .font(.subheadline).foregroundStyle(AccessPalette.gold)
+                        }
+                        pricePicker
+                    } else {
+                        lion(access.state == .unknown ? "TipCheers" : "TipMax", size: 156)
+                        heading(access.title, detail: access.message)
                     }
-                    #endif
-                    VStack(spacing: 10) {
-                        Text(access.title).font(.system(.largeTitle, design: .rounded, weight: .bold))
-                        Text(access.message).font(.body).foregroundStyle(.white.opacity(0.7))
-                            .fixedSize(horizontal: false, vertical: true)
-                    }.multilineTextAlignment(.center)
-
-                    VStack(spacing: 10) {
-                        if access.state == .eligible {
-                            primaryButton("Start my 14 free days", id: "start-free-trial", disabled: !store.isAvailable(AccessConfiguration.trialID)) {
-                                await store.purchase(id: AccessConfiguration.trialID)
-                            }
-                            Text("Free trial. No charge or hold. No automatic renewal.\nAfter 14 days, redirects pause until you choose a one-time purchase.")
-                                .font(.caption).foregroundStyle(.white.opacity(0.6)).multilineTextAlignment(.center)
-                                .fixedSize(horizontal: false, vertical: true)
-                        }
-                    }
-
-                    VStack(spacing: 14) {
-                        Image(unlocked ? "TipMax" : option.assetName)
-                            .resizable().scaledToFit().frame(width: 112, height: 112)
-                            .clipShape(RoundedRectangle(cornerRadius: 34, style: .continuous))
-                            .shadow(color: AccessPalette.orange.opacity(0.12), radius: 28, y: 8)
-                            .id(unlocked ? "unlocked" : option.id)
-                            .transition(.opacity)
-                            .accessibilityHidden(true)
-                        if unlocked {
-                            Label(access.state == .grandfathered ? "Early supporter · Free forever" : "Lifetime access", systemImage: "checkmark.seal.fill")
-                                .font(.headline).foregroundStyle(AccessPalette.gold)
-                        } else {
-                            VStack(spacing: 6) {
-                                Text(option.displayName).font(.title3.bold())
-                                Text(option.description).font(.subheadline).foregroundStyle(.white.opacity(0.65))
-                                    .fixedSize(horizontal: false, vertical: true)
-                            }.multilineTextAlignment(.center)
-                            VStack(spacing: 3) {
-                                Text(price).font(.system(size: 36, weight: .bold, design: .rounded)).contentTransition(.numericText())
-                                Text(index == 1 ? "Suggested · One time" : "One time · Same full app")
-                                    .font(.caption.weight(.medium)).foregroundStyle(AccessPalette.gold)
-                            }.accessibilityElement(children: .combine)
-                            VStack(spacing: 8) {
-                                Slider(value: $selection, in: 0...4, step: 1)
-                                    .tint(AccessPalette.gold)
-                                    .accessibilityLabel("Choose your lifetime price")
-                                    .accessibilityValue("\(option.displayName), \(price), one time")
-                                    .accessibilityIdentifier("lifetime-price-slider")
-                                HStack {
-                                    Text("A little love")
-                                    Spacer()
-                                    Text("A lot of love")
-                                }.font(.caption).foregroundStyle(.white.opacity(0.55))
-                            }
-                            Text("Every price unlocks every redirect.")
-                                .font(.subheadline.weight(.medium)).foregroundStyle(.white.opacity(0.85))
-                        }
-                    }
-                    .padding(20).frame(maxWidth: .infinity)
-                    .background(LinearGradient(colors: [Color(red: 0.20, green: 0.13, blue: 0.11), Color(red: 0.105, green: 0.095, blue: 0.12)], startPoint: .topLeading, endPoint: .bottomTrailing), in: RoundedRectangle(cornerRadius: 28))
-                    .overlay(RoundedRectangle(cornerRadius: 28).stroke(AccessPalette.gold.opacity(0.20), lineWidth: 1))
-                    .animation(reduceMotion ? nil : .easeInOut(duration: 0.18), value: index)
-
-                    VStack(spacing: 12) {
-                        if !unlocked && access.state != .unknown {
-                            if access.state == .eligible {
-                                Button("Or unlock now · \(price)") { Task { await store.purchase(id: option.id) } }
-                                    .buttonStyle(.plain).foregroundStyle(AccessPalette.gold).padding(8)
-                                    .disabled(busy || !store.isAvailable(option.id))
-                            } else {
-                                primaryButton("Unlock forever · \(price)", id: "lifetime-purchase", disabled: !store.isAvailable(option.id)) {
-                                    await store.purchase(id: option.id)
-                                }
-                            }
-                            if (!store.isAvailable(option.id) || (access.state == .eligible && !store.isAvailable(AccessConfiguration.trialID))) && !store.isLoadingProducts {
-                                Text("The App Store hasn’t made this option available yet.")
-                                    .font(.caption).foregroundStyle(.white.opacity(0.55)).multilineTextAlignment(.center)
-                                Button("Retry App Store") { Task { await store.loadProductsIfNeeded() } }
-                                    .buttonStyle(.plain).font(.caption).foregroundStyle(AccessPalette.gold)
-                            }
-                        }
-                        if let expires = access.expiresAt, access.state == .trial {
-                            Text("Free until \(expires.formatted(date: .abbreviated, time: .omitted))")
-                                .font(.caption).foregroundStyle(AccessPalette.gold)
-                        }
-                        if let message = store.purchaseMessage {
-                            Text(message).font(.callout).multilineTextAlignment(.center)
-                                .foregroundStyle(AccessPalette.gold).accessibilityIdentifier("purchase-result")
-                        }
-                        Button(store.isRestoring ? "Checking purchases…" : "Restore purchases") { Task { await store.restore() } }
-                            .buttonStyle(.plain).font(.subheadline).foregroundStyle(.white.opacity(0.7)).padding(8).disabled(busy)
-                        Text(access.state == .grandfathered ? "Your existing access stays free.\nTips are always optional." : "One purchase for your iPhone, iPad & Mac.\nSetup help is always here.")
-                            .font(.caption).foregroundStyle(.white.opacity(0.45)).multilineTextAlignment(.center)
-                    }
-                }.padding(24).frame(maxWidth: 480).frame(maxWidth: .infinity)
+                }
+                .padding(24).padding(.top, page == .lifetime ? 0 : 28)
+                .frame(maxWidth: 480).frame(maxWidth: .infinity)
             }
-            .safeAreaInset(edge: .top) {
-                HStack {
-                    Text("✦  BRAVER SEARCH")
-                        .font(.system(size: 11, weight: .bold, design: .rounded)).tracking(2)
-                        .foregroundStyle(AccessPalette.gold)
-                    Spacer()
-                    Button { dismiss() } label: {
-                        Image(systemName: "xmark").font(.system(size: 13, weight: .semibold))
-                            .foregroundStyle(.white.opacity(0.7)).frame(width: 44, height: 44)
-                            .background(.white.opacity(0.08), in: Circle())
-                    }.buttonStyle(.plain).accessibilityLabel("Close")
-                }.padding(.horizontal, 24).padding(.top, 12).padding(.bottom, 4).background(.black)
-            }
+            .safeAreaInset(edge: .top) { navigationBar }
+            .safeAreaInset(edge: .bottom) { actions }
         }
         .foregroundStyle(.white).preferredColorScheme(.dark)
         #if os(macOS)
@@ -154,19 +74,170 @@ struct LifetimeAccessView: View {
             let args = ProcessInfo.processInfo.arguments
             if let at = args.firstIndex(of: "-monetization-tier"), args.indices.contains(at + 1), let value = Double(args[at + 1]) { selection = min(4, max(0, value)) }
             #endif
+            recordPageView()
             await store.loadProductsIfNeeded()
-            DurableAnalytics.shared.capture("lifetime_screen_viewed", properties: ["access_state": access.state.rawValue])
+        }
+        .onChange(of: page) { _ in
+            // Activating a trial closes this sheet; it isn't a visit to pricing.
+            if access.state != .trial || choseLifetime { recordPageView() }
+        }
+        .onChange(of: access.state) { state in
+            // Also handles a trial approved later through Transaction.updates.
+            if state == .trial && !choseLifetime { dismiss() }
         }
         .onChange(of: index) { _ in
             DurableAnalytics.shared.capture("lifetime_tier_selected", properties: ["product_id": option.id])
         }
     }
 
+    private var navigationBar: some View {
+        HStack {
+            if page == .lifetime && access.state == .eligible {
+                Button { choseLifetime = false } label: {
+                    Label("Back", systemImage: "chevron.left").font(.subheadline)
+                        .frame(minHeight: 44)
+                }.buttonStyle(.plain).foregroundStyle(AccessPalette.gold).disabled(busy)
+                    .accessibilityIdentifier("back-to-trial")
+            } else {
+                Text("✦  BRAVER SEARCH")
+                    .font(.system(size: 11, weight: .bold, design: .rounded)).tracking(2)
+                    .foregroundStyle(AccessPalette.gold)
+            }
+            Spacer()
+            Button { dismiss() } label: {
+                Image(systemName: "xmark").font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(.white.opacity(0.7)).frame(width: 44, height: 44)
+                    .background(.white.opacity(0.08), in: Circle())
+            }.buttonStyle(.plain).accessibilityLabel("Close")
+        }.padding(.horizontal, 24).padding(.top, 12).padding(.bottom, 4).background(.black)
+    }
+
+    private var actions: some View {
+        VStack(spacing: 8) {
+            if let message = store.purchaseMessage, page != .status {
+                Text(message).font(.callout).multilineTextAlignment(.center)
+                    .foregroundStyle(AccessPalette.gold).accessibilityIdentifier("purchase-result")
+            }
+            if page == .trial {
+                availabilityMessage(for: AccessConfiguration.trialID)
+                primaryButton("Start free trial", id: "start-free-trial", disabled: !store.isAvailable(AccessConfiguration.trialID)) {
+                    await store.purchase(id: AccessConfiguration.trialID)
+                    if monetization.access.state == .trial { dismiss() }
+                }
+                Text("Buy once to continue after the trial.")
+                    .font(.caption).foregroundStyle(.white.opacity(0.6)).multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+                Button("See lifetime prices →") { choseLifetime = true }
+                    .buttonStyle(.plain).foregroundStyle(AccessPalette.gold).frame(minHeight: 44)
+                    .disabled(busy).accessibilityIdentifier("see-lifetime-prices")
+            } else if page == .lifetime {
+                availabilityMessage(for: option.id)
+                primaryButton("Unlock forever · \(price)", id: "lifetime-purchase", disabled: !store.isAvailable(option.id)) {
+                    await store.purchase(id: option.id)
+                }
+                Text("One purchase for iPhone, iPad & Mac.")
+                    .font(.caption).foregroundStyle(.white.opacity(0.6))
+            } else if access.state == .unknown {
+                if let message = store.purchaseMessage {
+                    Text(message).font(.callout).foregroundStyle(AccessPalette.gold).multilineTextAlignment(.center)
+                }
+                primaryButton("Check my access", id: "check-access", disabled: false) { await store.restore() }
+            } else {
+                primaryButton("Done", id: "access-done", disabled: false) { dismiss() }
+            }
+            if access.state != .unknown {
+                Button(store.isRestoring ? "Checking purchases…" : "Restore purchases") { Task { await store.restore() } }
+                    .buttonStyle(.plain).font(.caption).foregroundStyle(.white.opacity(0.6))
+                    .frame(minHeight: 44).disabled(busy)
+            }
+            #if DEBUG
+            if let test = AccessStore.localTest() {
+                Text("Sandbox · \(test.cohort.rawValue) user" + (test.elapsedDays == 0 ? "" : " · +\(test.elapsedDays) days"))
+                    .font(.caption2).foregroundStyle(AccessPalette.gold)
+            }
+            #endif
+        }
+        .padding(.horizontal, 24).padding(.top, 12).padding(.bottom, 12)
+        .frame(maxWidth: 480).frame(maxWidth: .infinity).background(.black)
+    }
+
+    private var pricePicker: some View {
+        VStack(spacing: 10) {
+            lion(option.assetName, size: 80)
+                .id(option.id).transition(.opacity)
+                .animation(reduceMotion ? nil : .easeInOut(duration: 0.18), value: index)
+            // All tier labels participate in sizing, even with larger text settings.
+            ZStack(alignment: .top) {
+                ForEach(MonetizationConfig.lifetimeOptions) { tier in
+                    Text(tier.displayName).font(.headline)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .opacity(tier.id == option.id ? 1 : 0)
+                        .accessibilityHidden(tier.id != option.id)
+                }
+            }.multilineTextAlignment(.center)
+            VStack(spacing: 3) {
+                Text(price).font(.system(size: 32, weight: .bold, design: .rounded))
+                    .monospacedDigit().lineLimit(1).minimumScaleFactor(0.65)
+                Text("Suggested price").font(.caption.weight(.medium)).foregroundStyle(AccessPalette.gold)
+                    .opacity(index == 1 ? 1 : 0).accessibilityHidden(index != 1)
+            }.accessibilityElement(children: .combine)
+            VStack(spacing: 8) {
+                Group {
+                    #if os(iOS)
+                    QuietPriceSlider(value: $selection)
+                    #else
+                    Slider(value: $selection, in: 0...4, step: 1).tint(AccessPalette.gold)
+                    #endif
+                }
+                .accessibilityLabel("Choose your lifetime price")
+                .accessibilityValue("\(option.displayName), \(price), one time")
+                .accessibilityIdentifier("lifetime-price-slider").disabled(busy)
+                HStack {
+                    Text("A little love")
+                    Spacer()
+                    Text("A lot of love")
+                }.font(.caption).foregroundStyle(.white.opacity(0.55))
+            }
+        }
+        .padding(16).frame(maxWidth: .infinity)
+        .background(LinearGradient(colors: [Color(red: 0.20, green: 0.13, blue: 0.11), Color(red: 0.105, green: 0.095, blue: 0.12)], startPoint: .topLeading, endPoint: .bottomTrailing), in: RoundedRectangle(cornerRadius: 28))
+        .overlay(RoundedRectangle(cornerRadius: 28).stroke(AccessPalette.gold.opacity(0.20), lineWidth: 1))
+    }
+
+    @ViewBuilder private func availabilityMessage(for id: String) -> some View {
+        if !store.isAvailable(id) && !store.isLoadingProducts {
+            Text("This option isn’t available from the App Store yet.")
+                .font(.caption).foregroundStyle(.white.opacity(0.6)).multilineTextAlignment(.center)
+            Button("Retry App Store") { Task { await store.loadProductsIfNeeded() } }
+                .buttonStyle(.plain).font(.caption).foregroundStyle(AccessPalette.gold).disabled(busy)
+        }
+    }
+
+    private func heading(_ title: String, detail: String) -> some View {
+        VStack(spacing: 10) {
+            Text(title).font(.system(page == .lifetime ? .title : .largeTitle, design: .rounded, weight: .bold))
+            Text(detail).font(.body).foregroundStyle(.white.opacity(0.7))
+                .fixedSize(horizontal: false, vertical: true)
+        }.multilineTextAlignment(.center)
+    }
+
+    private func lion(_ asset: String, size: CGFloat) -> some View {
+        Image(asset).resizable().scaledToFit().frame(width: size, height: size)
+            .clipShape(RoundedRectangle(cornerRadius: 34, style: .continuous))
+            .shadow(color: AccessPalette.orange.opacity(0.12), radius: 28, y: 8)
+            .accessibilityHidden(true)
+    }
+
+    private func recordPageView() {
+        let event = page == .trial ? "trial_offer_viewed" : page == .lifetime ? "lifetime_screen_viewed" : "access_status_viewed"
+        DurableAnalytics.shared.capture(event, properties: ["access_state": access.state.rawValue])
+    }
+
     private func primaryButton(_ title: String, id: String, disabled: Bool, action: @escaping () async -> Void) -> some View {
         Button { Task { await action() } } label: {
             HStack {
                 Spacer()
-                if store.activePurchaseProductID != nil { ProgressView().tint(AccessPalette.ink) }
+                if busy { ProgressView().tint(AccessPalette.ink) }
                 Text(title).font(.headline)
                 Spacer()
             }.padding(.vertical, 16).foregroundStyle(AccessPalette.ink)
@@ -175,6 +246,56 @@ struct LifetimeAccessView: View {
             .accessibilityIdentifier(id)
     }
 }
+
+#if os(iOS)
+/// A continuous thumb with discrete prices, without the system slider's endpoint feedback.
+/// VoiceOver can still move between the five tiers with its adjustable-control gesture.
+private struct QuietPriceSlider: View {
+    @Binding var value: Double
+    @Environment(\.layoutDirection) private var layoutDirection
+    @Environment(\.isEnabled) private var isEnabled
+
+    var body: some View {
+        GeometryReader { geometry in
+            let width = max(1, geometry.size.width - 28)
+            let progress = min(1, max(0, value / 4))
+            let position = layoutDirection == .rightToLeft ? 1 - progress : progress
+            ZStack(alignment: .leading) {
+                Capsule().fill(.white.opacity(0.18)).frame(height: 5)
+                Capsule().fill(AccessPalette.gold)
+                    .frame(width: width * progress, height: 5)
+                    .offset(x: layoutDirection == .rightToLeft ? width * (1 - progress) : 0)
+                Circle().fill(AccessPalette.gold)
+                    .frame(width: 28, height: 28)
+                    .shadow(color: .black.opacity(0.25), radius: 3, y: 2)
+                    .offset(x: width * position - 14)
+            }
+            .frame(width: width, height: 44)
+            .padding(.horizontal, 14)
+            // Track math uses physical coordinates; explicitly handle RTL above.
+            .environment(\.layoutDirection, .leftToRight)
+            .contentShape(Rectangle())
+            .gesture(DragGesture(minimumDistance: 0)
+                .onChanged { drag in
+                    guard isEnabled else { return }
+                    let position = min(1, max(0, (drag.location.x - 14) / width))
+                    value = 4 * (layoutDirection == .rightToLeft ? 1 - position : position)
+                }
+                .onEnded { _ in if isEnabled { value = value.rounded() } })
+        }
+        .frame(height: 44)
+        .accessibilityElement(children: .ignore)
+        .accessibilityAdjustableAction { direction in
+            guard isEnabled else { return }
+            switch direction {
+            case .increment: value = min(4, value.rounded() + 1)
+            case .decrement: value = max(0, value.rounded() - 1)
+            @unknown default: break
+            }
+        }
+    }
+}
+#endif
 
 struct AccessSummaryButton: View {
     @ObservedObject private var monetization = MonetizationManager.shared

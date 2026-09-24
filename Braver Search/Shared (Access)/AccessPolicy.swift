@@ -72,21 +72,21 @@ struct AccessDecision: Equatable {
         case .free: return "Free access"
         case .grandfathered: return "Yours to keep"
         case .unknown: return "Let’s check your access"
-        case .eligible: return "Meet your search companion"
-        case .trial: return "Your 14 free days are underway"
-        case .expired: return "Keep your searches flowing"
+        case .eligible: return "Search your way in Safari"
+        case .trial: return "Your free trial is underway"
+        case .expired: return "Keep Safari searching your way"
         case .lifetime: return "Yours for good"
         }
     }
     var message: String {
         switch state {
         case .free: return "Braver Search is free to use."
-        case .grandfathered: return "You were here early. Your redirects stay free, always."
+        case .grandfathered: return "You were here early. Your Safari search redirects stay free, always."
         case .unknown: return "Connect to the App Store to check your existing access. Setup help is always available."
-        case .eligible: return "Try every redirect for 14 days. No automatic payment."
-        case .trial: return "Enjoy every redirect. Choose a one-time price whenever you’re ready."
-        case .expired: return "Your free trial is complete. Choose a price to bring your redirects back."
-        case .lifetime: return "One payment. Every redirect. Thanks for supporting this little lion."
+        case .eligible: return "Redirect Safari address-bar searches for 14 days."
+        case .trial: return "Safari search redirects are on. Unlock once to keep them."
+        case .expired: return "Your trial has ended. Unlock Safari search redirects for good."
+        case .lifetime: return "Safari search redirects, unlocked for life."
         }
     }
 }

@@ -41,9 +41,12 @@ The current local controls described below require a development build, not Test
 
 ## 3. Run the development build
 
-The remote checkout is:
+The active Xcode checkout on the Mac is:
 
-`/Users/bishop/Work/braver-search-monetization-20260915/Braver Search/Braver Search.xcodeproj`
+`/Users/bishop/Developer/braver-search/Braver Search/Braver Search.xcodeproj`
+
+The older `/Users/bishop/Work/braver-search-monetization-20260915` directory is a
+separate build snapshot. Use the active checkout above for the current UI.
 
 Codex can attempt device builds/install/launch on the paired iPhone. Keep it
 unlocked and connected. If running directly in Xcode, select **Braver Search (iOS)** and
@@ -62,15 +65,22 @@ new
 ```
 
 Remove any `-monetization-scenario` screenshot arguments. Those are visual previews,
-not real purchase tests. The local-testing header must be visible. The cutoff defaults
+not real purchase tests. The `Sandbox · new user` footer must be visible. It is
+DEBUG-only and never appears in the shipped app. The cutoff defaults
 to 24 hours ago. Verified sandbox acquisition is remapped to the test cohort only;
 purchase transactions and their original dates remain genuine.
 
 ## 4. Check the actual flows
 
-1. Confirm the free trial plus all five localized paid prices load.
+1. An eligible user sees **Try it in Safari**, with **Start free trial** and no
+   price slider. **See lifetime prices** opens a separate page with the lion,
+   slider, and **Unlock forever** button. **Back** returns to the trial offer.
+   Confirm all five localized prices load and the card stays still while dragging.
 2. Start the free trial. Confirm the Apple sheet is a sandbox transaction. Report any
    unavailable-product, sign-in or verification error without entering real payment details.
+   Successful activation closes the offer and returns to the app. Cancellation or
+   pending approval must not grant access or dismiss the offer as a success.
+   Existing trial users and expired users open lifetime pricing directly.
 3. Enable the development extension in Safari and allow its required search sites.
    Search normally and run Test my setup. Both should work during the trial.
 4. Add `-monetization-test-elapsed-days` and `15` to launch arguments, then relaunch.

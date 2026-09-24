@@ -101,7 +101,7 @@ Debug-only visual fixtures: launch the app with `-monetization-scenario eligible
 
 ## Measurement
 
-Events added: `lifetime_screen_viewed` (access_state), `lifetime_tier_selected` (product_id), `purchase_started`, `purchase_pending`, `purchase_cancelled`, `purchase_failed`, `access_purchase_verified`, `access_revoked`, `purchases_restored`, `redirect_access_blocked` (once per state/day). Existing durable delivery labels platform, version and development/production. No search queries or visited URLs are added.
+Events added: `trial_offer_viewed`, `lifetime_screen_viewed`, `access_status_viewed` (access_state), `lifetime_tier_selected` (product_id), `purchase_started`, `purchase_pending`, `purchase_cancelled`, `purchase_failed`, `access_purchase_verified`, `access_revoked`, `purchases_restored`, `redirect_access_blocked` (once per state/day). Trial introduction and actual lifetime pricing visits are counted separately. Existing durable delivery labels platform, version and development/production. No search queries or visited URLs are added.
 
 Suggested PostHog views: new-cohort setup verified → trial verified → first ordinary redirect → lifetime verified; trial-expired cohort → price view → paid; purchase failures by product/platform/version; grandfathered users who unexpectedly see blocked access. Filter development traffic and split verified trial vs paid product IDs. Do not count selecting a slider tier as revenue or a diagnostic search as normal activation.
 
