@@ -74,6 +74,15 @@ body {
   color: var(--muted-color);
 }
 
+.patron-note {
+  margin: 12px 0 0;
+  padding-top: 10px;
+  border-top: 1px solid var(--card-border);
+  font-size: 0.78rem;
+  line-height: 1.4;
+  color: var(--muted-color);
+}
+
 .toggle {
   position: relative;
   display: inline-block;
