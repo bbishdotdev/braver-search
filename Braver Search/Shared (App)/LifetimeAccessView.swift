@@ -45,38 +45,27 @@ struct LifetimeAccessView: View {
     var body: some View {
         ZStack {
             backdrop
-            ScrollView {
-                VStack(spacing: page == .lifetime ? 16 : 24) {
-                    if monetization.showsAccessVerificationNotice {
-                        AccessVerificationNotice()
-                    }
-                    if page == .trial {
-                        lion("TipCheers", size: 156)
-                        heading("Try it in Safari", detail: "14 days of Safari search redirects.")
-                        Label("No automatic charge", systemImage: "checkmark.circle")
-                            .font(.subheadline).foregroundStyle(AccessPalette.gold)
-                    } else if page == .lifetime {
-                        if access.state == .expired {
-                            Text("Your free trial has ended.").font(.caption).foregroundStyle(.white.opacity(0.65))
-                        } else if let expires = access.expiresAt, access.state == .trial {
-                            Text("Your trial is free until \(expires.formatted(date: .abbreviated, time: .omitted))")
-                                .font(.caption).foregroundStyle(AccessPalette.gold)
-                        }
-                        pricePicker
-                    } else {
-                        lion(access.state == .unknown ? "TipCheers" : "TipMax", size: 156)
-                        heading(access.title, detail: access.message)
-                    }
+            #if os(macOS)
+            VStack(spacing: 0) {
+                navigationBar
+                HStack(spacing: 0) {
+                    macColumn { pageContent }
+                    Divider().overlay(.white.opacity(0.08)).padding(.vertical, 24)
+                    macColumn { actions }.frame(width: 300)
                 }
-                .padding(24).padding(.top, page == .lifetime ? 0 : 28)
-                .frame(maxWidth: 480).frame(maxWidth: .infinity)
+                .padding(.bottom, 12)
+            }
+            #else
+            ScrollView {
+                pageContent
             }
             .safeAreaInset(edge: .top) { navigationBar }
             .safeAreaInset(edge: .bottom) { actions }
+            #endif
         }
         .foregroundStyle(.white).preferredColorScheme(.dark)
         #if os(macOS)
-        .frame(width: 480, height: 760)
+        .frame(width: 760, height: 540)
         #endif
         .task {
             #if DEBUG
@@ -104,6 +93,45 @@ struct LifetimeAccessView: View {
             DurableAnalytics.shared.capture("lifetime_tier_selected", properties: ["product_id": option.id])
         }
     }
+
+    private var pageContent: some View {
+        VStack(spacing: page == .lifetime ? 16 : 24) {
+            if monetization.showsAccessVerificationNotice {
+                AccessVerificationNotice()
+            }
+            if page == .trial {
+                lion("TipCheers", size: 156)
+                heading("Try it in Safari", detail: "14 days of Safari search redirects.")
+                Label("No automatic charge", systemImage: "checkmark.circle")
+                    .font(.subheadline).foregroundStyle(AccessPalette.gold)
+            } else if page == .lifetime {
+                if access.state == .expired {
+                    Text("Your free trial has ended.").font(.caption).foregroundStyle(.white.opacity(0.65))
+                } else if let expires = access.expiresAt, access.state == .trial {
+                    Text("Your trial is free until \(expires.formatted(date: .abbreviated, time: .omitted))")
+                        .font(.caption).foregroundStyle(AccessPalette.gold)
+                }
+                pricePicker
+            } else {
+                lion(access.state == .unknown ? "TipCheers" : "TipMax", size: 156)
+                heading(access.title, detail: access.message)
+            }
+        }
+        .padding(24).padding(.top, page == .lifetime ? 0 : 28)
+        .frame(maxWidth: 480).frame(maxWidth: .infinity)
+    }
+
+    #if os(macOS)
+    /// Center normal content, but allow long messages to scroll without hiding controls.
+    private func macColumn<Content: View>(@ViewBuilder content: () -> Content) -> some View {
+        let column = content()
+        return GeometryReader { geometry in
+            ScrollView {
+                column.frame(minHeight: geometry.size.height)
+            }
+        }
+    }
+    #endif
 
     private var backdrop: some View {
         ZStack {
@@ -220,7 +248,10 @@ struct LifetimeAccessView: View {
             #endif
         }
         .padding(.horizontal, 24).padding(.top, 12).padding(.bottom, 12)
-        .frame(maxWidth: 480).frame(maxWidth: .infinity).background(.black)
+        .frame(maxWidth: 480).frame(maxWidth: .infinity)
+        #if os(iOS)
+        .background(.black)
+        #endif
     }
 
     private func close() {
