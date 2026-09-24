@@ -1,3 +1,6 @@
+let setupAccess = { allowed: false, state: "unknown" };
+let lastSetupSnapshot = { status: "idle" };
+
 function show(platform, enabled, useSettingsInsteadOfPreferences) {
     document.body.classList.add(`platform-${platform}`);
 
@@ -22,6 +25,28 @@ function openPreferences() {
 }
 
 function updateMonetization(payload) {
+    setupAccess = { allowed: payload.accessAllowed === true, state: payload.accessState };
+    const controls = document.getElementById("setup-test-controls");
+    const destination = document.getElementById(setupAccess.allowed ? "setup-test-primary" : "setup-help");
+    if (controls.parentElement !== destination) {
+        if (setupAccess.allowed) { destination.appendChild(controls); }
+        else { document.getElementById("setup-access-explanation").after(controls); }
+    }
+    document.getElementById("setup-test-primary").classList.toggle("hidden", !setupAccess.allowed);
+    document.getElementById("setup-access-explanation").classList.toggle("hidden", setupAccess.allowed);
+    document.getElementById("setup-test-label").textContent = setupAccess.allowed ? "Test my setup" : "Check extension setup";
+    updateSetup(lastSetupSnapshot);
+    const access = document.getElementById("access-summary");
+    if (access) {
+        access.classList.toggle("hidden", payload.accessState === "free");
+        const expired = payload.accessState === "expired";
+        access.classList.toggle("access-expired", expired);
+        const summary = document.getElementById("access-summary-default");
+        summary.textContent = `${payload.accessTitle} · ${payload.accessMessage}`;
+        summary.classList.toggle("hidden", expired);
+        document.getElementById("access-summary-expired").classList.toggle("hidden", !expired);
+        access.onclick = () => webkit.messageHandlers.controller.postMessage({ action: "open-lifetime" });
+    }
     const supportSection = document.querySelector(".support-section");
     const supportProducts = document.querySelector(".support-products");
     const reviewButton = document.querySelector(".review-button");
@@ -78,10 +103,24 @@ function focusSupportSection() {
 }
 
 document.querySelector("button.open-preferences").addEventListener("click", openPreferences);
+document.getElementById("privacy-policy")?.addEventListener("click", event => {
+    event.preventDefault();
+    webkit.messageHandlers.controller.postMessage({ action: "open-privacy" });
+});
 
 function updateSetup(payload) {
+    lastSetupSnapshot = payload;
     const result = document.getElementById('setup-result');
-    result.textContent = [payload.title, payload.message].filter(Boolean).join('. ');
+    if (payload.status === 'success' && !setupAccess.allowed) {
+        const nextStep = setupAccess.state === 'eligible'
+            ? 'Start your trial or unlock lifetime access to enable searches.'
+            : setupAccess.state === 'expired'
+                ? 'Your trial has ended. Unlock lifetime access to enable searches.'
+                : 'Check your access in the app to enable searches.';
+        result.textContent = `Extension setup verified. ${nextStep}`;
+    } else {
+        result.textContent = [payload.title, payload.message].filter(Boolean).join('. ');
+    }
     result.classList.toggle('hidden', payload.status === 'idle');
 }
 document.getElementById('test-setup').addEventListener('click', () => {

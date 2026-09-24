@@ -53,36 +53,6 @@ private enum ExtensionSetupKeys {
     static let extensionRuntimeLastSeenAt = "extensionRuntimeLastSeenAt"
 }
 
-private enum ExtensionMonetizationConfig {
-    private static let paidLaunchDateInfoKey = "PAID_LAUNCH_ISO8601"
-
-    static let paidLaunchDate: Date? = {
-        guard let rawValue = Bundle.main.object(forInfoDictionaryKey: paidLaunchDateInfoKey) as? String,
-              !rawValue.isEmpty else {
-            return nil
-        }
-
-        let formatter = ISO8601DateFormatter()
-        formatter.formatOptions = [.withInternetDateTime]
-        return formatter.date(from: rawValue)
-    }()
-}
-
-private func resolvedExtensionUserState(from defaults: UserDefaults) -> String {
-    let storedState = defaults.string(forKey: ExtensionMonetizationKeys.userState) ?? ExtensionMonetizationKeys.unknownState
-    guard storedState == ExtensionMonetizationKeys.unknownState else {
-        return storedState
-    }
-
-    guard let paidLaunchDate = ExtensionMonetizationConfig.paidLaunchDate else {
-        return ExtensionMonetizationKeys.grandfatheredState
-    }
-
-    return Date() < paidLaunchDate
-        ? ExtensionMonetizationKeys.grandfatheredState
-        : ExtensionMonetizationKeys.unknownState
-}
-
 enum ExtensionAnalytics {
     static func sharedDefaults() -> UserDefaults { DurableAnalytics.defaults }
 }
@@ -92,6 +62,7 @@ class SafariWebExtensionHandler: NSObject, NSExtensionRequestHandling {
     func beginRequest(with context: NSExtensionContext) {
         debugLog("Braver Search: Begin request")
         DurableAnalytics.configure()
+        AccessRefresh.schedule()
         
         let userDefaults = ExtensionAnalytics.sharedDefaults()
         var currentEnabled = userDefaults.bool(forKey: "enabled")
@@ -108,6 +79,15 @@ class SafariWebExtensionHandler: NSObject, NSExtensionRequestHandling {
                 debugLog("Braver Search: Message type: \(message.type)")
                 
                 switch message.type {
+                case "getRedirectAccess":
+                    let decision = AccessStore.decision()
+                    let testID = message.properties["test_id"] as? String ?? ""
+                    let diagnostic = message.properties["setup_query"] as? Bool == true && SetupCheck.isActive(id: testID)
+                    sendResponse(["allowed": decision.allowsRedirects || diagnostic, "state": decision.state.rawValue], context: context)
+                    if !decision.allowsRedirects && !diagnostic {
+                        DurableAnalytics.shared.capture("redirect_access_blocked", properties: ["access_state": decision.state.rawValue], once: "access_block_\(decision.state.rawValue)_\(Int(Date().timeIntervalSince1970 / 86400))")
+                    }
+                    return
                 case "setupTestProgress":
                     let accepted = SetupCheck.recordProgress(
                         id: message.properties["test_id"] as? String ?? "",
@@ -166,11 +146,15 @@ class SafariWebExtensionHandler: NSObject, NSExtensionRequestHandling {
                         return
                     }
                 case "getMonetizationState":
-                    let userState = resolvedExtensionUserState(from: userDefaults)
-                    let canTip = userState == ExtensionMonetizationKeys.grandfatheredState
+                    let decision = AccessStore.decision()
+                    let userState = decision.state.rawValue
+                    let canTip = decision.state.canTip
                     sendResponse(
                         [
                             "userState": userState,
+                            "accessAllowed": decision.allowsRedirects,
+                            "accessTitle": decision.title,
+                            "accessMessage": decision.message,
                             "canTip": canTip,
                             "hasDonated": userDefaults.bool(forKey: ExtensionMonetizationKeys.hasDonated),
                             "reviewURL": ExtensionMonetizationKeys.reviewURL,
@@ -240,4 +224,17 @@ class SafariWebExtensionHandler: NSObject, NSExtensionRequestHandling {
 private struct Settings {
     let enabled: Bool
     let searchUrl: String
+}
+
+/// Refresh StoreKit independently of search navigation; cache is re-evaluated for expiry on every search.
+private enum AccessRefresh {
+    private static let lock = NSLock()
+    private static var lastRefresh = Date.distantPast
+    static func schedule() {
+        lock.lock()
+        guard Date().timeIntervalSince(lastRefresh) > 300 else { lock.unlock(); return }
+        lastRefresh = Date()
+        lock.unlock()
+        Task { await AccessStore.refreshExtension() }
+    }
 }

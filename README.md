@@ -414,16 +414,17 @@ The Commons Clause restricts you from:
 
 ### App Store Distribution
 - Official distribution through the App Store is exclusively by Brenden Bishop
-- One-time purchase price: $4.99
-- Family Sharing enabled
+- Free download; the upcoming model offers an explicitly started 14-day trial and a choice of one-time lifetime prices
+- Production activation remains gated until the announced grandfathering cutoff and Apple approval
 - Updates included
 - App Store terms and EULA apply
 
 ### Privacy and Data Collection
-- No personal information collected
-- Search queries sent directly to Brave Search
-- Settings stored locally
-- Optional anonymous PostHog analytics can be configured for aggregate usage counts only
+- Search queries are sent to the selected search engine, not to our analytics service
+- Settings and verified purchase evidence are stored locally
+- Builds configured with PostHog send usage, setup diagnostic and purchase-outcome events using a random installation identifier
+- No search query text, full browsing URLs, payment details or Apple Account credentials are included in analytics payloads
+- [Privacy policy](https://www.bbish.dev/braver-search/privacy); see [release privacy audit](docs/APP-REVIEW-READINESS.md) for pending disclosure updates
 
 ## Contributing
 

@@ -41,6 +41,53 @@ describe('Background Script', () => {
         });
     }
 
+    describe('native redirect entitlement gate', () => {
+        it.each(['expired', 'eligible', 'unknown'])('does not redirect when native access is %s, even with the toggle on', async state => {
+            await loadBackgroundScript();
+            browser.runtime.sendNativeMessage.mockResolvedValue({ allowed: false, state });
+            await navigateToGoogleSearch('hello');
+            expect(browser.tabs.update).not.toHaveBeenCalled();
+        });
+        it('does not mistake a generic ok response or a JavaScript paid flag for access', async () => {
+            await loadBackgroundScript();
+            browser.runtime.sendNativeMessage.mockResolvedValue({ ok: true, paid: true });
+            await navigateToGoogleSearch('hello');
+            expect(browser.tabs.update).not.toHaveBeenCalled();
+        });
+        it('fails closed when the native bridge rejects', async () => {
+            await loadBackgroundScript();
+            browser.runtime.sendNativeMessage.mockRejectedValue(new Error('offline bridge'));
+            await navigateToGoogleSearch('hello');
+            expect(browser.tabs.update).not.toHaveBeenCalled();
+        });
+        it('rejects a fabricated setup token on the early path too', async () => {
+            await loadBackgroundScript();
+            browser.runtime.sendNativeMessage.mockResolvedValue({ allowed: false });
+            await navigateToGoogleSearch('hello', { url: 'https://www.google.com/search?q=hello&braver_setup=12345678-1234-1234-1234-123456789abc' });
+            expect(browser.tabs.update).not.toHaveBeenCalled();
+            expect(browser.runtime.sendNativeMessage).toHaveBeenCalledWith(expect.objectContaining({ type: 'getRedirectAccess', properties: expect.objectContaining({ setup_query: false }) }));
+        });
+        it('does not pull the user back after navigating away during a native access check', async () => {
+            await loadBackgroundScript();
+            let release;
+            browser.runtime.sendNativeMessage.mockImplementation(m => m.type === 'getRedirectAccess' ? new Promise(resolve => { release = resolve; }) : Promise.resolve({}));
+            const first = navigateToGoogleSearch('hello', { tabId: 4 });
+            await flushPromises();
+            await navigationListener({ tabId: 4, frameId: 0, url: 'https://example.com/' });
+            release({ allowed: true });
+            await first;
+            expect(browser.tabs.update).not.toHaveBeenCalled();
+        });
+        it('rechecks native access on the next navigation after expiration or refund', async () => {
+            await loadBackgroundScript();
+            await navigateToGoogleSearch('before expiry');
+            expect(browser.tabs.update).toHaveBeenCalledTimes(1);
+            browser.runtime.sendNativeMessage.mockResolvedValue({ allowed: false });
+            await navigateToGoogleSearch('after expiry');
+            expect(browser.tabs.update).toHaveBeenCalledTimes(1);
+        });
+    });
+
     describe('setup wake-up recovery', () => {
         const id = '12345678-1234-1234-1234-123456789abc';
         const google = `https://www.google.com/search?q=Braver+Search+setup+check&braver_setup=${id}`;
@@ -53,7 +100,7 @@ describe('Background Script', () => {
         };
 
         beforeEach(() => {
-            browser.runtime.sendNativeMessage.mockResolvedValue({ ok: true, analytics: { durablyQueued: true } });
+            browser.runtime.sendNativeMessage.mockResolvedValue({ ok: true, allowed: true, analytics: { durablyQueued: true } });
             browser.tabs.get.mockResolvedValue({ id: 3, url: google });
         });
 
@@ -69,7 +116,7 @@ describe('Background Script', () => {
 
         it('does not delay the early redirect for an unanswered diagnostic message', async () => {
             await loadBackgroundScript();
-            browser.runtime.sendNativeMessage.mockImplementation(m => m.type === 'setupTestProgress' ? new Promise(() => {}) : Promise.resolve({ ok: true }));
+            browser.runtime.sendNativeMessage.mockImplementation(m => m.type === 'setupTestProgress' ? new Promise(() => {}) : Promise.resolve({ ok: true, allowed: true }));
             void navigationListener({ frameId: 0, tabId: 3, url: google });
             await flushPromises();
             expect(browser.tabs.update).toHaveBeenCalledTimes(1);
@@ -79,7 +126,7 @@ describe('Background Script', () => {
             await loadBackgroundScript();
             browser.runtime.sendNativeMessage.mockImplementation(m => {
                 if (m.type === 'setupTestProgress') { throw new Error('Native bridge unavailable'); }
-                return Promise.resolve({ ok: true });
+                return Promise.resolve({ ok: true, allowed: true });
             });
             await navigationListener({ frameId: 0, tabId: 3, url: google });
             expect(browser.tabs.update).toHaveBeenCalledTimes(1);
@@ -193,7 +240,7 @@ describe('Background Script', () => {
             ));
             await loadBackgroundScript({ enabled: true });
             expect(browser.storage.local.set).not.toHaveBeenCalledWith({ hasTrackedExtensionActivated: true });
-            browser.runtime.sendNativeMessage.mockResolvedValue({ analytics: { durablyQueued: true } });
+            browser.runtime.sendNativeMessage.mockResolvedValue({ allowed: true, analytics: { durablyQueued: true } });
         });
 
         it('does not count a setup test as an ordinary search', async () => {
@@ -460,7 +507,7 @@ describe('Background Script', () => {
         });
 
         it('should not block redirects when analytics fails', async () => {
-            browser.runtime.sendNativeMessage.mockRejectedValueOnce(new Error('analytics unavailable'));
+            browser.runtime.sendNativeMessage.mockImplementation(m => m.type === 'getRedirectAccess' ? Promise.resolve({ allowed: true }) : Promise.reject(new Error('analytics unavailable')));
 
             await navigateToGoogleSearch('test');
             await flushPromises();
