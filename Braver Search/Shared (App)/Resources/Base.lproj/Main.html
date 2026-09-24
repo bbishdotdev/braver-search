@@ -16,7 +16,15 @@
     <script src="../Script.js" defer></script>
   </head>
   <body>
-    <button id="access-summary" class="setup-action hidden" type="button"></button>
+    <button id="access-summary" class="setup-action hidden" type="button">
+      <span id="access-summary-default"></span>
+      <span id="access-summary-expired" class="hidden">
+        <span class="expiry-badge"><span aria-hidden="true">⏸</span> TRIAL EXPIRED</span>
+        <span class="expiry-title">Safari redirects are paused</span>
+        <span class="expiry-message">Choose a one-time purchase to turn them back on.</span>
+        <span class="expiry-cta">Unlock lifetime access <span aria-hidden="true">→</span></span>
+      </span>
+    </button>
     <section class="summary-grid">
       <article class="summary-card status-card">
         <h2>Braver Search</h2>
