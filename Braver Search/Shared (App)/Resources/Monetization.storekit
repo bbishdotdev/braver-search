@@ -18,18 +18,33 @@
       "type": "NonConsumable"
     },
     {
+      "displayPrice": "2.99",
+      "familyShareable": false,
+      "internalID": "dce0a462-f4e0-4290-bfdb-c0b82f57a466",
+      "localizations": [
+        {
+          "description": "Lifetime Safari search redirects. No subscription.",
+          "displayName": "Lifetime · Thanks!",
+          "locale": "en_US"
+        }
+      ],
+      "productID": "braversearch.lifetime.thanks",
+      "referenceName": "Lifetime · Thanks!",
+      "type": "NonConsumable"
+    },
+    {
       "displayPrice": "4.99",
       "familyShareable": false,
       "internalID": "09410a82-419b-427c-97d7-4875f8fd4480",
       "localizations": [
         {
-          "description": "All redirects, with a single lifetime purchase.",
-          "displayName": "Lifetime \u00b7 A little love",
+          "description": "Lifetime Safari search redirects. No subscription.",
+          "displayName": "Lifetime · High five!",
           "locale": "en_US"
         }
       ],
       "productID": "braversearch.lifetime.coffee",
-      "referenceName": "Lifetime \u00b7 A little love",
+      "referenceName": "Lifetime · High five!",
       "type": "NonConsumable"
     },
     {
@@ -38,13 +53,13 @@
       "internalID": "aad7a8e8-8078-49aa-a18d-d47c0f62040f",
       "localizations": [
         {
-          "description": "All redirects, with a single lifetime purchase.",
-          "displayName": "Lifetime \u00b7 A happy lion",
+          "description": "Lifetime Safari search redirects. No subscription.",
+          "displayName": "Lifetime · Cheers!",
           "locale": "en_US"
         }
       ],
       "productID": "braversearch.lifetime.supporter",
-      "referenceName": "Lifetime \u00b7 A happy lion",
+      "referenceName": "Lifetime · Cheers!",
       "type": "NonConsumable"
     },
     {
@@ -53,13 +68,13 @@
       "internalID": "b5868512-858c-430c-9f77-d38015b17f64",
       "localizations": [
         {
-          "description": "All redirects, with a single lifetime purchase.",
-          "displayName": "Lifetime \u00b7 Big-hearted lion",
+          "description": "Lifetime Safari search redirects. No subscription.",
+          "displayName": "Lifetime · You’re a lifesaver!",
           "locale": "en_US"
         }
       ],
       "productID": "braversearch.lifetime.champion",
-      "referenceName": "Lifetime \u00b7 Big-hearted lion",
+      "referenceName": "Lifetime · You’re a lifesaver!",
       "type": "NonConsumable"
     },
     {
@@ -68,13 +83,13 @@
       "internalID": "db5e97f7-a043-4ec0-9215-5dbdaf541eed",
       "localizations": [
         {
-          "description": "All redirects, with a single lifetime purchase.",
-          "displayName": "Lifetime \u00b7 Lionhearted",
+          "description": "Lifetime Safari search redirects. No subscription.",
+          "displayName": "Lifetime · Now that’s love!",
           "locale": "en_US"
         }
       ],
       "productID": "braversearch.lifetime.hero",
-      "referenceName": "Lifetime \u00b7 Lionhearted",
+      "referenceName": "Lifetime · Now that’s love!",
       "type": "NonConsumable"
     },
     {
@@ -83,13 +98,13 @@
       "internalID": "89b757a9-df38-4ffb-a578-675ba886defd",
       "localizations": [
         {
-          "description": "All redirects, with a single lifetime purchase.",
-          "displayName": "Lifetime \u00b7 Legend",
+          "description": "Lifetime Safari search redirects. No subscription.",
+          "displayName": "Lifetime · Endless thanks!",
           "locale": "en_US"
         }
       ],
       "productID": "braversearch.lifetime.legend",
-      "referenceName": "Lifetime \u00b7 Legend",
+      "referenceName": "Lifetime · Endless thanks!",
       "type": "NonConsumable"
     }
   ],

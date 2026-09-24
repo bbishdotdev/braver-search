@@ -1,13 +1,13 @@
 # Braver Search: 14-day trial and lifetime access
 
-Implementation branch: `codex/lifetime-unlock`. Production enforcement is deliberately OFF: `AccessConfiguration.launchDate == nil`. This branch does not change the price of the download or create products in App Store Connect.
+Implementation branch: `codex/lifetime-unlock`. Production enforcement is deliberately OFF: `AccessConfiguration.launchDate == nil`. The app remains a free download. Seven Apple products are now configured separately in App Store Connect; local catalog edits do not publish or approve them. See the [current verification status](MONETIZATION-VERIFICATION.md#current-status--september-23).
 
 ## Product experience
 
 - Free download. The user explicitly starts a **14-day Trial**, a zero-price, non-consumable Apple in-app purchase. It is not a subscription, has no renewal, and authorizes no downstream payment or hold. Braver Search collects no payment details. Apple controls its authentication UI and may require account verification; we cannot guarantee Apple never requests billing/account information. Test with a real no-payment-method Apple Account before advertising that stronger guarantee.
-- The free trial button appears before the optional lifetime price picker. The expiry and loss of redirect access are disclosed before starting.
-- Lifetime prices: $4.99, $9.99 suggested, $24.99, $49.99, $99.99 in the US. All buy exactly the same access. Each is a separate non-consumable product, not a subscription or consumable tip.
-- The slider uses the existing four lion illustrations, warm dark surfaces, rounded corners and gold actions. $25 and $50 share the existing lifesaver illustration. No invented “most popular” claim. VoiceOver names the selected tier and price; Reduce Motion suppresses transitions; content scrolls at larger text sizes.
+- The trial introduction has its own page. “See lifetime prices” opens a separate price picker; Back returns to the trial. Trial and expired users open pricing directly. The expiry and loss of redirect access are disclosed before starting.
+- Lifetime prices: $2.99, $4.99, $9.99 suggested, $24.99, $49.99, $99.99 in the US. All buy exactly the same access. Each is a separate non-consumable product, not a subscription or consumable tip.
+- The slider uses four existing lion illustrations plus matching High five! and Now that’s love! artwork, warm dark surfaces, rounded corners and gold actions. Each tier has its own illustration. No invented “most popular” claim. VoiceOver names the selected tier and price; Reduce Motion suppresses transitions; content scrolls at larger text sizes.
 - Actual checkout uses StoreKit's localized price. Missing/misconfigured products cannot be purchased; UI offers Retry App Store. Debug UI fixtures may display suggested US amounts, clearly separated from purchase availability.
 - Legacy users keep optional donations with the original tip identifiers. New paid tiers must not reuse those identifiers.
 - Help, setup instructions, and the current setup diagnostic remain available with no paid access. Expiry does not hijack Safari into a checkout; ordinary searches continue on the selected default search engine.
@@ -43,7 +43,7 @@ The extension popup explains expired/missing access and links back to the app. I
 
 - Only verified StoreKit non-consumable transactions for the allowlisted lifetime IDs grant lifetime access. The trial SKU must have price zero before it can be started through the app.
 - Entitlements are persisted before `transaction.finish()`. Failed persistence leaves delivery retryable.
-- `Transaction.updates` handles approvals and revocations; `currentEntitlements` reconciles the inventory on refresh. StoreKit maintains its local receipt for offline use. An empty inventory does not invent ownership.
+- `Transaction.updates` handles approvals and revocations; `currentEntitlements` reconciles the inventory on refresh, with verified individual transactions covering missing allowlisted products. StoreKit maintains its local receipt for offline use. An empty inventory does not invent ownership.
 - Restore purchases explicitly invokes `AppStore.sync()`, then refreshes acquisition and IAP evidence. This may request Apple authentication.
 - Pending/cancelled/failed/unverified results do not unlock redirects. The app prevents concurrent purchase sheets and shows purchase/restore status.
 - Refunding a lifetime tier removes that tier. Another valid purchased tier still grants access; otherwise the original trial's remaining time determines access.
@@ -57,15 +57,16 @@ Use App Store Connect → My Apps → Braver Search → Monetization → In-App 
 | Product ID | Reference/display name | Suggested US price |
 |---|---|---:|
 | `braversearch.trial.14day` | 14-day Trial | Free / price tier 0 |
-| `braversearch.lifetime.coffee` | Lifetime · A little love | $4.99 |
-| `braversearch.lifetime.supporter` | Lifetime · A happy lion | $9.99 |
-| `braversearch.lifetime.champion` | Lifetime · Big-hearted lion | $24.99 |
-| `braversearch.lifetime.hero` | Lifetime · Lionhearted | $49.99 |
-| `braversearch.lifetime.legend` | Lifetime · Legend | $99.99 |
+| `braversearch.lifetime.thanks` | Lifetime · Thanks! | $2.99 |
+| `braversearch.lifetime.coffee` | Lifetime · High five! | $4.99 |
+| `braversearch.lifetime.supporter` | Lifetime · Cheers! | $9.99 |
+| `braversearch.lifetime.champion` | Lifetime · You’re a lifesaver! | $24.99 |
+| `braversearch.lifetime.hero` | Lifetime · Now that’s love! | $49.99 |
+| `braversearch.lifetime.legend` | Lifetime · Endless thanks! | $99.99 |
 
-Descriptions: trial — “14 days of search redirects. No automatic renewal or charge. After the trial, choose a separate lifetime purchase to continue redirects.” Paid — “Unlock all Braver Search redirects with one payment. Every lifetime price provides the same features.” Add localizations, availability and review screenshots, and complete the relevant agreements/tax/banking setup if Apple requests it. Keep the app download free.
+Descriptions: trial — “14 days of search redirects. No automatic renewal or charge. After the trial, choose a separate lifetime purchase to continue redirects.” Paid — “Lifetime Safari search redirects. No subscription.” Every lifetime price provides identical access. The $99.99 in-app card keeps “I can’t thank you enough!”; Apple uses the shorter “Lifetime · Endless thanks!” to fit its display-name limit. Existing product IDs remain unchanged; only the $2.99 product is new. Add localizations, availability and review screenshots, and complete the relevant agreements/tax/banking setup if Apple requests it. Keep the app download free.
 
-Apple supports App Store Connect API product management, but no authenticated App Store Connect tool/CLI was available in this session. GitHub signing secrets are not a substitute for an exposed authorized API connection. These product entries still need creation in Apple; the local `.storekit` file does not create them.
+Apple supports App Store Connect API product management, but no authenticated App Store Connect tool/CLI was available in this session. GitHub signing secrets are not a substitute for an exposed authorized API connection. Verify the live entries and submission status in Apple separately; the local `.storekit` file does not create or update them.
 
 Apple's documented non-subscription trial route: [App Review Guidelines 3.1.1](https://developer.apple.com/app-store/review/guidelines/#in-app-purchase). Product type: [non-consumable IAP](https://developer.apple.com/help/app-store-connect/reference/in-app-purchases-and-subscriptions/in-app-purchase-types/). [Universal purchase](https://developer.apple.com/help/app-store-connect/create-an-app-record/add-platforms/).
 
@@ -88,11 +89,11 @@ xcodebuild test -project 'Braver Search/Braver Search.xcodeproj' \
   -parallel-testing-enabled NO -derivedDataPath build/ios
 ```
 
-Debug-only visual fixtures: launch the app with `-monetization-scenario eligible|trial|expired|lifetime|grandfathered|unknown`, optionally `-show-lifetime` and `-monetization-tier 0..4`. These populate a separate development record read by the debug app/extension; they do not forge a StoreKit purchase. Launch without the scenario flag to clear it. Release compiles out all fixture parsing and test persistence injection. Never use fixtures as evidence of production purchase, migration, or Safari permission behavior.
+Debug-only visual fixtures: launch the app with `-monetization-scenario eligible|trial|expired|lifetime|grandfathered|unknown`, optionally `-show-lifetime` and `-monetization-tier 0..5`. These populate a separate development record read by the debug app/extension; they do not forge a StoreKit purchase. Launch without the scenario flag to clear it. Release compiles out all fixture parsing and test persistence injection. Never use fixtures as evidence of production purchase, migration, or Safari permission behavior.
 
 ## Release checklist
 
-1. Create and approve the six products; verify both iOS and macOS belong to the same universal app record. If adding the higher amounts later, the UI safely disables those missing options; at least trial and a paid tier must work before enforcement.
+1. Verify the seven configured products (six lifetime tiers plus the free trial), attach them to the app update, and obtain Apple approval; verify both iOS and macOS belong to the same universal app record. If adding the higher amounts later, the UI safely disables those missing options; at least trial and a paid tier must work before enforcement.
 2. Verify a no-payment-method Apple Account can obtain the free trial under real App Store conditions. Apple's account prompts are outside the app's control.
 3. Agree/announce the grandfathering cutoff. Set the single shared `AccessConfiguration.launchDate` to that exact UTC Date. Do not enable it via an unrelated remote analytics flag.
 4. Sandbox/TestFlight on actual iPhone and Mac: start trial, use Safari with permissions on/off, restore on a second device, check a legacy App Store download's original date, and verify production SKU availability. Use the App Store sandbox refund tooling and check reconciliation.
@@ -110,6 +111,8 @@ Suggested PostHog views: new-cohort setup verified → trial verified → first 
 See `MONETIZATION-VERIFICATION.md` for the completed checks, actual screenshots, limitations and remaining Apple-side release work.
 
 ## Remaining Mac runtime signing step
+
+**Historical troubleshooting:** the signing block described here was resolved on September 23 using the existing desktop security session. Do not repeat the keychain steps merely because these older notes remain. Use the desktop-session procedure below for remote builds; signed Safari runtime validation is still separate.
 
 The remote Mac now reports **macOS 26.6.2**, with Xcode 16.4. Unsigned Debug and Release builds compile. The ad-hoc-signed hosted test stalled before tests began, inside macOS shared-preferences access. The project’s pinned Mac development profiles also did not include the current certificate/device; an automatic-provisioning retry got past that mismatch, but `codesign` then returned `errSecInternalComponent` for the existing Apple Development key.
 

@@ -75,7 +75,7 @@ purchase transactions and their original dates remain genuine.
 1. An eligible user sees **Try it in Safari**, with **Start free trial** and no
    price slider. **See lifetime prices** opens a separate page with the lion,
    slider, and **Unlock forever** button. **Back** returns to the trial offer.
-   Confirm all five localized prices load and the card stays still while dragging.
+   Confirm all six localized prices load and the card stays still while dragging.
 2. Start the free trial. Confirm the Apple sheet is a sandbox transaction. Report any
    unavailable-product, sign-in or verification error without entering real payment details.
    Successful activation closes the offer and returns to the app. Cancellation or

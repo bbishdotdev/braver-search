@@ -14,9 +14,10 @@ struct LifetimeAccessView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @ObservedObject private var monetization = MonetizationManager.shared
     @ObservedObject private var store = StoreManager.shared
-    @State private var selection = 1.0
+    @State private var selection = Double(MonetizationConfig.suggestedLifetimeIndex)
     @State private var choseLifetime = false
-    private var index: Int { min(4, max(0, Int(selection.rounded()))) }
+    private var maximumTier: Double { Double(MonetizationConfig.lifetimeOptions.count - 1) }
+    private var index: Int { min(Int(maximumTier), max(0, Int(selection.rounded()))) }
     private var option: DonationOption { MonetizationConfig.lifetimeOptions[index] }
     private var access: AccessDecision { monetization.access }
     private var busy: Bool { store.activePurchaseProductID != nil || store.isRestoring }
@@ -37,14 +38,14 @@ struct LifetimeAccessView: View {
 
     var body: some View {
         ZStack {
-            Color.black.ignoresSafeArea()
+            backdrop
             ScrollView {
                 VStack(spacing: page == .lifetime ? 16 : 24) {
                     if page == .trial {
                         lion("TipCheers", size: 156)
                         heading("Try it in Safari", detail: "14 days of Safari search redirects.")
                         Label("No automatic charge", systemImage: "checkmark.circle")
-                            .font(.subheadline).foregroundStyle(.white.opacity(0.7))
+                            .font(.subheadline).foregroundStyle(AccessPalette.gold)
                     } else if page == .lifetime {
                         if access.state == .expired {
                             Text("Your free trial has ended.").font(.caption).foregroundStyle(.white.opacity(0.65))
@@ -71,7 +72,7 @@ struct LifetimeAccessView: View {
         .task {
             #if DEBUG
             let args = ProcessInfo.processInfo.arguments
-            if let at = args.firstIndex(of: "-monetization-tier"), args.indices.contains(at + 1), let value = Double(args[at + 1]) { selection = min(4, max(0, value)) }
+            if let at = args.firstIndex(of: "-monetization-tier"), args.indices.contains(at + 1), let value = Double(args[at + 1]) { selection = min(maximumTier, max(0, value)) }
             #endif
             recordPageView()
             await store.loadProductsIfNeeded()
@@ -87,6 +88,20 @@ struct LifetimeAccessView: View {
         .onChange(of: index) { _ in
             DurableAnalytics.shared.capture("lifetime_tier_selected", properties: ["product_id": option.id])
         }
+    }
+
+    private var backdrop: some View {
+        ZStack {
+            Color.black
+            if page == .trial {
+                LinearGradient(
+                    colors: [Color(red: 0.12, green: 0.10, blue: 0.09), .black],
+                    startPoint: .top, endPoint: .bottom)
+                RadialGradient(
+                    colors: [AccessPalette.orange.opacity(0.14), .clear],
+                    center: UnitPoint(x: 0.5, y: 0.27), startRadius: 0, endRadius: 290)
+            }
+        }.ignoresSafeArea()
     }
 
     private var navigationBar: some View {
@@ -108,7 +123,7 @@ struct LifetimeAccessView: View {
                     .foregroundStyle(.white.opacity(0.7)).frame(width: 44, height: 44)
                     .background(.white.opacity(0.08), in: Circle())
             }.buttonStyle(.plain).accessibilityLabel("Close")
-        }.padding(.horizontal, 24).padding(.top, 12).padding(.bottom, 4).background(.black)
+        }.padding(.horizontal, 24).padding(.top, 12).padding(.bottom, 4).background(page == .trial ? Color.clear : Color.black)
     }
 
     private var actions: some View {
@@ -204,14 +219,15 @@ struct LifetimeAccessView: View {
                 Text(price).font(.system(size: 32, weight: .bold, design: .rounded))
                     .monospacedDigit().lineLimit(1).minimumScaleFactor(0.65)
                 Text("Suggested price").font(.caption.weight(.medium)).foregroundStyle(AccessPalette.gold)
-                    .opacity(index == 1 ? 1 : 0).accessibilityHidden(index != 1)
+                    .opacity(option.id == AccessConfiguration.suggestedLifetimeID ? 1 : 0)
+                    .accessibilityHidden(option.id != AccessConfiguration.suggestedLifetimeID)
             }.accessibilityElement(children: .combine)
             VStack(spacing: 8) {
                 Group {
                     #if os(iOS)
-                    QuietPriceSlider(value: $selection)
+                    QuietPriceSlider(value: $selection, maximum: maximumTier)
                     #else
-                    Slider(value: $selection, in: 0...4, step: 1).tint(AccessPalette.gold)
+                    Slider(value: $selection, in: 0...maximumTier, step: 1).tint(AccessPalette.gold)
                     #endif
                 }
                 .accessibilityLabel("Choose your lifetime price")
@@ -274,16 +290,17 @@ struct LifetimeAccessView: View {
 
 #if os(iOS)
 /// A continuous thumb with discrete prices, without the system slider's endpoint feedback.
-/// VoiceOver can still move between the five tiers with its adjustable-control gesture.
+/// VoiceOver can still move between the available tiers with its adjustable-control gesture.
 private struct QuietPriceSlider: View {
     @Binding var value: Double
+    let maximum: Double
     @Environment(\.layoutDirection) private var layoutDirection
     @Environment(\.isEnabled) private var isEnabled
 
     var body: some View {
         GeometryReader { geometry in
             let width = max(1, geometry.size.width - 28)
-            let progress = min(1, max(0, value / 4))
+            let progress = min(1, max(0, value / max(1, maximum)))
             let position = layoutDirection == .rightToLeft ? 1 - progress : progress
             ZStack(alignment: .leading) {
                 Capsule().fill(.white.opacity(0.18)).frame(height: 5)
@@ -304,7 +321,7 @@ private struct QuietPriceSlider: View {
                 .onChanged { drag in
                     guard isEnabled else { return }
                     let position = min(1, max(0, (drag.location.x - 14) / width))
-                    value = 4 * (layoutDirection == .rightToLeft ? 1 - position : position)
+                    value = maximum * (layoutDirection == .rightToLeft ? 1 - position : position)
                 }
                 .onEnded { _ in if isEnabled { value = value.rounded() } })
         }
@@ -313,7 +330,7 @@ private struct QuietPriceSlider: View {
         .accessibilityAdjustableAction { direction in
             guard isEnabled else { return }
             switch direction {
-            case .increment: value = min(4, value.rounded() + 1)
+            case .increment: value = min(maximum, value.rounded() + 1)
             case .decrement: value = max(0, value.rounded() - 1)
             @unknown default: break
             }
