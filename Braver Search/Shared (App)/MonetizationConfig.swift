@@ -3,7 +3,6 @@ import Foundation
 enum MonetizationUserState: String {
     case unknown
     case grandfathered
-    case paidAppCustomer
 
     var canTip: Bool {
         self == .grandfathered
@@ -19,22 +18,21 @@ struct DonationOption: Identifiable {
 }
 
 enum MonetizationConfig {
-    private static let paidLaunchDateInfoKey = "PAID_LAUNCH_ISO8601"
     static let appGroupIdentifier = "group.xyz.bsquared.braversearch"
     static let appStoreID = "6740840706"
     static let supportURL = URL(string: "braversearch://support")!
-    static let reviewURL = URL(string: "https://apps.apple.com/app/id\(appStoreID)?action=write-review")!
-    // Set to `nil` while the app is still free for everyone.
-    static let paidLaunchDate: Date? = {
-        guard let rawValue = Bundle.main.object(forInfoDictionaryKey: paidLaunchDateInfoKey) as? String,
-              !rawValue.isEmpty else {
-            return nil
-        }
-
-        let formatter = ISO8601DateFormatter()
-        formatter.formatOptions = [.withInternetDateTime]
-        return formatter.date(from: rawValue)
-    }()
+    static let reviewURL = URL(string: "https://apps.apple.com/app/id6740840706?action=write-review")!
+    static let lifetimeOptions: [DonationOption] = [
+        DonationOption(id: AccessConfiguration.thanksLifetimeID, displayName: "Thanks!", fallbackPrice: "$2.99", description: "A little kindness goes a long way.", assetName: "TipThanks"),
+        DonationOption(id: AccessConfiguration.highFiveLifetimeID, displayName: "High five!", fallbackPrice: "$4.99", description: "Paws up. You made my day!", assetName: "TipHighFive"),
+        DonationOption(id: AccessConfiguration.cheersLifetimeID, displayName: "Cheers!", fallbackPrice: "$9.99", description: "A coffee for me. A little joy from you.", assetName: "TipCheers"),
+        DonationOption(id: AccessConfiguration.lifesaverLifetimeID, displayName: "You’re a lifesaver!", fallbackPrice: "$24.99", description: "A helping paw that means so much.", assetName: "TipLifesaver"),
+        DonationOption(id: AccessConfiguration.loveLifetimeID, displayName: "Now that’s love!", fallbackPrice: "$49.99", description: "Sending a great big hug right back.", assetName: "TipLove"),
+        DonationOption(id: AccessConfiguration.gratitudeLifetimeID, displayName: "I can’t thank you enough!", fallbackPrice: "$99.99", description: "Your generosity means the world to me.", assetName: "TipMax")
+    ]
+    static var suggestedLifetimeIndex: Int {
+        lifetimeOptions.firstIndex { $0.id == AccessConfiguration.suggestedLifetimeID } ?? 0
+    }
 
     static let donationOptions: [DonationOption] = [
         DonationOption(
@@ -83,5 +81,5 @@ extension Notification.Name {
 }
 
 func sharedMonetizationDefaults() -> UserDefaults {
-    UserDefaults(suiteName: MonetizationConfig.appGroupIdentifier)!
+    DurableAnalytics.defaults
 }

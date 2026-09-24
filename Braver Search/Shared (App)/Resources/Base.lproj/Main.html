@@ -16,6 +16,15 @@
     <script src="../Script.js" defer></script>
   </head>
   <body>
+    <button id="access-summary" class="setup-action hidden" type="button">
+      <span id="access-summary-default"></span>
+      <span id="access-summary-expired" class="hidden">
+        <span class="expiry-badge"><span aria-hidden="true">⏸</span> TRIAL EXPIRED</span>
+        <span class="expiry-title">Safari redirects are paused</span>
+        <span class="expiry-message">Choose a one-time purchase to turn them back on.</span>
+        <span class="expiry-cta">Unlock lifetime access <span aria-hidden="true">→</span></span>
+      </span>
+    </button>
     <section class="summary-grid">
       <article class="summary-card status-card">
         <h2>Braver Search</h2>
@@ -45,14 +54,18 @@
             </p>
           </div>
         </div>
-        <button type="button" id="test-setup" class="setup-action">
-          <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 4 6v6c0 5 8 9 8 9s8-4 8-9V6l-8-3Z"/><path d="m8 12 3 3 5-6"/></svg>
-          <span>Test my setup</span><span class="setup-arrow" aria-hidden="true">↗</span>
-        </button>
-        <p id="setup-result" class="setup-result hidden" role="status" aria-live="polite"></p>
+        <div id="setup-test-primary"></div>
         <details id="setup-help" class="setup-help">
-          <summary>Need help with setup?</summary>
-          <p>In Safari Settings → Extensions, turn on Braver Search. Allow website access to Google and Brave Search, and check that redirects are on in the extension popup. Then try the test again.</p>
+          <summary>Setup help</summary>
+          <p id="setup-access-explanation">Check Safari permissions without starting your trial or unlocking searches.</p>
+          <div id="setup-test-controls">
+            <button type="button" id="test-setup" class="setup-action">
+              <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 4 6v6c0 5 8 9 8 9s8-4 8-9V6l-8-3Z"/><path d="m8 12 3 3 5-6"/></svg>
+              <span id="setup-test-label">Check extension setup</span><span class="setup-arrow" aria-hidden="true">↗</span>
+            </button>
+            <p id="setup-result" class="setup-result hidden" role="status" aria-live="polite"></p>
+          </div>
+          <p>In Safari Settings → Extensions, turn on Braver Search. Allow website access to Google and Brave Search. When your trial or lifetime access is active, check that redirects are on in the extension popup.</p>
           <p>The test verifies Google to Brave. Other search engines may need their own website permission.</p>
         </details>
         <button class="platform-mac open-preferences">
@@ -88,6 +101,8 @@
       <div class="support-products"></div>
     </section>
     <p class="support-disclaimer">
+      <a id="privacy-policy" href="https://www.bbish.dev/braver-search/privacy">Privacy Policy</a>
+      <br />
       Not affiliated with Brave Software Inc.
       <a href="https://search.brave.com" target="_blank">About Brave Search</a>
     </p>

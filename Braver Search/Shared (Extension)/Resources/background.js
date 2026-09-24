@@ -47,6 +47,7 @@ const enabledState = {
 
 const pendingBangRedirects = new Map();
 const pendingSetupRedirects = new Map();
+const navigationVersions = new Map();
 
 function debugLog(...args) {
     if (DEBUG_LOGGING) {
@@ -354,6 +355,7 @@ async function handleSearchNavigation(details, { loadedPage = false } = {}) {
         return;
     }
 
+    const navigationVersion = navigationVersions.get(details.tabId);
     const searchQuery = url.searchParams.get('q');
 
     if (searchQuery && isBraveSearchUrl(url)) {
@@ -397,6 +399,17 @@ async function handleSearchNavigation(details, { loadedPage = false } = {}) {
         return;
     }
 
+    // Native policy is authoritative. A toggle or a fabricated setup token cannot grant access.
+    // This reads a local App Group record, never a network request or analytics acknowledgment.
+    let access;
+    try {
+        access = await browser.runtime.sendNativeMessage({
+            type: 'getRedirectAccess',
+            properties: { test_id: isSetupTest ? testID : '', setup_query: isSetupTest && searchQuery === 'Braver Search setup check' }
+        });
+    } catch { return; }
+    if (access?.allowed !== true || navigationVersions.get(details.tabId) !== navigationVersion) { return; }
+
     if (loadedPage) {
         // Native/storage reads may finish after the user has left this page.
         const tab = await browser.tabs.get(details.tabId).catch(() => null);
@@ -436,8 +449,14 @@ async function handleSearchNavigation(details, { loadedPage = false } = {}) {
         });
 }
 
-browser.webNavigation.onBeforeNavigate.addListener(handleSearchNavigation);
+browser.webNavigation.onBeforeNavigate.addListener(details => {
+    if (details.frameId === undefined || details.frameId === 0) {
+        navigationVersions.set(details.tabId, (navigationVersions.get(details.tabId) || 0) + 1);
+    }
+    return handleSearchNavigation(details);
+});
 browser.tabs.onRemoved.addListener(tabId => {
+    navigationVersions.delete(tabId);
     pendingSetupRedirects.delete(tabId);
     pendingBangRedirects.delete(tabId);
 });

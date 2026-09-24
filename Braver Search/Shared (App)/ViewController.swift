@@ -12,6 +12,7 @@ import UIKit
 typealias PlatformViewController = UIViewController
 #elseif os(macOS)
 import Cocoa
+import SwiftUI
 import SafariServices
 typealias PlatformViewController = NSViewController
 #endif
@@ -34,6 +35,7 @@ class ViewController: PlatformViewController, WKNavigationDelegate, WKScriptMess
 
     override func viewDidLoad() {
         super.viewDidLoad()
+        guard !DurableAnalytics.isUnitTestHost else { return }
         setupTimer = Timer.scheduledTimer(withTimeInterval: 2, repeats: true) { [weak self] _ in
             self?.updateSetupUI()
         }
@@ -82,6 +84,10 @@ class ViewController: PlatformViewController, WKNavigationDelegate, WKScriptMess
 #elseif os(macOS)
         webView.evaluateJavaScript("show('mac')")
         updateSetupUI()
+        updateMonetizationUI()
+        #if DEBUG
+        if ProcessInfo.processInfo.arguments.contains("-show-lifetime") { showLifetime() }
+        #endif
 
         SFSafariExtensionManager.getStateOfSafariExtension(withIdentifier: extensionBundleIdentifier) { (state, error) in
             guard let state = state, error == nil else {
@@ -123,6 +129,8 @@ class ViewController: PlatformViewController, WKNavigationDelegate, WKScriptMess
         }
 
         switch action {
+        case "open-lifetime":
+            showLifetime()
         case "test-setup":
             do {
                 let url = try SetupCheck.start()
@@ -139,6 +147,8 @@ class ViewController: PlatformViewController, WKNavigationDelegate, WKScriptMess
             MacAppAnalytics.track("setup_help_opened")
         case "open-review":
             NSWorkspace.shared.open(MonetizationConfig.reviewURL)
+        case "open-privacy":
+            NSWorkspace.shared.open(URL(string: "https://www.bbish.dev/braver-search/privacy")!)
         case "purchase":
             guard let productID = payload["productId"] as? String,
                   let option = MonetizationConfig.donationOptions.first(where: { $0.id == productID }) else {
@@ -170,6 +180,7 @@ class ViewController: PlatformViewController, WKNavigationDelegate, WKScriptMess
 
     private func updateSetupUI() {
 #if os(macOS)
+        if NSApp.isActive { MonetizationManager.shared.refreshAccess() }
         let snapshot = SetupCheck.snapshot()
         if NSApp.isActive {
             SetupCheck.resultShown(snapshot)
@@ -184,6 +195,10 @@ class ViewController: PlatformViewController, WKNavigationDelegate, WKScriptMess
     private func updateMonetizationUI() {
 #if os(macOS)
         let payload: [String: Any] = [
+            "accessState": MonetizationManager.shared.access.state.rawValue,
+            "accessAllowed": MonetizationManager.shared.access.allowsRedirects,
+            "accessTitle": MonetizationManager.shared.access.title,
+            "accessMessage": MonetizationManager.shared.access.message,
             "canTip": MonetizationManager.shared.canShowSupport,
             "hasDonated": MonetizationManager.shared.hasDonated,
             "reviewURL": MonetizationConfig.reviewURL.absoluteString,
@@ -210,12 +225,18 @@ class ViewController: PlatformViewController, WKNavigationDelegate, WKScriptMess
 
     private func focusSupportUI() {
 #if os(macOS)
+        if !MonetizationManager.shared.canShowSupport { showLifetime(); return }
         updateMonetizationUI()
         webView.evaluateJavaScript("focusSupportSection()")
 #endif
     }
 
 #if os(macOS)
+    private func showLifetime() {
+        guard presentedViewControllers?.isEmpty != false else { return }
+        presentAsSheet(NSHostingController(rootView: LifetimeAccessView()))
+    }
+
     private func configureWindowLayout() {
         guard let window = view.window else {
             return
