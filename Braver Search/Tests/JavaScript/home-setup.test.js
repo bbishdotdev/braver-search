@@ -84,13 +84,13 @@ describe('Mac home setup access presentation', () => {
         context.updateSetup({ status: 'inconclusive', title: 'Test incomplete', message: 'Check Safari permissions' });
         expect(document.getElementById('setup-result').textContent).toBe('Test incomplete. Check Safari permissions');
     });
-    it('exposes verification failure and an explicit retry even when the access policy remains free', () => {
-        context.updateMonetization({ ...payload('free', true), accessVerificationMessage: 'Apple verification failed (StoreKit 2)' });
+    it('exposes verification failure and an explicit retry when access is unresolved', () => {
+        context.updateMonetization({ ...payload('unknown', false), accessVerificationMessage: 'Apple verification failed (StoreKit 2)' });
         expect(document.getElementById('access-verification').classList.contains('hidden')).toBe(false);
         expect(document.getElementById('access-verification-message').textContent).toContain('StoreKit 2');
         document.getElementById('retry-access').click();
         expect(postMessage).toHaveBeenCalledWith({ action: 'retry-access' });
-        context.updateMonetization({ ...payload('free', true), isVerifyingAccess: true });
+        context.updateMonetization({ ...payload('unknown', false), isVerifyingAccess: true });
         expect(document.getElementById('retry-access').disabled).toBe(true);
         document.getElementById('retry-access').click();
         expect(postMessage).toHaveBeenCalledTimes(1);
@@ -98,5 +98,16 @@ describe('Mac home setup access presentation', () => {
         expect(document.getElementById('access-verification').classList.contains('hidden')).toBe(true);
         expect(document.getElementById('access-summary').classList.contains('hidden')).toBe(false);
         expect(document.querySelector('.support-section').classList.contains('hidden')).toBe(true);
+    });
+    it.each(['free', 'grandfathered', 'trial', 'lifetime'])('does not alarm %s users or hide their existing access when Apple is unavailable', state => {
+        const canTip = ['free', 'grandfathered'].includes(state);
+        for (const isVerifyingAccess of [true, false]) {
+            context.updateMonetization({ ...payload(state, true), canTip, products: [], isVerifyingAccess,
+                accessVerificationMessage: 'Apple verification failed (StoreKit 2)' });
+            expect(getComputedStyle(document.getElementById('access-verification')).display).toBe('none');
+            expect(document.getElementById('setup-test-label').textContent).toBe('Test my setup');
+            expect(getComputedStyle(document.querySelector('.support-section')).display).toBe(canTip ? 'flex' : 'none');
+            expect(document.getElementById('access-summary-action').textContent).not.toBe('Start free trial');
+        }
     });
 });

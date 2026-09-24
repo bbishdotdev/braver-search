@@ -26,7 +26,13 @@ final class MonetizationManager: ObservableObject {
     }
 
     var canShowSupport: Bool {
-        access.state.canTip && accessVerificationMessage == nil && !isVerifyingAccess
+        access.state.canTip
+    }
+
+    var showsAccessVerificationNotice: Bool {
+        // An unavailable Apple refresh is not a loss of existing access. Keep the
+        // technical failure for explicit Restore, but don't alarm users who can search.
+        !access.allowsRedirects && accessVerificationMessage != nil
     }
 
     func configureIfNeeded() {

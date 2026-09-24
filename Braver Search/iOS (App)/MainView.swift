@@ -45,7 +45,7 @@ struct MainView: View {
 
                 ScrollView(showsIndicators: false) {
                     VStack(alignment: .leading, spacing: 18) {
-                        if monetization.accessVerificationMessage != nil {
+                        if monetization.showsAccessVerificationNotice {
                             AccessVerificationNotice()
                         }
                         if monetization.access.state != .free {

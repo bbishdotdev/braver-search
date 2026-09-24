@@ -47,7 +47,7 @@ struct LifetimeAccessView: View {
             backdrop
             ScrollView {
                 VStack(spacing: page == .lifetime ? 16 : 24) {
-                    if monetization.accessVerificationMessage != nil {
+                    if monetization.showsAccessVerificationNotice {
                         AccessVerificationNotice()
                     }
                     if page == .trial {

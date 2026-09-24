@@ -7,13 +7,34 @@ throws or returns an unverified result: that build discarded the error. The symp
 was reported on macOS 26.6.2 with no `appTransactionEnvironment` saved in the access
 record. This does not establish Apple's underlying error or mean the Mac UI is missing.
 
-The recovery change shows a **Check your App Store access** notice with a technical
-error code and a **Retry verification** button, on Mac and iOS. The button explicitly
+Builds 2.0.11–2.0.12 showed a **Check your App Store access** warning for every
+acquisition failure, even when existing access remained valid. The follow-up fix
+limits that notice to users whose redirects are blocked. Free, grandfathered,
+active-trial and lifetime users retain their normal home screen; free and
+grandfathered users retain donations. An explicit Restore still reports a failed
+Apple check, and technical failures remain logged.
+
+The notice includes a technical error code and a **Retry verification** button on
+Mac and iOS. The button explicitly
 calls `AppTransaction.refresh()` and may ask for App Store authentication. Background
 refresh never forces authentication. No receipt or account information is included
 in the displayed code or log. A failed check preserves cached access and trial dates;
-it cannot start a trial, extend expiry, or invent a lifetime purchase. Donation cards
-are hidden while verification is running or has failed.
+it cannot start a trial, extend expiry, or invent a lifetime purchase.
+
+### Existing-user release gate
+
+The same access-store regression runs on iOS and Mac. It injects an Apple
+verification failure and checks donation-era first-use migration without an access
+record, cached production grandfathering, cached lifetime ownership, expired trials,
+and an unresolved download. Unresolved acquisition after rollout remains **unknown**,
+not **eligible**; no failure may be treated as evidence that someone must pay.
+
+These are deterministic failure tests, not proof of a live App Store upgrade. Before
+activating the production cutoff, test an upgrade from the public donation build on
+both platforms with a normal App Store account, including an offline launch. A
+TestFlight new-user screen does not validate production grandfathering: the sandbox
+policy deliberately exercises the new-user flow. Keep the cutoff disabled until that
+upgrade validation is complete.
 
 After retry succeeds with a verified Sandbox acquisition, the existing sandbox policy
 shows the trial/purchase flow. If retry still fails, record the on-screen error code.

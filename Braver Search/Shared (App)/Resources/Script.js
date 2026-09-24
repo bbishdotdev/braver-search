@@ -28,7 +28,7 @@ function updateMonetization(payload) {
     const verification = document.getElementById("access-verification");
     const verifying = payload.isVerifyingAccess === true;
     const verificationMessage = payload.accessVerificationMessage || "";
-    verification.classList.toggle("hidden", !verifying && !verificationMessage);
+    verification.classList.toggle("hidden", payload.accessAllowed === true || (!verifying && !verificationMessage));
     document.getElementById("access-verification-title").textContent = verifying
         ? "Checking App Store access…" : "Check your App Store access";
     document.getElementById("access-verification-message").textContent = verifying
