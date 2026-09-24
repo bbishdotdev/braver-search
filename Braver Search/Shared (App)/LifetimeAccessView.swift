@@ -45,6 +45,9 @@ struct LifetimeAccessView: View {
             backdrop
             ScrollView {
                 VStack(spacing: page == .lifetime ? 16 : 24) {
+                    if monetization.accessVerificationMessage != nil {
+                        AccessVerificationNotice()
+                    }
                     if page == .trial {
                         lion("TipCheers", size: 156)
                         heading("Try it in Safari", detail: "14 days of Safari search redirects.")
@@ -304,6 +307,30 @@ struct LifetimeAccessView: View {
                 .background(LinearGradient(colors: [AccessPalette.gold, AccessPalette.goldEnd], startPoint: .top, endPoint: .bottom), in: RoundedRectangle(cornerRadius: 18))
         }.buttonStyle(.plain).disabled(busy || disabled).opacity(busy || disabled ? 0.75 : 1)
             .accessibilityIdentifier(id)
+    }
+}
+
+/// Explicit recovery is available even before acquisition verification can select a paywall.
+struct AccessVerificationNotice: View {
+    @ObservedObject private var monetization = MonetizationManager.shared
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Label("Check your App Store access", systemImage: "exclamationmark.circle")
+                .font(.subheadline.weight(.semibold))
+            if let message = monetization.accessVerificationMessage {
+                Text(message).font(.footnote).foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            Button(monetization.isVerifyingAccess ? "Checking…" : "Retry verification") {
+                Task { await monetization.resolveUserState(forceRefresh: true) }
+            }
+            .buttonStyle(.bordered).disabled(monetization.isVerifyingAccess)
+            .accessibilityIdentifier("retry-access-verification")
+        }
+        .frame(maxWidth: .infinity, alignment: .leading).padding(16)
+        .background(.white.opacity(0.06), in: RoundedRectangle(cornerRadius: 16))
+        .overlay(RoundedRectangle(cornerRadius: 16).stroke(AccessPalette.gold.opacity(0.35)))
     }
 }
 

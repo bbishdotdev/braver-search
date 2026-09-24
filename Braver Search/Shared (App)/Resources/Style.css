@@ -90,6 +90,16 @@ button {
     text-align: left;
 }
 
+.access-verification {
+    width: min(var(--content-width), 100%);
+    box-sizing: border-box;
+    text-align: left;
+    border: 1px solid color-mix(in srgb, #e9ae60 45%, transparent);
+}
+
+.access-verification p { margin: 0; overflow-wrap: anywhere; }
+.access-verification.hidden { display: none; }
+
 .summary-row {
     display: grid;
     grid-template-columns: 72px minmax(0, 1fr);

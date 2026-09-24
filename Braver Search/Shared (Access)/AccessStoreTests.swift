@@ -5,6 +5,46 @@ import StoreKitTest
 
 /// Real Xcode StoreKit transactions. These never contact the production App Store or charge money.
 @MainActor final class AccessStoreTests: XCTestCase {
+    func testAcquisitionFailureAndRecoveryPreserveVerifiedAccess() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent("acquisition-tests-" + UUID().uuidString)
+        AccessStore.testPersistence = DurableAnalytics(directory: root)
+        defer { try? FileManager.default.removeItem(at: root) }
+        AccessStore.configureLocalTest(arguments: [])
+        AccessStore.configurePreview()
+        let fail: () async throws -> (Date, String) = {
+            throw NSError(domain: "StoreKit.StoreKitError", code: 2,
+                          userInfo: [NSLocalizedDescriptionKey: "Private receipt details"])
+        }
+        let message = await AccessStore.verifyAcquisition(using: fail)
+        XCTAssertTrue(message?.contains("StoreKit.StoreKitError 2") == true)
+        XCTAssertFalse(message?.contains("Private receipt details") == true)
+        try AccessStore.update {
+            XCTAssertNil($0.appTransactionEnvironment)
+            XCTAssertNil($0.trialStart)
+            XCTAssertTrue($0.lifetimeProducts.isEmpty)
+        }
+        let original = Date(timeIntervalSince1970: 1375340400)
+        let recovered = await AccessStore.verifyAcquisition { (original, "Sandbox") }
+        XCTAssertNil(recovered)
+        XCTAssertEqual(AccessStore.decision().state, .eligible)
+        try AccessStore.update {
+            $0.trialStart = Date().addingTimeInterval(-15 * 86400)
+        }
+        _ = await AccessStore.verifyAcquisition(using: fail)
+        XCTAssertEqual(AccessStore.decision().state, .expired, "An error must not restart an expired trial")
+        try AccessStore.update { $0.lifetimeProducts = [AccessConfiguration.thanksLifetimeID] }
+        _ = await AccessStore.verifyAcquisition(using: fail)
+        XCTAssertEqual(AccessStore.decision().state, .lifetime, "Failure preserves previously verified ownership")
+        _ = await AccessStore.verifyAcquisition { (original, "Sandbox") }
+        XCTAssertEqual(AccessStore.decision().state, .lifetime, "Same-environment recovery preserves ownership")
+        _ = await AccessStore.verifyAcquisition { (original, "Production") }
+        XCTAssertEqual(AccessStore.decision().state, .free, "Recovery must not activate the public rollout")
+        try AccessStore.update {
+            XCTAssertTrue($0.lifetimeProducts.isEmpty, "Sandbox ownership must not cross into production")
+            XCTAssertNil($0.trialStart)
+        }
+    }
+
     private func restoredDecision(_ expected: AccessState, cutoff: Date) async throws -> AccessDecision {
         print("StoreKit test: restoring \(expected)")
         // StoreKit Test updates its entitlement inventory asynchronously after delivery/refund.

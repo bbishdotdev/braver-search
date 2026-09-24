@@ -57,17 +57,25 @@ enum AccessStore {
         return decision
     }
 
-    /// All StoreKit reads use the local verified receipt; no web request on the navigation path.
-    static func refresh() async {
+    /// Host only. A forced refresh may authenticate and must be user initiated.
+    @discardableResult
+    static func refresh(forceRefresh: Bool = false) async -> String? {
         #if DEBUG
-        if previewRecord() != nil { return }
+        if previewRecord() != nil { return nil }
         #endif
         if #available(iOS 16.0, macOS 13.0, *) {
-            if let result = try? await AppTransaction.shared, case .verified(let app) = result {
-                try? update {
-                    $0.setVerifiedAcquisition(date: app.originalPurchaseDate, environment: app.environment.rawValue)
+            let failure = await verifyAcquisition {
+                let result: VerificationResult<AppTransaction>
+                if forceRefresh { result = try await AppTransaction.refresh() }
+                else { result = try await AppTransaction.shared }
+                switch result {
+                case .verified(let app): return (app.originalPurchaseDate, app.environment.rawValue)
+                case .unverified(_, let error): throw error
                 }
             }
+            // Failure is not evidence of a new account or revoked access. Keep cached
+            // entitlements; ordinary trial expiry still uses the local guarded clock.
+            if let failure { return failure }
         }
         var revision = 0
         var environment: String?
@@ -110,6 +118,21 @@ enum AccessStore {
             record.entitlementRevision += 1
             record.lifetimeProducts = lifetime.filter { !record.revokedTransactionIDs.contains($0.1) }.map { $0.0 }
             record.trialStart = trialTransactionID.map { record.revokedTransactionIDs.contains($0) } == true ? nil : trialStart
+        }
+        return nil
+    }
+
+    /// Tests inject acquisition failures without forging any StoreKit purchase.
+    static func verifyAcquisition(using load: () async throws -> (Date, String)) async -> String? {
+        do {
+            let (date, environment) = try await load()
+            try update { $0.setVerifiedAcquisition(date: date, environment: environment) }
+            return nil
+        } catch {
+            let error = error as NSError
+            // Only a technical code, never receipts, account details, or purchase identifiers.
+            NSLog("Braver Search: app access verification failed (%@ %ld)", error.domain, error.code)
+            return "We couldn’t verify your app download with Apple. Retry to check your trial or lifetime access. (\(error.domain) \(error.code))"
         }
     }
 

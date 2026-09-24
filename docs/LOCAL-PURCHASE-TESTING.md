@@ -1,5 +1,27 @@
 ## TestFlight builds (September 24 update)
 
+### Mac verification recovery
+
+Build 2.0.10 (46) can show the free/donation UI if Apple's `AppTransaction.shared`
+throws or returns an unverified result: that build discarded the error. The symptom
+was reported on macOS 26.6.2 with no `appTransactionEnvironment` saved in the access
+record. This does not establish Apple's underlying error or mean the Mac UI is missing.
+
+The recovery change shows a **Check your App Store access** notice with a technical
+error code and a **Retry verification** button, on Mac and iOS. The button explicitly
+calls `AppTransaction.refresh()` and may ask for App Store authentication. Background
+refresh never forces authentication. No receipt or account information is included
+in the displayed code or log. A failed check preserves cached access and trial dates;
+it cannot start a trial, extend expiry, or invent a lifetime purchase. Donation cards
+are hidden while verification is running or has failed.
+
+After retry succeeds with a verified Sandbox acquisition, the existing sandbox policy
+shows the trial/purchase flow. If retry still fails, record the on-screen error code.
+The recovery is not proof that Apple's failure is fixed on the affected Mac; that
+requires retesting the TestFlight build there. Keep the production cutoff disabled.
+
+### Expected sandbox behavior
+
 Release builds now recognize Apple's **verified Sandbox app transaction** and show the new-user flow automatically, despite Apple's fixed 2013 original acquisition date. No Xcode launch arguments are needed. Existing sandbox purchases are restored, so use a fresh sandbox tester or clear its purchase history and sign out/in if you need to start over.
 
 Both platforms use the same policy. Trial and lifetime access still require genuine verified Apple sandbox transactions; expiry remains **14 real days**. TestFlight has no time-shift or free-unlock controls. The Debug instructions below remain useful for accelerated expiry and legacy scenarios. Production stays free while `launchDate` is nil; sandbox testing does not set the public cutoff.

@@ -108,7 +108,11 @@ final class StoreManager: ObservableObject {
         defer { isRestoring = false }
         do {
             try await AppStore.sync() // Only on an explicit user action; may request Apple authentication.
-            await MonetizationManager.shared.resolveUserState()
+            await MonetizationManager.shared.resolveUserState(forceRefresh: MonetizationManager.shared.accessVerificationMessage != nil)
+            if let message = MonetizationManager.shared.accessVerificationMessage {
+                purchaseMessage = message
+                return
+            }
             purchaseMessage = AccessStore.decision().allowsRedirects ? "Your access is ready." : "No active access found. You can start a trial if eligible or choose a lifetime price."
             DurableAnalytics.shared.capture("purchases_restored")
         } catch { purchaseMessage = "Couldn’t connect to the App Store. Your saved access hasn’t changed." }
