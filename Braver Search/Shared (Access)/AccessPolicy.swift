@@ -114,20 +114,7 @@ struct AccessDecision: Equatable {
 }
 
 enum AccessPolicy {
-    /// Apple gives sandbox acquisitions a fixed 2013 date. TestFlight/App Review therefore
-    /// exercise the new-user flow using real transactions, independently of the public cutoff.
-    /// This never changes stored acquisition evidence or fabricates a purchase.
-    static func evaluateForStore(_ record: AccessRecord, cutoff: Date?, now: Date) -> AccessDecision {
-        guard record.appTransactionEnvironment == "Sandbox", record.originalPurchaseDate != nil else {
-            return evaluate(record, cutoff: cutoff, now: now)
-        }
-        var sandbox = record
-        let sandboxCutoff = Date(timeIntervalSince1970: 1)
-        sandbox.originalPurchaseDate = sandboxCutoff
-        sandbox.legacyFirstUse = nil
-        return evaluate(sandbox, cutoff: sandboxCutoff, now: now)
-    }
-
+    /// All StoreKit environments use the same acquisition evidence and release cutoff.
     static func evaluate(_ record: AccessRecord, cutoff: Date?, now: Date) -> AccessDecision {
         func result(_ state: AccessState, _ expires: Date? = nil) -> AccessDecision { AccessDecision(state: state, expiresAt: expires) }
         guard let cutoff, now >= cutoff else { return result(.free) }

@@ -74,26 +74,47 @@ import StoreKitTest
             XCTAssertNil($0.trialStart)
             XCTAssertTrue($0.lifetimeProducts.isEmpty)
         }
-        let original = Date(timeIntervalSince1970: 1375340400)
+        let original = Date()
+        let cutoff = original.addingTimeInterval(-30 * 86400)
         let recovered = await AccessStore.verifyAcquisition { (original, "Sandbox") }
         XCTAssertNil(recovered)
-        XCTAssertEqual(AccessStore.decision().state, .eligible)
+        XCTAssertEqual(AccessStore.decision().state, .free, "Sandbox must honor the disabled public cutoff")
+        XCTAssertEqual(AccessStore.decision(cutoff: cutoff).state, .eligible)
         try AccessStore.update {
             $0.trialStart = Date().addingTimeInterval(-15 * 86400)
         }
         _ = await AccessStore.verifyAcquisition(using: fail)
-        XCTAssertEqual(AccessStore.decision().state, .expired, "An error must not restart an expired trial")
+        XCTAssertEqual(AccessStore.decision(cutoff: cutoff).state, .expired, "An error must not restart an expired trial")
         try AccessStore.update { $0.lifetimeProducts = [AccessConfiguration.thanksLifetimeID] }
         _ = await AccessStore.verifyAcquisition(using: fail)
-        XCTAssertEqual(AccessStore.decision().state, .lifetime, "Failure preserves previously verified ownership")
+        XCTAssertEqual(AccessStore.decision(cutoff: cutoff).state, .lifetime, "Failure preserves previously verified ownership")
         _ = await AccessStore.verifyAcquisition { (original, "Sandbox") }
-        XCTAssertEqual(AccessStore.decision().state, .lifetime, "Same-environment recovery preserves ownership")
+        XCTAssertEqual(AccessStore.decision(cutoff: cutoff).state, .lifetime, "Same-environment recovery preserves ownership")
         _ = await AccessStore.verifyAcquisition { (original, "Production") }
         XCTAssertEqual(AccessStore.decision().state, .free, "Recovery must not activate the public rollout")
         try AccessStore.update {
             XCTAssertTrue($0.lifetimeProducts.isEmpty, "Sandbox ownership must not cross into production")
             XCTAssertNil($0.trialStart)
         }
+    }
+
+    func testSandboxAcquisitionKeepsLegacyAccess() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent("sandbox-legacy-tests-" + UUID().uuidString)
+        AccessStore.testPersistence = DurableAnalytics(directory: root)
+        defer { try? FileManager.default.removeItem(at: root) }
+        AccessStore.configurePreview()
+        AccessStore.configureLocalTest(arguments: [])
+        let original = Date(timeIntervalSince1970: 1375340400)
+        let cutoff = Date().addingTimeInterval(-86400)
+        _ = await AccessStore.verifyAcquisition { (original, "Sandbox") }
+        XCTAssertEqual(AccessStore.decision().state, .free)
+        XCTAssertEqual(AccessStore.decision(cutoff: Date().addingTimeInterval(86400)).state, .free)
+        XCTAssertEqual(AccessStore.decision(cutoff: cutoff).state, .grandfathered)
+        try AccessStore.update { $0.trialStart = Date().addingTimeInterval(-15 * 86400) }
+        let decision = AccessStore.decision(cutoff: cutoff)
+        XCTAssertEqual(decision.state, .grandfathered, "An old sandbox trial must not replace legacy access")
+        XCTAssertTrue(decision.allowsRedirects)
+        try AccessStore.update { XCTAssertEqual($0.originalPurchaseDate, original) }
     }
 
     private func restoredDecision(_ expected: AccessState, cutoff: Date) async throws -> AccessDecision {

@@ -51,7 +51,7 @@ enum AccessStore {
                     return
                 }
                 #endif
-                decision = AccessPolicy.evaluateForStore(record, cutoff: cutoff, now: effective)
+                decision = AccessPolicy.evaluate(record, cutoff: cutoff, now: effective)
             }
         } catch { /* storage failure never grants paid access */ }
         return decision
