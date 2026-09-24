@@ -412,7 +412,9 @@ struct AccessSummaryButton: View {
     var action: () -> Void
     var body: some View {
         Button(action: action) {
-            if monetization.access.state == .expired {
+            if monetization.access.state == .eligible {
+                trialSummary
+            } else if monetization.access.state == .expired {
                 expiredSummary
             } else {
                 HStack(spacing: 12) {
@@ -427,6 +429,26 @@ struct AccessSummaryButton: View {
                 }.padding(16).background(.white.opacity(0.05), in: RoundedRectangle(cornerRadius: 18))
             }
         }.buttonStyle(.plain).accessibilityIdentifier("access-summary")
+    }
+    private var trialSummary: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            VStack(alignment: .leading, spacing: 5) {
+                Text("Start your free trial to enable Safari redirects")
+                    .font(.headline).foregroundStyle(.white)
+                Text("Try it for 14 days. No automatic charge.")
+                    .font(.subheadline).foregroundStyle(.white.opacity(0.75))
+            }.fixedSize(horizontal: false, vertical: true)
+            HStack {
+                Text("Start free trial").font(.subheadline.bold())
+                Spacer(minLength: 8)
+                Image(systemName: "arrow.right").font(.subheadline.bold())
+            }
+            .foregroundStyle(AccessPalette.ink).padding(.horizontal, 14).padding(.vertical, 12)
+            .background(LinearGradient(colors: [AccessPalette.gold, AccessPalette.goldEnd], startPoint: .top, endPoint: .bottom), in: RoundedRectangle(cornerRadius: 12))
+        }
+        .frame(maxWidth: .infinity, alignment: .leading).padding(16)
+        .background(LinearGradient(colors: [Color(red: 0.18, green: 0.145, blue: 0.105), Color(red: 0.125, green: 0.115, blue: 0.105)], startPoint: .topLeading, endPoint: .bottomTrailing), in: RoundedRectangle(cornerRadius: 18))
+        .overlay(RoundedRectangle(cornerRadius: 18).stroke(AccessPalette.gold.opacity(0.3), lineWidth: 1))
     }
     private var expiredSummary: some View {
         VStack(alignment: .leading, spacing: 12) {

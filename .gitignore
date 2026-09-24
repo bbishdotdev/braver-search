@@ -144,3 +144,7 @@ Braver Search/Braver Search.xcodeproj/project.pbxproj
 
 # windsurf rules
 .windsurfrules
+
+# Internal analytics exports, release runbooks, and purchase-testing evidence.
+# Keep these in a private directory outside this public repository.
+/docs/

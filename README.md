@@ -415,7 +415,6 @@ The Commons Clause restricts you from:
 ### App Store Distribution
 - Official distribution through the App Store is exclusively by Brenden Bishop
 - Free download; the upcoming model offers an explicitly started 14-day trial and a choice of one-time lifetime prices
-- Production activation remains gated until the announced grandfathering cutoff and Apple approval
 - Updates included
 - App Store terms and EULA apply
 
@@ -424,9 +423,11 @@ The Commons Clause restricts you from:
 - Settings and verified purchase evidence are stored locally
 - Builds configured with PostHog send usage, setup diagnostic and purchase-outcome events using a random installation identifier
 - No search query text, full browsing URLs, payment details or Apple Account credentials are included in analytics payloads
-- [Privacy policy](https://www.bbish.dev/braver-search/privacy); see [release privacy audit](docs/APP-REVIEW-READINESS.md) for pending disclosure updates
+- [Privacy policy](https://www.bbish.dev/braver-search/privacy)
 
 ## Contributing
+
+Keep internal analytics exports, business plans, release runbooks, and testing screenshots outside this public repository. The `docs/` directory is reserved for private local material and is ignored by Git.
 
 We love contributions! Here's how:
 
