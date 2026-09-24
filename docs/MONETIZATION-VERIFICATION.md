@@ -270,3 +270,44 @@ Final screenshot copies are also on the Mac at
 and launched with the existing DEBUG new-user sandbox arguments at 20:46 on the
 Mac clock. A real Apple sandbox checkout still needs manual verification; the
 passing StoreKitTest suites and screenshot fixtures do not establish it.
+
+## Missing-price recovery — September 24
+
+The physical iPhone screenshot showed a missing Thanks! price, a disabled unlock
+button, and an error footer taking space away from the tier card. Rechecked the
+live App Store Connect record: `braversearch.lifetime.thanks` remained Ready for
+Review, available in all countries/regions, with United States pricing of $2.99.
+Apple documents that sandbox metadata updates can take up to one hour; propagation
+was plausible, but the original failed request was not logged and its cause is
+not proven.
+
+The updated phone build logged two successful live StoreKit catalog requests,
+both returning all 11 configured products (six lifetime, four existing tips, and
+the trial), including `braversearch.lifetime.thanks`, with `missing=[]`. The launch
+used the new-user sandbox cohort, without a local StoreKit configuration or visual
+preview fixture. This confirms live product discovery recovered; it does not
+claim that a sandbox checkout or cross-device restoration was completed.
+The scoped app console capture is `/tmp/braver-catalog-device.log` on the Mac;
+its final timeout was the deliberate 45-second bound on console attachment.
+
+Changes:
+- Missing products now show an active **Retry App Store** action in place of a
+  disabled purchase button and extra retry link. The card shows **Unavailable**
+  instead of an unexplained dash; loading and connection errors are distinct.
+- Returning to the foreground retries a missing selected product.
+- `store_catalog_loaded` records returned count and missing product IDs;
+  `store_catalog_failed` records the error domain/code. No receipt or account
+  data is included in these events.
+- The DEBUG-only `-preview-missing-price` flag, combined with a visual access
+  scenario, reproduces a missing Thanks! product without affecting real sandbox
+  sessions or release builds.
+
+Validation: signed iPhone and Mac builds passed, access-policy checks passed,
+and the iOS suite passed (5 XCTest tests plus 1 Swift Testing example). The
+StoreKit integration test also checks the $2.99 product through StoreManager's
+availability boundary and rejects an unconfigured ID. Logs on the Mac:
+`/tmp/braver-catalog-iphone.log`, `/tmp/braver-catalog-mac.log`, and
+`/tmp/braver-catalog-tests.log`. The updated build was installed on Brenden's
+iPhone. Native simulator fixture capture:
+[Missing-price recovery](monetization/six-tier-flow/missing-price.png).
+Production monetization remains inactive; no release or merge occurred.

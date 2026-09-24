@@ -11,6 +11,7 @@ private enum AccessPalette {
 struct LifetimeAccessView: View {
     private enum Page { case trial, lifetime, status }
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.scenePhase) private var scenePhase
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @ObservedObject private var monetization = MonetizationManager.shared
     @ObservedObject private var store = StoreManager.shared
@@ -31,9 +32,12 @@ struct LifetimeAccessView: View {
     private var price: String {
         if let product = store.productsByID[option.id] { return product.displayPrice }
         #if DEBUG
-        if AccessStore.previewRecord() != nil { return option.fallbackPrice }
+        if AccessStore.previewRecord() != nil,
+           !(ProcessInfo.processInfo.arguments.contains("-preview-missing-price") && option.id == AccessConfiguration.thanksLifetimeID) {
+            return option.fallbackPrice
+        }
         #endif
-        return "—"
+        return store.isLoadingProducts ? "Loading…" : "Unavailable"
     }
 
     var body: some View {
@@ -76,6 +80,12 @@ struct LifetimeAccessView: View {
             #endif
             recordPageView()
             await store.loadProductsIfNeeded()
+        }
+        .onChange(of: scenePhase) { phase in
+            let id = page == .trial ? AccessConfiguration.trialID : option.id
+            if phase == .active && page != .status && !store.isAvailable(id) {
+                Task { await store.loadProductsIfNeeded() }
+            }
         }
         .onChange(of: page) { _ in
             // Activating a trial closes this sheet; it isn't a visit to pricing.
@@ -133,10 +143,13 @@ struct LifetimeAccessView: View {
                     .foregroundStyle(AccessPalette.gold).accessibilityIdentifier("purchase-result")
             }
             if page == .trial {
-                availabilityMessage(for: AccessConfiguration.trialID)
-                primaryButton("Start free trial", id: "start-free-trial", disabled: !store.isAvailable(AccessConfiguration.trialID)) {
-                    await store.purchase(id: AccessConfiguration.trialID)
-                    if monetization.access.state == .trial { dismiss() }
+                if store.isAvailable(AccessConfiguration.trialID) {
+                    primaryButton("Start free trial", id: "start-free-trial", disabled: false) {
+                        await store.purchase(id: AccessConfiguration.trialID)
+                        if monetization.access.state == .trial { dismiss() }
+                    }
+                } else {
+                    catalogRetry(for: AccessConfiguration.trialID)
                 }
                 Text("Buy once to continue after the trial.")
                     .font(.caption).foregroundStyle(.white.opacity(0.6)).multilineTextAlignment(.center)
@@ -152,11 +165,14 @@ struct LifetimeAccessView: View {
                     .buttonStyle(.plain)
                     .disabled(busy).accessibilityIdentifier("see-lifetime-prices")
             } else if page == .lifetime {
-                availabilityMessage(for: option.id)
-                Text("Every price unlocks the full app.")
-                    .font(.caption).foregroundStyle(.white.opacity(0.65))
-                primaryButton("Unlock forever · \(price)", id: "lifetime-purchase", disabled: !store.isAvailable(option.id)) {
-                    await store.purchase(id: option.id)
+                if store.isAvailable(option.id) {
+                    Text("Every price unlocks the full app.")
+                        .font(.caption).foregroundStyle(.white.opacity(0.65))
+                    primaryButton("Unlock forever · \(price)", id: "lifetime-purchase", disabled: false) {
+                        await store.purchase(id: option.id)
+                    }
+                } else {
+                    catalogRetry(for: option.id)
                 }
                 Text("One purchase for iPhone, iPad & Mac.")
                     .font(.caption).foregroundStyle(.white.opacity(0.6))
@@ -245,12 +261,15 @@ struct LifetimeAccessView: View {
         .overlay(RoundedRectangle(cornerRadius: 28).stroke(AccessPalette.gold.opacity(0.20), lineWidth: 1))
     }
 
-    @ViewBuilder private func availabilityMessage(for id: String) -> some View {
-        if !store.isAvailable(id) && !store.isLoadingProducts {
-            Text("This option isn’t available from the App Store yet.")
-                .font(.caption).foregroundStyle(.white.opacity(0.6)).multilineTextAlignment(.center)
-            Button("Retry App Store") { Task { await store.loadProductsIfNeeded() } }
-                .buttonStyle(.plain).font(.caption).foregroundStyle(AccessPalette.gold).disabled(busy)
+    private func catalogRetry(for id: String) -> some View {
+        VStack(spacing: 8) {
+            Text(store.isLoadingProducts ? "Checking the App Store…" :
+                 (store.productLoadMessage ?? (id == AccessConfiguration.trialID ? "Apple hasn’t loaded the trial yet." : "Apple hasn’t loaded this price yet.")))
+                .font(.caption).foregroundStyle(.white.opacity(0.65))
+                .multilineTextAlignment(.center)
+            primaryButton(store.isLoadingProducts ? "Loading…" : "Retry App Store", id: "retry-store-catalog", disabled: store.isLoadingProducts) {
+                await store.loadProductsIfNeeded()
+            }
         }
     }
 

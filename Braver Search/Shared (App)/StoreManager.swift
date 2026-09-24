@@ -6,6 +6,7 @@ final class StoreManager: ObservableObject {
     static let shared = StoreManager()
     @Published private(set) var productsByID: [String: Product] = [:]
     @Published private(set) var isLoadingProducts = false
+    @Published private(set) var productLoadMessage: String?
     @Published private(set) var purchaseMessage: String?
     @Published private(set) var activePurchaseProductID: String?
     @Published private(set) var isRestoring = false
@@ -28,13 +29,31 @@ final class StoreManager: ObservableObject {
     func loadProductsIfNeeded() async {
         guard !isLoadingProducts else { return }
         isLoadingProducts = true
+        productLoadMessage = nil
         defer { isLoadingProducts = false }
         do {
             let ids = MonetizationConfig.donationOptions.map(\.id) + AccessConfiguration.lifetimeIDs + [AccessConfiguration.trialID]
-            let products = try await Product.products(for: ids)
+            var products = try await Product.products(for: ids)
+            #if DEBUG
+            // Visual error fixture only; never changes a real sandbox purchase session.
+            if AccessStore.previewRecord() != nil, ProcessInfo.processInfo.arguments.contains("-preview-missing-price") {
+                products.removeAll { $0.id == AccessConfiguration.thanksLifetimeID }
+            }
+            #endif
             productsByID = Dictionary(uniqueKeysWithValues: products.map { ($0.id, $0) })
+            let missing = Set(ids).subtracting(products.map(\.id)).sorted()
+            DurableAnalytics.shared.capture("store_catalog_loaded", properties: ["returned_count": products.count, "missing_product_ids": missing])
+            #if DEBUG
+            print("Store catalog: returned=\(products.map(\.id).sorted()) missing=\(missing)")
+            #endif
             NotificationCenter.default.post(name: .monetizationStateDidChange, object: nil)
-        } catch { purchaseMessage = "The App Store is unavailable. Please try again when you’re connected." }
+        } catch {
+            productLoadMessage = "Couldn’t connect to the App Store."
+            DurableAnalytics.shared.capture("store_catalog_failed", properties: ["error_domain": (error as NSError).domain, "error_code": (error as NSError).code])
+            #if DEBUG
+            print("Store catalog failed: \((error as NSError).domain) \((error as NSError).code)")
+            #endif
+        }
     }
     func priceText(for option: DonationOption) -> String { productsByID[option.id]?.displayPrice ?? option.fallbackPrice }
     func isAvailable(_ id: String) -> Bool {
