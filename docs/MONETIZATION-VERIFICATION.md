@@ -438,3 +438,17 @@ All three views fit within Safari's modal without clipped copy or CTAs. Enabled
 the development extension in this simulator and allowed its Google page access
 for one day to open the popup. No settings on the physical iPhone were changed.
 Copies are on the Mac in `/Users/bishop/Downloads/Braver-Safari-Popup-States/`.
+
+## Lifetime patron note — September 24
+
+The shared iOS/Mac extension popup now thanks lifetime owners with:
+“Thank you for supporting private, independent search.” It is a small, muted note
+inside the redirect card, separated by a fine divider. It is shown only when the
+native state is lifetime with access allowed; trial, expired, unknown, and legacy
+states do not display it. No donation action was added.
+
+Verified visually in the actual simulator Safari popup and updated
+[the lifetime screenshot](monetization/safari-popup/lifetime.png), including its
+copy in the Mac Downloads folder. All 89 JavaScript tests and signed generic-iOS,
+Mac, and simulator builds passed. The physical iPhone was unavailable as an Xcode
+destination, so this last popup copy update has not been installed there yet.

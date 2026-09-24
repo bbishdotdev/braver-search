@@ -59,6 +59,8 @@ document.addEventListener('DOMContentLoaded', async function() {
 
     function showAccessState(response) {
         const blocked = response?.accessAllowed === false;
+        document.getElementById('patronNote').classList.toggle('hidden',
+            response?.userState !== 'lifetime' || response?.accessAllowed !== true);
         document.getElementById('redirectToggle').classList.toggle('hidden', blocked);
         document.getElementById('accessCard').classList.toggle('hidden', !blocked);
         // Preserve the saved switch preference. Access, not a switch change, pauses redirects.

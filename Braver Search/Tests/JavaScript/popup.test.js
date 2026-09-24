@@ -13,7 +13,7 @@ describe('Popup Script', () => {
         document.body.innerHTML = `
             <h1 id="redirectTitle"></h1><p id="redirectDescription"></p>
             <label id="redirectToggle"><input type="checkbox" id="toggleButton"></label>
-            <a id="accessLink"></a>
+            <a id="accessLink"></a><p id="patronNote" class="hidden"></p>
             <section id="accessCard" class="hidden"><h2 id="accessTitle"></h2><p id="accessMessage"></p></section>
             <a id="reviewLink" href="#"></a>
             <section id="supportCard" class="hidden"></section>
