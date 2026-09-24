@@ -30,6 +30,18 @@ jobs:
         run: bash scripts/test-access.sh
       - name: Test durable telemetry and setup verification
         run: bash scripts/test-telemetry.sh
+      - name: Verify app and extension release versions
+        env:
+          PLATFORM: ${{ matrix.platform }}
+        run: |
+          for configuration in Debug Release; do
+            xcodebuild -showBuildSettings \
+              -project 'Braver Search/Braver Search.xcodeproj' \
+              -alltargets -configuration "$configuration" -json \
+              > "$RUNNER_TEMP/braver-build-settings.json"
+            python3 scripts/read-release-version.py "$RUNNER_TEMP/braver-build-settings.json" \
+              'Braver Search/Shared (Extension)/Resources/manifest.json' "$PLATFORM"
+          done
       - name: Boot iOS Simulator
         if: matrix.platform == 'iOS'
         id: ios-simulator

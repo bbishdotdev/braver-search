@@ -7,18 +7,12 @@ on:
       - completed
     branches: [main]
   workflow_dispatch:
-    inputs:
-      version_bump:
-        description: "Version bump type (patch/minor/major)"
-        required: false
-        default: "patch"
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref_name }}
   cancel-in-progress: true
 
 env:
-  MARKETING_VERSION: ${{ vars.MARKETING_VERSION || '1.0.0' }}
   BUILD_NUMBER: ${{ vars.BUILD_NUMBER || 1 }}
 
 permissions:
@@ -149,39 +143,22 @@ jobs:
           POSTHOG_HOST = https:\$(FORWARD_SLASH)\$(FORWARD_SLASH)us.i.posthog.com
           EOF
 
-      - name: Calculate new version
+      - name: Read release version from Xcode
         id: version
         run: |
-          IFS='.' read -r major minor patch <<< "$MARKETING_VERSION"
-          case '${{ inputs.version_bump }}' in
-            major)
-              major=$((major + 1))
-              minor=0
-              patch=0
-              ;;
-            minor)
-              minor=$((minor + 1))
-              patch=0
-              ;;
-            *)
-              patch=$((patch + 1))
-              ;;
-          esac
-          echo "new_marketing_version=$major.$minor.$patch" >> $GITHUB_OUTPUT
+          xcodebuild -showBuildSettings \
+            -project "Braver Search/Braver Search.xcodeproj" \
+            -alltargets -configuration Release -json \
+            > "$RUNNER_TEMP/braver-build-settings.json"
+          python3 scripts/read-release-version.py "$RUNNER_TEMP/braver-build-settings.json" \
+            "Braver Search/Shared (Extension)/Resources/manifest.json" >> "$GITHUB_OUTPUT"
           echo "Using build number: $BUILD_NUMBER"
 
       - name: Set iOS version numbers
         run: |
           cd "Braver Search"
-          agvtool new-marketing-version "${{ steps.version.outputs.new_marketing_version }}"
+          agvtool new-marketing-version "${{ steps.version.outputs.marketing_version }}"
           agvtool new-version -all $BUILD_NUMBER
-          # Update manifest.json version
-          major_version=$(echo "${{ steps.version.outputs.new_marketing_version }}" | cut -d. -f1)
-          minor_version=$(echo "${{ steps.version.outputs.new_marketing_version }}" | cut -d. -f2)
-          manifest_version="$major_version.$minor_version.0"
-          echo "Setting manifest version to $manifest_version"
-          sed -i '' "s/\"version\": \"[^\"]*\"/\"version\": \"$manifest_version\"/" "Shared (Extension)/Resources/manifest.json"
-          cd ..
 
       - name: Build iOS App
         env:
@@ -202,7 +179,7 @@ jobs:
             "Braver Search Extension (iOS):PROVISIONING_PROFILE_SPECIFIER=Braver Search iOS Extension App Store" \
             OTHER_CODE_SIGN_FLAGS="--keychain $RUNNER_TEMP/app-signing.keychain-db" \
             ENABLE_BITCODE=NO \
-            MARKETING_VERSION=${{ steps.version.outputs.new_marketing_version }} \
+            MARKETING_VERSION=${{ steps.version.outputs.marketing_version }} \
             CURRENT_PROJECT_VERSION=$BUILD_NUMBER
 
           # Create exportOptions.plist for iOS
@@ -262,7 +239,7 @@ jobs:
       - name: Set macOS version numbers
         run: |
           cd "Braver Search"
-          agvtool new-marketing-version "${{ steps.version.outputs.new_marketing_version }}"
+          agvtool new-marketing-version "${{ steps.version.outputs.marketing_version }}"
           agvtool new-version -all $BUILD_NUMBER
           cd ..
 
@@ -286,7 +263,7 @@ jobs:
             "Braver Search (macOS):PROVISIONING_PROFILE_SPECIFIER=Braver Search macOS App Store" \
             "Braver Search Extension (macOS):PROVISIONING_PROFILE_SPECIFIER=Braver Search macOS Extension App Store" \
             OTHER_CODE_SIGN_FLAGS="--keychain $RUNNER_TEMP/app-signing.keychain-db" \
-            MARKETING_VERSION=${{ steps.version.outputs.new_marketing_version }} \
+            MARKETING_VERSION=${{ steps.version.outputs.marketing_version }} \
             CURRENT_PROJECT_VERSION=$BUILD_NUMBER
 
           # Inspect archive contents
@@ -356,9 +333,9 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.PAT_TOKEN }}
         run: |
-          # Update marketing version
+          # Record the deployed version for visibility; Xcode is the source of truth.
           gh api -X PATCH /repos/bbishdotdev/braver-search/actions/variables/MARKETING_VERSION \
-            -f value="${{ steps.version.outputs.new_marketing_version }}"
+            -f value="${{ steps.version.outputs.marketing_version }}"
 
           # Increment build number
           NEW_BUILD_NUMBER=$((BUILD_NUMBER + 1))
