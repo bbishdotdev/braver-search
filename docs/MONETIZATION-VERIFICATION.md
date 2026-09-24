@@ -351,3 +351,20 @@ that blocked-state presentation never writes the saved switch preference.
 Signed iPhone and Mac builds also passed (`/tmp/braver-paused-popup-iOS.log` and
 `/tmp/braver-paused-popup-macOS.log` on the Mac). The popup build is ready; it has
 not replaced the phone app during the user's in-progress expiry/purchase test.
+
+## iPhone redirect-access sequence confirmed — September 24
+
+Brenden completed the real-device Safari checks and reported that trial-expiry
+disablement and post-purchase enablement both work. Combined with his earlier
+checks, the following sequence is now user-verified on the development iPhone
+build with real Apple sandbox purchases:
+
+- Trial not started: ordinary Safari searches remain on the default engine.
+- Trial activated: ordinary searches redirect.
+- Local test clock advanced to day 15: ordinary redirects stop.
+- Lifetime purchase after expiry: ordinary redirects resume.
+
+Expiry was accelerated using the existing DEBUG test-time offset, not by changing
+the device clock. These are user-reported physical-device results, not an automated
+browser observation. Equivalent Mac Safari runtime checks, cross-device restore,
+and the updated popup's visual review remain outstanding.
