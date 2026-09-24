@@ -100,3 +100,22 @@ The setup dashboard now has two validated release-build views (Debug excluded;
 TestFlight still included): outcomes by result and a 30-minute start→success funnel.
 Purchase/access events are absent from the live schema, so monetization views remain
 pending real event validation. See docs/LOCAL-PURCHASE-TESTING.md for the user walkthrough.
+
+## Signed Mac build follow-up (September 23)
+
+- The final September 16 CI run 35051844031 at commit 4340fcc passed iOS, macOS,
+  and JavaScript jobs. This is historical evidence for that commit, not a claim
+  about checks on later commits.
+- Confirmed remote-only signing failure: bishop's SSH and Aqua desktop have
+  distinct security sessions. Desktop-session signing succeeded without new
+  keychain permissions or credentials, while SSH signing still failed.
+- Added `scripts/run-in-macos-session.py` to submit a one-shot command to the
+  existing desktop session and remove its job afterward. The actual signed Mac
+  build succeeded using this helper.
+- Used fresh `build/mac-signed-desktop` derived data after finding an invalid
+  leftover test bundle in the older `build/mac-signed` app output.
+- Strict signature verification passed for the complete Mac app and its Safari
+  extension, using Apple Development team A947N6H5GS.
+- Signed Safari runtime, real Apple sandbox transactions, iPhone deployment,
+  cross-platform restoration, genuine legacy upgrades, and production/TestFlight
+  activation remain separate outstanding checks. Production cutoff remains nil.

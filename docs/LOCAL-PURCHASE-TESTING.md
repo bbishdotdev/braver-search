@@ -4,21 +4,27 @@ Production remains free. Yesterday's cutoff is used only in Debug local-test mod
 The code, CI, simulator checks and remote builds can be handled remotely. Apple
 password/keychain prompts, sandbox sign-in and Safari permission choices need local interaction.
 
-## 1. Unblock signing on the Mac
+## 1. Signing is working; keep the bishop desktop session logged in
 
-In Mac Terminal:
+Confirmed September 23: the developer-signed Mac build succeeds, and both the app
+and Safari extension pass strict signature verification with team A947N6H5GS.
+No further keychain changes are needed for the current session.
 
-```bash
-security unlock-keychain "$HOME/Library/Keychains/login.keychain-db"
-/usr/bin/codesign --force \
-  --sign 'Apple Development: Brenden Bishop (4DNC4UZ685)' \
-  --timestamp=none \
-  '/Users/bishop/Work/braver-search-monetization-20260915/build/mac-signed/Build/Products/Debug/Braver Search Extension.appex/Contents/MacOS/Braver Search Extension.debug.dylib'
-```
+The earlier failure was specific to the SSH security session. A command launched
+in bishop's existing desktop session can access the keychain and sign successfully;
+the same identity fails with `errSecInternalComponent` in the separate SSH session.
+Another user's active desktop does not establish which account ran your Terminal
+command. Local codesign printing only "replacing existing signature" and exiting
+successfully is normal; an approval dialog is not required.
 
-Enter passwords locally only. Approve access for codesign if macOS asks. Report the
-result; do not send a password. The certificate exists, but the latest remote signed
-build failed with `errSecInternalComponent`.
+Remote builds now use `scripts/run-in-macos-session.py` to run once in bishop's
+existing desktop session. It does not store passwords, change keychain permissions,
+or install a login item. Keep that session logged in. After a restart or logout,
+log into bishop again and unlock the login keychain locally if needed.
+
+The [remote build instructions](MONETIZATION-RUNBOOK.md#remote-mac-signing-from-ssh)
+include the verified command. Safari behavior and actual sandbox purchases remain
+separate validation steps; a signed build alone does not prove those flows.
 
 ## 2. Prepare a Sandbox Apple Account
 
@@ -39,7 +45,7 @@ The remote checkout is:
 
 `/Users/bishop/Work/braver-search-monetization-20260915/Braver Search/Braver Search.xcodeproj`
 
-Codex can build/install/launch on the paired iPhone after signing is unblocked. Keep it
+Codex can attempt device builds/install/launch on the paired iPhone. Keep it
 unlocked and connected. If running directly in Xcode, select **Braver Search (iOS)** and
 **Brenden's iPhone**. For Mac choose **Braver Search (macOS)** / **My Mac**.
 

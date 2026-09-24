@@ -187,3 +187,49 @@ from the still-required genuine production upgrade/receipt test.
 sandbox cohort path still needs implementation before an enabled release candidate;
 do not set a modern production cutoff and assume a fresh sandbox account will be new.
 Keep production enforcement disabled until this and the release timing are settled.
+
+## Remote Mac signing from SSH
+
+September 23 diagnosis: SSH and bishop's existing Aqua desktop used different
+security sessions (observed audit session IDs 102806 and 100016). The SSH session
+could enumerate the development identity but could not access keychain settings
+or sign; a temporary launch job in `gui/501` could do both. Local signing success
+does not guarantee keychain access in a separate SSH session. Do not repeatedly
+request unlocks or broaden the private key ACL when this comparison explains the
+failure. Apple's [multiple-user documentation](https://developer.apple.com/library/archive/documentation/MacOSX/Conceptual/BPMultipleUsers/)
+describes SSH connections as separate login sessions.
+
+Run the following **on the Mac checkout**, including via SSH as bishop:
+
+```bash
+cd /Users/bishop/Work/braver-search-monetization-20260915
+/usr/bin/python3 scripts/run-in-macos-session.py -- \
+  /usr/bin/xcodebuild build \
+  -project 'Braver Search/Braver Search.xcodeproj' \
+  -scheme 'Braver Search (macOS)' \
+  -configuration Debug \
+  -destination 'platform=macOS,arch=arm64' \
+  -derivedDataPath build/mac-signed-desktop \
+  CODE_SIGN_STYLE=Automatic \
+  PROVISIONING_PROFILE_SPECIFIER='' PROVISIONING_PROFILE='' \
+  DEVELOPMENT_TEAM=A947N6H5GS CODE_SIGN_IDENTITY='Apple Development' \
+  -allowProvisioningUpdates
+```
+
+The helper targets the calling user's existing GUI session, streams output,
+returns the command's result, and unregisters its one-shot job on completion or
+timeout. Logs remain at the printed temporary directory. It does not unlock a
+keychain, alter permissions, store credentials, or install a persistent agent.
+It requires that user's desktop session to remain logged in. The launched command
+uses the desktop environment rather than inheriting SSH environment variables;
+provide build settings explicitly as above. Use separate derived-data directories
+for app builds and test builds: the old `build/mac-signed` contained an invalid
+leftover `Braver Search macOS Tests.xctest`, which independently blocked bundle
+signing after key access was resolved.
+
+Validated output:
+`build/mac-signed-desktop/Build/Products/Debug/Braver Search.app`.
+Both the app and embedded `Braver Search Extension.appex` passed
+`codesign --verify --strict --verbose=2`, signed with Apple Development team
+A947N6H5GS. This confirms build/signature integrity, not Safari runtime behavior,
+App Store product availability, or cross-device purchase restoration.
