@@ -363,17 +363,43 @@ struct AccessSummaryButton: View {
     var action: () -> Void
     var body: some View {
         Button(action: action) {
-            HStack(spacing: 12) {
-                Image(systemName: monetization.access.allowsRedirects ? "sparkles" : "heart.fill")
-                    .foregroundStyle(AccessPalette.gold)
-                VStack(alignment: .leading, spacing: 3) {
-                    Text(monetization.access.title).font(.subheadline.bold()).foregroundStyle(.white)
-                    Text(subtitle).font(.caption).foregroundStyle(.white.opacity(0.6))
-                }
-                Spacer()
-                Image(systemName: "chevron.right").font(.caption.bold()).foregroundStyle(.white.opacity(0.4))
-            }.padding(16).background(.white.opacity(0.05), in: RoundedRectangle(cornerRadius: 18))
+            if monetization.access.state == .expired {
+                expiredSummary
+            } else {
+                HStack(spacing: 12) {
+                    Image(systemName: monetization.access.allowsRedirects ? "sparkles" : "heart.fill")
+                        .foregroundStyle(AccessPalette.gold)
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text(monetization.access.title).font(.subheadline.bold()).foregroundStyle(.white)
+                        Text(subtitle).font(.caption).foregroundStyle(.white.opacity(0.6))
+                    }
+                    Spacer()
+                    Image(systemName: "chevron.right").font(.caption.bold()).foregroundStyle(.white.opacity(0.4))
+                }.padding(16).background(.white.opacity(0.05), in: RoundedRectangle(cornerRadius: 18))
+            }
         }.buttonStyle(.plain).accessibilityIdentifier("access-summary")
+    }
+    private var expiredSummary: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Label("TRIAL EXPIRED", systemImage: "pause.circle.fill")
+                .font(.caption.weight(.bold)).tracking(1)
+                .foregroundStyle(Color(red: 1, green: 0.55, blue: 0.46))
+            VStack(alignment: .leading, spacing: 5) {
+                Text("Safari redirects are paused").font(.headline).foregroundStyle(.white)
+                Text("Choose a one-time purchase to turn them back on.")
+                    .font(.subheadline).foregroundStyle(.white.opacity(0.75))
+            }.fixedSize(horizontal: false, vertical: true)
+            HStack {
+                Text("Unlock lifetime access").font(.subheadline.bold())
+                Spacer(minLength: 8)
+                Image(systemName: "arrow.right").font(.subheadline.bold())
+            }
+            .foregroundStyle(AccessPalette.ink).padding(.horizontal, 14).padding(.vertical, 12)
+            .background(LinearGradient(colors: [AccessPalette.gold, AccessPalette.goldEnd], startPoint: .top, endPoint: .bottom), in: RoundedRectangle(cornerRadius: 12))
+        }
+        .frame(maxWidth: .infinity, alignment: .leading).padding(16)
+        .background(LinearGradient(colors: [Color(red: 0.23, green: 0.105, blue: 0.095), Color(red: 0.12, green: 0.075, blue: 0.085)], startPoint: .topLeading, endPoint: .bottomTrailing), in: RoundedRectangle(cornerRadius: 18))
+        .overlay(RoundedRectangle(cornerRadius: 18).stroke(Color(red: 1, green: 0.55, blue: 0.46).opacity(0.45), lineWidth: 1))
     }
     private var subtitle: String {
         if let expires = monetization.access.expiresAt, monetization.access.state == .trial {

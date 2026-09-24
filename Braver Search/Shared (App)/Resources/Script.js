@@ -25,7 +25,12 @@ function updateMonetization(payload) {
     const access = document.getElementById("access-summary");
     if (access) {
         access.classList.toggle("hidden", payload.accessState === "free");
-        access.textContent = `${payload.accessTitle} · ${payload.accessMessage}`;
+        const expired = payload.accessState === "expired";
+        access.classList.toggle("access-expired", expired);
+        const summary = document.getElementById("access-summary-default");
+        summary.textContent = `${payload.accessTitle} · ${payload.accessMessage}`;
+        summary.classList.toggle("hidden", expired);
+        document.getElementById("access-summary-expired").classList.toggle("hidden", !expired);
         access.onclick = () => webkit.messageHandlers.controller.postMessage({ action: "open-lifetime" });
     }
     const supportSection = document.querySelector(".support-section");

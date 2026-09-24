@@ -273,3 +273,22 @@ body > section { flex-shrink: 0; }
 .setup-result { margin: 0; text-align: left; font-size: 0.92em; opacity: 0.8; }
 .setup-help { text-align: left; font-size: 0.92em; opacity: 0.8; }
 .setup-help summary { cursor: pointer; }
+
+/* Expiry is a service interruption, with its cause and recovery action together. */
+#access-summary.access-expired {
+    padding: 16px;
+    border: 1px solid rgba(255, 140, 117, 0.45);
+    border-radius: 18px;
+    background: linear-gradient(135deg, #3b1b18, #1f1316);
+    color: #fff;
+}
+#access-summary-expired { width: 100%; }
+.expiry-badge { display: block; color: #ff8c75; font-size: 12px; font-weight: 700; letter-spacing: 1px; }
+.expiry-title { display: block; margin-top: 12px; font-size: 17px; font-weight: 700; }
+.expiry-message { display: block; margin-top: 5px; color: rgba(255,255,255,0.75); font-size: 14px; line-height: 1.4; font-weight: 400; }
+.expiry-cta { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 12px; padding: 12px 14px; border-radius: 12px; background: linear-gradient(#f5cf78, #d39a2c); color: #301a00; font-size: 14px; font-weight: 700; }
+#access-summary.access-expired:hover { border-color: #ff8c75; }
+#access-summary.access-expired:focus-visible { outline-color: #f5cf78; }
+#access-summary { width: min(var(--content-width), 100%); box-sizing: border-box; flex-shrink: 0; }
+#access-summary.hidden { display: none; }
+#access-summary span { cursor: pointer; }

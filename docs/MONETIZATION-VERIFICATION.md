@@ -368,3 +368,23 @@ Expiry was accelerated using the existing DEBUG test-time offset, not by changin
 the device clock. These are user-reported physical-device results, not an automated
 browser observation. Equivalent Mac Safari runtime checks, cross-device restore,
 and the updated popup's visual review remain outstanding.
+
+## Expired-trial home banner — September 24
+
+The home screen now explains the interruption prominently on both platforms:
+coral **TRIAL EXPIRED** label and border, **Safari redirects are paused**, a short
+one-time-purchase explanation, and a gold **Unlock lifetime access** action. The
+iOS SwiftUI card and Mac HTML card use matching copy and colors. They are driven
+by the existing expired state; trial dates and purchase/access policy are unchanged.
+Other access states retain their normal presentation.
+
+Native iPhone 16 Pro simulator fixture screenshot:
+[Expired home banner](monetization/six-tier-flow/expired-home.png). Visually checked
+that the full callout and CTA fit above setup content. This is a DEBUG visual
+fixture, not a claim of a new sandbox purchase test. The Mac HTML was checked with
+its real document/script in jsdom through expired, lifetime, free, and expired
+again, including the open-lifetime action. Actual Mac visual/runtime inspection
+remains outstanding. All 80 existing JavaScript tests passed.
+
+Signed iPhone and Mac builds passed; logs on the Mac:
+`/tmp/braver-expiry-home-iOS.log` and `/tmp/braver-expiry-home-macOS.log`.
