@@ -2,9 +2,9 @@ import Foundation
 
 /// One policy compiled into both apps and both extensions. No UI or analytics decides access.
 enum AccessConfiguration {
-    // RELEASE GATE: set an announced UTC cutoff only after all StoreKit products are approved.
-    // nil keeps the currently free app free. Never infer payment from an app download.
-    static let launchDate: Date? = nil
+    // October 9, 2026 at 00:00 UTC. Earlier acquisitions retain free access.
+    // Release only with approved StoreKit products; move this date if approval is delayed.
+    static let launchDate: Date? = Date(timeIntervalSince1970: 1_791_504_000)
     static let trialDuration: TimeInterval = 14 * 24 * 60 * 60
     static let trialID = "braversearch.trial.14day"
     static let thanksLifetimeID = "braversearch.lifetime.thanks"

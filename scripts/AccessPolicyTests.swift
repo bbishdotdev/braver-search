@@ -3,6 +3,13 @@ import Foundation
 @main struct AccessPolicyTests {
     static func main() {
         var checks = 0
+        let releaseCutoff = AccessConfiguration.launchDate!
+        precondition(ISO8601DateFormatter().string(from: releaseCutoff) == "2026-10-09T00:00:00Z")
+        let existingOwner = AccessRecord(originalPurchaseDate: releaseCutoff.addingTimeInterval(-1))
+        let newOwner = AccessRecord(originalPurchaseDate: releaseCutoff)
+        precondition(AccessPolicy.evaluate(existingOwner, cutoff: releaseCutoff, now: releaseCutoff.addingTimeInterval(-1)).state == .free)
+        precondition(AccessPolicy.evaluate(existingOwner, cutoff: releaseCutoff, now: releaseCutoff).state == .grandfathered)
+        precondition(AccessPolicy.evaluate(newOwner, cutoff: releaseCutoff, now: releaseCutoff).state == .eligible)
         let cutoff = Date(timeIntervalSince1970: 1_800_000_000)
         let now = cutoff.addingTimeInterval(30 * 86400)
         func expect(_ record: AccessRecord, _ state: AccessState, at: Date? = nil, launch: Date? = nil) {
