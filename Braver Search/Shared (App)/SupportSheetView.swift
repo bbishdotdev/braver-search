@@ -26,7 +26,7 @@ struct SupportSheetView: View {
                             IOSDonationCarousel(
                                 selectedIndex: $selectedDonationIndex,
                                 height: 344,
-                                isDisabled: store.activePurchaseProductID != nil,
+                                isDisabled: store.activePurchaseProductID != nil || store.isRestoring,
                                 priceText: { option in
                                     store.priceText(for: option)
                                 },

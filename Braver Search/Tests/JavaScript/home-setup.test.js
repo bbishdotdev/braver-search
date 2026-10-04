@@ -51,6 +51,60 @@ describe('Mac home setup access presentation', () => {
         context.updateMonetization(payload('free', true));
         expect(getComputedStyle(document.getElementById('access-summary')).display).toBe('none');
     });
+    it.each(['free', 'grandfathered', 'eligible', 'trial', 'expired', 'lifetime', 'unknown'])('offers explicit restore on the home screen for %s users', state => {
+        context.updateMonetization({ ...payload(state, ['free', 'grandfathered', 'trial', 'lifetime'].includes(state)),
+            canTip: ['free', 'grandfathered'].includes(state), products: [] });
+        context.updateStore({ isRestoring: false, isPurchasing: false });
+        const button = document.getElementById('restore-purchases');
+        expect(button.textContent).toBe('Restore Purchases');
+        expect(button.disabled).toBe(false);
+        for (let element = button; element; element = element.parentElement) {
+            expect(getComputedStyle(element).display).not.toBe('none');
+        }
+        // Loading or refreshing access must never start an authenticated restore.
+        expect(postMessage).not.toHaveBeenCalled();
+        button.click();
+        expect(postMessage).toHaveBeenCalledWith({ action: 'restore-purchases' });
+        expect(button.textContent).toBe('Restoring Purchases…');
+        expect(button.disabled).toBe(true);
+        button.click();
+        expect(postMessage).toHaveBeenCalledTimes(1);
+    });
+    it('shows restore results even before launch and clears the previous result on retry', () => {
+        context.updateMonetization(payload('free', true));
+        const result = document.getElementById('restore-result');
+        const button = document.getElementById('restore-purchases');
+        for (const restoreMessage of ['Your access is ready.', 'No active access found.', 'Couldn’t connect to the App Store. Your saved access hasn’t changed.']) {
+            context.updateStore({ isRestoring: false, restoreMessage });
+            expect(result.textContent).toBe(restoreMessage);
+            expect(getComputedStyle(result).display).not.toBe('none');
+            expect(button.disabled).toBe(false);
+            button.click();
+            expect(result.textContent).toBe('');
+            expect(getComputedStyle(result).display).toBe('none');
+            expect(button.getAttribute('aria-busy')).toBe('true');
+        }
+        context.updateStore({ isRestoring: false });
+        expect(button.getAttribute('aria-busy')).toBe('false');
+        expect(button.disabled).toBe(false);
+    });
+    it('prevents overlapping purchase and restore actions without hiding restore', () => {
+        context.updateMonetization({ ...payload('free', true), canTip: true,
+            products: [{ id: 'tip', displayName: 'Thanks', price: '$1' }] });
+        const restore = document.getElementById('restore-purchases');
+        const purchase = document.querySelector('.support-product-button');
+        for (const state of [{ isPurchasing: true }, { isRestoring: true }]) {
+            context.updateStore(state);
+            expect(restore.disabled).toBe(true);
+            expect(purchase.disabled).toBe(true);
+            restore.click();
+            purchase.click();
+            expect(postMessage).not.toHaveBeenCalled();
+        }
+        context.updateStore({});
+        expect(restore.disabled).toBe(false);
+        expect(purchase.disabled).toBe(false);
+    });
     it.each(['eligible', 'expired', 'unknown'])('keeps the diagnostic under help for %s users', state => {
         context.updateMonetization(payload(state, false));
         expect(document.getElementById('setup-test-controls').parentElement.id).toBe('setup-help');

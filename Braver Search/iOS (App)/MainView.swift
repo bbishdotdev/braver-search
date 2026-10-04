@@ -68,6 +68,7 @@ struct MainView: View {
                             .accessibilityIdentifier("setup-help")
                         }
                         activationCard
+                        restorePurchasesAction
 
                         if monetization.canShowSupport {
                             supportSection
@@ -120,6 +121,38 @@ struct MainView: View {
 
     private var isCheckingSetup: Bool {
         setupError == nil && setupStatus["status"] as? String == "waiting"
+    }
+
+    private var restorePurchasesAction: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Button {
+                Task { await store.restore() }
+            } label: {
+                HStack(spacing: 8) {
+                    if store.isRestoring {
+                        ProgressView().tint(IOSTheme.secondaryText)
+                    } else {
+                        Image(systemName: "arrow.clockwise")
+                    }
+                    Text(store.isRestoring ? "Restoring Purchases…" : "Restore Purchases")
+                }
+                .font(.subheadline.weight(.medium))
+                .foregroundStyle(IOSTheme.secondaryText)
+                .frame(maxWidth: .infinity, minHeight: 44)
+                .background(IOSTheme.surface, in: RoundedRectangle(cornerRadius: 14))
+            }
+            .buttonStyle(.plain)
+            .disabled(store.isRestoring || store.activePurchaseProductID != nil)
+            .accessibilityIdentifier("restore-purchases")
+
+            if let message = store.restoreMessage {
+                Text(message)
+                    .font(.footnote)
+                    .foregroundStyle(IOSTheme.secondaryText)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityIdentifier("restore-result")
+            }
+        }
     }
 
     private var isSetupVerified: Bool {
@@ -331,7 +364,7 @@ struct MainView: View {
             IOSDonationCarousel(
                 selectedIndex: $selectedDonationIndex,
                 height: 344,
-                isDisabled: store.activePurchaseProductID != nil,
+                isDisabled: store.activePurchaseProductID != nil || store.isRestoring,
                 priceText: { option in
                     store.priceText(for: option)
                 },
@@ -342,7 +375,7 @@ struct MainView: View {
                 }
             )
 
-            if let purchaseMessage = store.purchaseMessage {
+            if let purchaseMessage = store.purchaseMessage, purchaseMessage != store.restoreMessage {
                 Text(purchaseMessage)
                     .font(.system(size: 14, weight: .medium))
                     .foregroundStyle(IOSTheme.secondaryText)

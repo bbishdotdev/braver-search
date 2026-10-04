@@ -10,6 +10,7 @@ final class StoreManager: ObservableObject {
     @Published private(set) var purchaseMessage: String?
     @Published private(set) var activePurchaseProductID: String?
     @Published private(set) var isRestoring = false
+    @Published private(set) var restoreMessage: String?
     private var updateTask: Task<Void, Never>?
 
     private init() {
@@ -68,6 +69,7 @@ final class StoreManager: ObservableObject {
         // Lock before the first await to prevent overlapping sheets.
         activePurchaseProductID = id
         purchaseMessage = nil
+        restoreMessage = nil
         defer { activePurchaseProductID = nil }
         if productsByID[id] == nil { await loadProductsIfNeeded() }
         let tip = MonetizationConfig.donationOptions.contains { $0.id == id }
@@ -105,17 +107,22 @@ final class StoreManager: ObservableObject {
     func restore() async {
         guard !isRestoring, activePurchaseProductID == nil else { return }
         isRestoring = true
-        defer { isRestoring = false }
+        restoreMessage = nil
+        purchaseMessage = nil
+        defer {
+            purchaseMessage = restoreMessage
+            isRestoring = false
+        }
         do {
             try await AppStore.sync() // Only on an explicit user action; may request Apple authentication.
             await MonetizationManager.shared.resolveUserState(forceRefresh: MonetizationManager.shared.accessVerificationMessage != nil)
             if let message = MonetizationManager.shared.accessVerificationMessage {
-                purchaseMessage = message
+                restoreMessage = message
                 return
             }
-            purchaseMessage = AccessStore.decision().allowsRedirects ? "Your access is ready." : "No active access found. You can start a trial if eligible or choose a lifetime price."
+            restoreMessage = AccessStore.decision().allowsRedirects ? "Your access is ready." : "No active access found. You can start a trial if eligible or choose a lifetime price."
             DurableAnalytics.shared.capture("purchases_restored")
-        } catch { purchaseMessage = "Couldn’t connect to the App Store. Your saved access hasn’t changed." }
+        } catch { restoreMessage = "Couldn’t connect to the App Store. Your saved access hasn’t changed." }
     }
 
     private func deliver(_ transaction: Transaction) throws {

@@ -12,6 +12,7 @@ import UIKit
 typealias PlatformViewController = UIViewController
 #elseif os(macOS)
 import Cocoa
+import Combine
 import SwiftUI
 import SafariServices
 typealias PlatformViewController = NSViewController
@@ -32,6 +33,9 @@ class ViewController: PlatformViewController, WKNavigationDelegate, WKScriptMess
     private var setupTimer: Timer?
     private var monetizationObserver: NSObjectProtocol?
     private var supportFlowObserver: NSObjectProtocol?
+    #if os(macOS)
+    private var storeObserver: AnyCancellable?
+    #endif
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -49,6 +53,12 @@ class ViewController: PlatformViewController, WKNavigationDelegate, WKScriptMess
         self.webView.configuration.userContentController.add(self, name: "controller")
 
         self.webView.loadFileURL(Bundle.main.url(forResource: "Main", withExtension: "html")!, allowingReadAccessTo: Bundle.main.resourceURL!)
+
+        #if os(macOS)
+        storeObserver = StoreManager.shared.objectWillChange
+            .receive(on: RunLoop.main)
+            .sink { [weak self] _ in self?.updateStoreUI() }
+        #endif
 
         monetizationObserver = NotificationCenter.default.addObserver(
             forName: .monetizationStateDidChange,
@@ -133,6 +143,11 @@ class ViewController: PlatformViewController, WKNavigationDelegate, WKScriptMess
             Task { await MonetizationManager.shared.resolveUserState(forceRefresh: true) }
         case "open-lifetime":
             showLifetime()
+        case "restore-purchases":
+            Task {
+                await StoreManager.shared.restore()
+                self.updateStoreUI()
+            }
         case "test-setup":
             do {
                 let url = try SetupCheck.start()
@@ -224,6 +239,21 @@ class ViewController: PlatformViewController, WKNavigationDelegate, WKScriptMess
         }
 
         webView.evaluateJavaScript("updateMonetization(\(json))")
+        updateStoreUI()
+#endif
+    }
+
+    private func updateStoreUI() {
+#if os(macOS)
+        let store = StoreManager.shared
+        let payload: [String: Any] = [
+            "isRestoring": store.isRestoring,
+            "isPurchasing": store.activePurchaseProductID != nil,
+            "restoreMessage": store.restoreMessage ?? "",
+        ]
+        guard let data = try? JSONSerialization.data(withJSONObject: payload),
+              let json = String(data: data, encoding: .utf8) else { return }
+        webView.evaluateJavaScript("updateStore(\(json))")
 #endif
     }
 

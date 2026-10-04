@@ -24,6 +24,19 @@ function openPreferences() {
     webkit.messageHandlers.controller.postMessage("open-preferences");
 }
 
+function updateStore(payload) {
+    const restoring = payload.isRestoring === true;
+    const busy = restoring || payload.isPurchasing === true;
+    const button = document.getElementById("restore-purchases");
+    button.disabled = busy;
+    button.textContent = restoring ? "Restoring Purchases…" : "Restore Purchases";
+    button.setAttribute("aria-busy", String(restoring));
+    const result = document.getElementById("restore-result");
+    result.textContent = payload.restoreMessage || "";
+    result.classList.toggle("hidden", !result.textContent);
+    document.querySelectorAll(".support-product-button").forEach(button => { button.disabled = busy; });
+}
+
 function updateMonetization(payload) {
     const verification = document.getElementById("access-verification");
     const verifying = payload.isVerifyingAccess === true;
@@ -123,6 +136,11 @@ function focusSupportSection() {
 }
 
 document.querySelector("button.open-preferences").addEventListener("click", openPreferences);
+document.getElementById("restore-purchases").addEventListener("click", () => {
+    // Give immediate feedback and prevent repeat clicks while the native action starts.
+    updateStore({ isRestoring: true });
+    webkit.messageHandlers.controller.postMessage({ action: "restore-purchases" });
+});
 document.getElementById("privacy-policy")?.addEventListener("click", event => {
     event.preventDefault();
     webkit.messageHandlers.controller.postMessage({ action: "open-privacy" });
