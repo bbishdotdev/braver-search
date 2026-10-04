@@ -39,7 +39,7 @@ import StoreKitTest
         defaults.removeObject(forKey: key)
         try AccessStore.update { $0 = AccessRecord() }
         _ = await AccessStore.verifyAcquisition(using: fail)
-        XCTAssertEqual(AccessStore.decision().state, .free, "The public rollout is still disabled")
+        XCTAssertEqual(AccessStore.decision(cutoff: nil).state, .free, "A disabled rollout must remain free")
         XCTAssertEqual(AccessStore.decision(cutoff: cutoff).state, .unknown,
                        "Missing evidence after rollout must ask to verify existing access, not classify someone as a new payer")
 
@@ -78,7 +78,7 @@ import StoreKitTest
         let cutoff = original.addingTimeInterval(-30 * 86400)
         let recovered = await AccessStore.verifyAcquisition { (original, "Sandbox") }
         XCTAssertNil(recovered)
-        XCTAssertEqual(AccessStore.decision().state, .free, "Sandbox must honor the disabled public cutoff")
+        XCTAssertEqual(AccessStore.decision(cutoff: nil).state, .free, "Sandbox must honor a disabled public cutoff")
         XCTAssertEqual(AccessStore.decision(cutoff: cutoff).state, .eligible)
         try AccessStore.update {
             $0.trialStart = Date().addingTimeInterval(-15 * 86400)
@@ -91,7 +91,7 @@ import StoreKitTest
         _ = await AccessStore.verifyAcquisition { (original, "Sandbox") }
         XCTAssertEqual(AccessStore.decision(cutoff: cutoff).state, .lifetime, "Same-environment recovery preserves ownership")
         _ = await AccessStore.verifyAcquisition { (original, "Production") }
-        XCTAssertEqual(AccessStore.decision().state, .free, "Recovery must not activate the public rollout")
+        XCTAssertEqual(AccessStore.decision(cutoff: nil).state, .free, "Recovery must not activate a disabled rollout")
         try AccessStore.update {
             XCTAssertTrue($0.lifetimeProducts.isEmpty, "Sandbox ownership must not cross into production")
             XCTAssertNil($0.trialStart)
@@ -107,7 +107,7 @@ import StoreKitTest
         let original = Date(timeIntervalSince1970: 1375340400)
         let cutoff = Date().addingTimeInterval(-86400)
         _ = await AccessStore.verifyAcquisition { (original, "Sandbox") }
-        XCTAssertEqual(AccessStore.decision().state, .free)
+        XCTAssertEqual(AccessStore.decision(cutoff: nil).state, .free)
         XCTAssertEqual(AccessStore.decision(cutoff: Date().addingTimeInterval(86400)).state, .free)
         XCTAssertEqual(AccessStore.decision(cutoff: cutoff).state, .grandfathered)
         try AccessStore.update { $0.trialStart = Date().addingTimeInterval(-15 * 86400) }
@@ -247,6 +247,6 @@ import StoreKitTest
             XCTAssertEqual($0.originalPurchaseDate, original)
             XCTAssertNil($0.trialStart, "Sandbox testing must not modify the normal access record")
         }
-        XCTAssertEqual(AccessStore.decision().state, .free, "Local test flags must not activate the production cutoff")
+        XCTAssertEqual(AccessStore.decision(cutoff: nil).state, .free, "Local test flags must not activate a disabled rollout")
     }
 }

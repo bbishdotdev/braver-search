@@ -4,7 +4,7 @@ import Foundation
     static func main() {
         var checks = 0
         let releaseCutoff = AccessConfiguration.launchDate!
-        precondition(ISO8601DateFormatter().string(from: releaseCutoff) == "2026-10-09T00:00:00Z")
+        precondition(ISO8601DateFormatter().string(from: releaseCutoff) == "2026-10-04T04:00:00Z")
         let existingOwner = AccessRecord(originalPurchaseDate: releaseCutoff.addingTimeInterval(-1))
         let newOwner = AccessRecord(originalPurchaseDate: releaseCutoff)
         precondition(AccessPolicy.evaluate(existingOwner, cutoff: releaseCutoff, now: releaseCutoff.addingTimeInterval(-1)).state == .free)
