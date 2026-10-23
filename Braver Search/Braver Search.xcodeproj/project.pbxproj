@@ -33,6 +33,8 @@
 		BBA400000000000000000013 /* AccessStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBA300000000000000000001; };
 		BBA500000000000000000010 /* AccessStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBA500000000000000000000; };
 		BBA500000000000000000011 /* AccessStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBA500000000000000000000; };
+		BBA700000000000000000001 = {isa = PBXBuildFile; fileRef = BBA700000000000000000002; };
+		BBA700000000000000000003 = {isa = PBXBuildFile; fileRef = BBA700000000000000000004; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -78,6 +80,7 @@
 			remoteGlobalIDString = CE77FAC32D3C8C8000B47EE3;
 			remoteInfo = "Braver Search (iOS)";
 		};
+		BBA700000000000000000009 = {isa = PBXContainerItemProxy; containerPortal = CE77FAA82D3C8C7E00B47EE3; proxyType = 1; remoteGlobalIDString = CE77FAC32D3C8C8000B47EE3; remoteInfo = "Braver Search (iOS)"; };
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -122,6 +125,9 @@
 		BBA300000000000000000000 /* AccessPolicy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Shared (Access)/AccessPolicy.swift"; sourceTree = SOURCE_ROOT; };
 		BBA300000000000000000001 /* AccessStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Shared (Access)/AccessStore.swift"; sourceTree = SOURCE_ROOT; };
 		BBA500000000000000000000 /* AccessStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Shared (Access)/AccessStoreTests.swift"; sourceTree = SOURCE_ROOT; };
+		BBA700000000000000000002 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Braver Search Recovery UI Tests/RecoveryUITests.swift"; sourceTree = SOURCE_ROOT; };
+		BBA700000000000000000004 = {isa = PBXFileReference; lastKnownFileType = text; path = "Shared (App)/Resources/Monetization.storekit"; sourceTree = SOURCE_ROOT; };
+		BBA700000000000000000005 = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; path = "Braver Search Recovery UI Tests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -332,6 +338,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		BBA700000000000000000008 = {isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -361,6 +368,7 @@
 				CEE6B2C62D405B95003F51F9 /* Braver Search iOS Tests */,
 				CEE6B2D32D405BAE003F51F9 /* Braver Search macOS Tests */,
 				CE7CB60F2F5F2CD8002B9A1E /* Frameworks */,
+				BBA700000000000000000002 /* RecoveryUITests.swift */,
 				CE77FAC52D3C8C8000B47EE3 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -374,6 +382,7 @@
 				CE77FAEC2D3C8C8000B47EE3 /* Braver Search Extension.appex */,
 				CEE6B2C52D405B95003F51F9 /* Braver Search iOS Tests.xctest */,
 				CEE6B2D22D405BAE003F51F9 /* Braver Search macOS Tests.xctest */,
+				BBA700000000000000000005 /* Braver Search Recovery UI Tests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -530,6 +539,17 @@
 			productReference = CEE6B2D22D405BAE003F51F9 /* Braver Search macOS Tests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
+		BBA70000000000000000000B /* Braver Search Recovery UI Tests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = BBA70000000000000000000C;
+			buildPhases = (BBA700000000000000000006, BBA700000000000000000008, BBA700000000000000000007,);
+			buildRules = ();
+			dependencies = (BBA70000000000000000000A,);
+			name = "Braver Search Recovery UI Tests";
+			productName = "Braver Search Recovery UI Tests";
+			productReference = BBA700000000000000000005;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -540,6 +560,7 @@
 				LastSwiftUpdateCheck = 1610;
 				LastUpgradeCheck = 1610;
 				TargetAttributes = {
+					BBA70000000000000000000B = {CreatedOnToolsVersion = 26.6; TestTargetID = CE77FAC32D3C8C8000B47EE3; };
 					CE77FAC32D3C8C8000B47EE3 = {
 						CreatedOnToolsVersion = 16.1;
 					};
@@ -576,6 +597,7 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
+				BBA70000000000000000000B /* Braver Search Recovery UI Tests */,
 				CE77FAC32D3C8C8000B47EE3 /* Braver Search (iOS) */,
 				CE77FAD52D3C8C8000B47EE3 /* Braver Search (macOS) */,
 				CE77FAE12D3C8C8000B47EE3 /* Braver Search Extension (iOS) */,
@@ -633,6 +655,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		BBA700000000000000000007 = {isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = (BBA700000000000000000003,); runOnlyForDeploymentPostprocessing = 0; };
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
@@ -696,6 +719,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		BBA700000000000000000006 = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (BBA700000000000000000001,); runOnlyForDeploymentPostprocessing = 0; };
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -729,6 +753,7 @@
 			target = CE77FAC32D3C8C8000B47EE3 /* Braver Search (iOS) */;
 			targetProxy = CEE6B2E92D4067FB003F51F9 /* PBXContainerItemProxy */;
 		};
+		BBA70000000000000000000A = {isa = PBXTargetDependency; target = CE77FAC32D3C8C8000B47EE3; targetProxy = BBA700000000000000000009; };
 /* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
@@ -1102,7 +1127,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
-				MARKETING_VERSION = 3.0.0;
+				MARKETING_VERSION = 3.0.1;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
@@ -1162,7 +1187,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
-				MARKETING_VERSION = 3.0.0;
+				MARKETING_VERSION = 3.0.1;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				PAID_LAUNCH_ISO8601 = "2027-01-01T08:00:00Z";
@@ -1252,6 +1277,36 @@
 			};
 			name = Release;
 		};
+		BBA70000000000000000000D = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.1;
+				PRODUCT_BUNDLE_IDENTIFIER = "xyz.bsquared.Braver-Search-Recovery-UITests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = "Braver Search (iOS)";
+			};
+			name = Debug;
+		};
+		BBA70000000000000000000E = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.1;
+				PRODUCT_BUNDLE_IDENTIFIER = "xyz.bsquared.Braver-Search-Recovery-UITests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = "Braver Search (iOS)";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -1318,6 +1373,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
+		BBA70000000000000000000C = {isa = XCConfigurationList; buildConfigurations = (BBA70000000000000000000D, BBA70000000000000000000E,); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
 /* End XCConfigurationList section */
 	};
 	rootObject = CE77FAA82D3C8C7E00B47EE3 /* Project object */;

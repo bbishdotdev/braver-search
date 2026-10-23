@@ -1,0 +1,20 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<Scheme LastUpgradeVersion="2660" version="1.7">
+  <BuildAction parallelizeBuildables="YES" buildImplicitDependencies="YES">
+    <BuildActionEntries>
+      <BuildActionEntry buildForTesting="YES" buildForRunning="NO" buildForProfiling="NO" buildForArchiving="NO" buildForAnalyzing="YES">
+        <BuildableReference BuildableIdentifier="primary" BlueprintIdentifier="CE77FAC32D3C8C8000B47EE3" BuildableName="Braver Search.app" BlueprintName="Braver Search (iOS)" ReferencedContainer="container:Braver Search.xcodeproj" />
+      </BuildActionEntry>
+      <BuildActionEntry buildForTesting="YES" buildForRunning="NO" buildForProfiling="NO" buildForArchiving="NO" buildForAnalyzing="YES">
+        <BuildableReference BuildableIdentifier="primary" BlueprintIdentifier="BBA70000000000000000000B" BuildableName="Braver Search Recovery UI Tests.xctest" BlueprintName="Braver Search Recovery UI Tests" ReferencedContainer="container:Braver Search.xcodeproj" />
+      </BuildActionEntry>
+    </BuildActionEntries>
+  </BuildAction>
+  <TestAction buildConfiguration="Debug" selectedDebuggerIdentifier="Xcode.DebuggerFoundation.Debugger.LLDB" selectedLauncherIdentifier="Xcode.IDEFoundation.Launcher.PosixSpawn" shouldUseLaunchSchemeArgsEnv="NO">
+    <Testables>
+      <TestableReference skipped="NO" parallelizable="NO">
+        <BuildableReference BuildableIdentifier="primary" BlueprintIdentifier="BBA70000000000000000000B" BuildableName="Braver Search Recovery UI Tests.xctest" BlueprintName="Braver Search Recovery UI Tests" ReferencedContainer="container:Braver Search.xcodeproj" />
+      </TestableReference>
+    </Testables>
+  </TestAction>
+</Scheme>

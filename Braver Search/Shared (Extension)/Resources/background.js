@@ -48,6 +48,18 @@ const enabledState = {
 const pendingBangRedirects = new Map();
 const pendingSetupRedirects = new Map();
 const navigationVersions = new Map();
+let lastAccessNotice;
+
+function showAccessNotice(state) {
+    const text = ['verificationPending', 'unknown'].includes(state) ? '!' : '';
+    if (lastAccessNotice === text || !browser.browserAction?.setBadgeText) { return; }
+    lastAccessNotice = text;
+    // A recovery reminder must never delay or prevent a search, including on
+    // Safari versions that do not support toolbar badges.
+    try {
+        Promise.resolve(browser.browserAction.setBadgeText({ text })).catch(() => {});
+    } catch { /* Optional presentation only. */ }
+}
 
 function debugLog(...args) {
     if (DEBUG_LOGGING) {
@@ -408,6 +420,7 @@ async function handleSearchNavigation(details, { loadedPage = false } = {}) {
             properties: { test_id: isSetupTest ? testID : '', setup_query: isSetupTest && searchQuery === 'Braver Search setup check' }
         });
     } catch { return; }
+    showAccessNotice(access?.state);
     if (access?.allowed !== true || navigationVersions.get(details.tabId) !== navigationVersion) { return; }
 
     if (loadedPage) {

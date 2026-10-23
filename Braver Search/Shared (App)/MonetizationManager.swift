@@ -32,7 +32,7 @@ final class MonetizationManager: ObservableObject {
     var showsAccessVerificationNotice: Bool {
         // An unavailable Apple refresh is not a loss of existing access. Keep the
         // technical failure for explicit Restore, but don't alarm users who can search.
-        !access.allowsRedirects && accessVerificationMessage != nil
+        (!access.allowsRedirects || access.state == .verificationPending) && accessVerificationMessage != nil
     }
 
     func configureIfNeeded() {

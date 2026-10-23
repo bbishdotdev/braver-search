@@ -33,6 +33,7 @@ class ViewController: PlatformViewController, WKNavigationDelegate, WKScriptMess
     private var setupTimer: Timer?
     private var monetizationObserver: NSObjectProtocol?
     private var supportFlowObserver: NSObjectProtocol?
+    private var setupFlowObserver: NSObjectProtocol?
     #if os(macOS)
     private var storeObserver: AnyCancellable?
     #endif
@@ -74,6 +75,9 @@ class ViewController: PlatformViewController, WKNavigationDelegate, WKScriptMess
             queue: .main
         ) { [weak self] _ in
             self?.focusSupportUI()
+        }
+        setupFlowObserver = NotificationCenter.default.addObserver(forName: .finishSafariSetup, object: nil, queue: .main) { [weak self] _ in
+            self?.webView.evaluateJavaScript("focusSetupHelp()")
         }
     }
 
@@ -193,6 +197,7 @@ class ViewController: PlatformViewController, WKNavigationDelegate, WKScriptMess
         if let supportFlowObserver {
             NotificationCenter.default.removeObserver(supportFlowObserver)
         }
+        if let setupFlowObserver { NotificationCenter.default.removeObserver(setupFlowObserver) }
     }
 
     private func updateSetupUI() {

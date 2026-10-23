@@ -22,6 +22,8 @@ let installationSteps: [Step] = [
 ]
 
 struct InstallationGuideView: View {
+    @ObservedObject private var monetization = MonetizationManager.shared
+    @State private var isShowingAccess = false
     @State private var seenSteps = Set<String>()
     var body: some View {
         ScrollView {
@@ -30,11 +32,25 @@ struct InstallationGuideView: View {
                     Text("Turn On Braver Search")
                         .font(.system(size: 26, weight: .bold))
 
-                    Text("Safari setup has two parts: enable the extension in Settings, then allow website access from Safari.")
+                    Text("Activate your access, enable the extension in Settings, then allow website access from Safari.")
                         .font(.system(size: 16, weight: .medium))
                         .foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
                 }
+
+                VStack(alignment: .leading, spacing: 10) {
+                    Text(monetization.access.state == .verificationPending ? "Check your access soon"
+                         : monetization.access.allowsRedirects ? "Access ready — continue below" : "First, activate your access")
+                        .font(.headline)
+                    Text(monetization.access.state == .verificationPending ? monetization.access.message : monetization.access.allowsRedirects
+                         ? "Your access allows searches. Complete the Safari steps below, then return to Braver Search and test your setup."
+                         : "New users must complete Apple’s free trial confirmation before ordinary searches redirect. Existing users can check or restore their access.")
+                        .font(.subheadline).foregroundStyle(.secondary)
+                    if !monetization.access.allowsRedirects || monetization.access.state == .verificationPending {
+                        Button(monetization.access.state == .eligible ? "Start free trial" : "Check my access") { isShowingAccess = true }
+                            .accessibilityIdentifier("guide-check-access")
+                    }
+                }.padding().background(.secondary.opacity(0.1), in: RoundedRectangle(cornerRadius: 12))
 
                 ForEach(installationSteps) { step in
                     VStack(alignment: .leading, spacing: 16) {
@@ -69,6 +85,9 @@ struct InstallationGuideView: View {
         .onAppear { IOSAppAnalytics.track("setup_guide_viewed") }
         .navigationTitle("Installation Guide")
         .navigationBarTitleDisplayMode(.inline)
+        .sheet(isPresented: $isShowingAccess) {
+            LifetimeAccessView(finishSafariSetup: { isShowingAccess = false })
+        }
     }
 }
 

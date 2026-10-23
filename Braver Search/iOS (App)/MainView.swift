@@ -23,6 +23,8 @@ struct MainView: View {
     @State private var isSetupHelpExpanded = false
     @State private var isShowingSupportSheet = false
     @State private var isShowingLifetime = false
+    @State private var isShowingInstallationGuide = false
+    @State private var opensGuideAfterAccess = false
     @State private var selectedDonationIndex = 0
     @StateObject private var monetization = MonetizationManager.shared
     @StateObject private var store = StoreManager.shared
@@ -85,6 +87,7 @@ struct MainView: View {
             }
             .navigationTitle("Braver Search")
             .navigationBarTitleDisplayMode(.large)
+            .navigationDestination(isPresented: $isShowingInstallationGuide) { InstallationGuideView() }
         }
         .preferredColorScheme(.dark)
         .onAppear(perform: refreshSetupStatus)
@@ -113,7 +116,17 @@ struct MainView: View {
             }
             isShowingSupportSheet = true
         }
-        .sheet(isPresented: $isShowingLifetime) { LifetimeAccessView() }
+        .sheet(isPresented: $isShowingLifetime, onDismiss: {
+            if opensGuideAfterAccess {
+                opensGuideAfterAccess = false
+                isShowingInstallationGuide = true
+            }
+        }) {
+            LifetimeAccessView(finishSafariSetup: {
+                opensGuideAfterAccess = true
+                isShowingLifetime = false
+            })
+        }
         .sheet(isPresented: $isShowingSupportSheet) {
             SupportSheetView()
         }
@@ -302,7 +315,7 @@ struct MainView: View {
                         .font(.system(size: 24, weight: .bold))
                         .foregroundStyle(.white)
 
-                    Text("Safari has its own extension switch. Follow the video, then use the guide if you get stuck.")
+                    Text("First activate your free trial or check your existing access above. Then enable the Safari extension and allow website access. Follow the video or open the guide.")
                         .font(.system(size: 15, weight: .medium))
                         .foregroundStyle(IOSTheme.secondaryText)
                         .fixedSize(horizontal: false, vertical: true)

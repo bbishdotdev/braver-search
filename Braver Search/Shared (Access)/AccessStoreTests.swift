@@ -5,6 +5,79 @@ import StoreKitTest
 
 /// Real Xcode StoreKit transactions. These never contact the production App Store or charge money.
 @MainActor final class AccessStoreTests: XCTestCase {
+    func testExtensionFirstUpgradeMigratesLegacyPreferencesWithoutHostLaunch() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        let suite = "braver-upgrade-legacy-" + UUID().uuidString
+        let legacy = UserDefaults(suiteName: suite)!
+        let defaults = DurableAnalytics.defaults
+        let key = "monetization.firstUseDate"
+        let previous = defaults.object(forKey: key)
+        AccessStore.testPersistence = DurableAnalytics(directory: root)
+        AccessStore.testLegacyDefaults = legacy
+        defer {
+            AccessStore.testPersistence = nil
+            AccessStore.testLegacyDefaults = nil
+            legacy.removePersistentDomain(forName: suite)
+            if let previous { defaults.set(previous, forKey: key) } else { defaults.removeObject(forKey: key) }
+            try? FileManager.default.removeItem(at: root)
+        }
+        let cutoff = AccessConfiguration.launchDate!
+        legacy.set(cutoff.addingTimeInterval(-86400).timeIntervalSince1970, forKey: key)
+        defaults.removeObject(forKey: key)
+        // No MonetizationManager, host launch or StoreKit authentication is involved.
+        XCTAssertEqual(AccessStore.decision().state, .grandfathered)
+        // Recover even if 3.0 already stored a later first-use date and an unknown record.
+        defaults.set(cutoff.addingTimeInterval(86400).timeIntervalSince1970, forKey: key)
+        try AccessStore.update { $0 = AccessRecord(legacyFirstUse: cutoff.addingTimeInterval(86400)) }
+        XCTAssertEqual(AccessStore.decision().state, .grandfathered)
+        // Signed evidence takes precedence over a local fallback.
+        try AccessStore.update { $0.setVerifiedAcquisition(date: cutoff, environment: "Production") }
+        XCTAssertEqual(AccessStore.decision().state, .eligible)
+    }
+
+    func testMissingEvidenceRecoveryPersistsAcrossExtensionRestartsAndExpires() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        let defaults = DurableAnalytics.defaults
+        let key = "monetization.firstUseDate"
+        let previous = defaults.object(forKey: key)
+        defaults.removeObject(forKey: key)
+        AccessStore.testPersistence = DurableAnalytics(directory: root)
+        defer {
+            AccessStore.testPersistence = nil
+            if let previous { defaults.set(previous, forKey: key) } else { defaults.removeObject(forKey: key) }
+            try? FileManager.default.removeItem(at: root)
+        }
+        let now = Date()
+        let first = AccessStore.decision(now: now)
+        XCTAssertEqual(first.state, .verificationPending)
+        XCTAssertTrue(first.allowsRedirects)
+        XCTAssertEqual(first.expiresAt, now.addingTimeInterval(AccessConfiguration.verificationGraceDuration))
+        AccessStore.testPersistence = DurableAnalytics(directory: root)
+        XCTAssertEqual(AccessStore.decision(now: now.addingTimeInterval(86400)).expiresAt, first.expiresAt)
+        _ = await AccessStore.verifyAcquisition { throw NSError(domain: "offline", code: 1) }
+        XCTAssertEqual(AccessStore.decision(now: now.addingTimeInterval(86400)).state, .verificationPending)
+        XCTAssertEqual(AccessStore.decision(now: first.expiresAt!).state, .unknown)
+        // Neither another process nor a clock rollback starts a new window.
+        AccessStore.testPersistence = DurableAnalytics(directory: root)
+        XCTAssertEqual(AccessStore.decision(now: now).state, .unknown)
+        _ = await AccessStore.verifyAcquisition { (AccessConfiguration.launchDate!.addingTimeInterval(-1), "Production") }
+        XCTAssertEqual(AccessStore.decision().state, .grandfathered)
+    }
+
+    func testDamagedAccessRecordRequiresVerifiedEvidenceToRepair() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        let file = root.appendingPathComponent("access-v1.json")
+        let damaged = Data("damaged existing record".utf8)
+        try damaged.write(to: file)
+        AccessStore.testPersistence = DurableAnalytics(directory: root)
+        defer { AccessStore.testPersistence = nil; try? FileManager.default.removeItem(at: root) }
+        XCTAssertEqual(AccessStore.decision().state, .unknown)
+        XCTAssertEqual(try Data(contentsOf: file), damaged)
+        _ = await AccessStore.verifyAcquisition { (AccessConfiguration.launchDate!.addingTimeInterval(-1), "Production") }
+        XCTAssertEqual(AccessStore.decision().state, .grandfathered)
+    }
+
     func testExistingProductionUsersKeepAccessWhenAppleVerificationFails() async throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent("legacy-upgrade-tests-" + UUID().uuidString)
         AccessStore.testPersistence = DurableAnalytics(directory: root)
@@ -40,8 +113,8 @@ import StoreKitTest
         try AccessStore.update { $0 = AccessRecord() }
         _ = await AccessStore.verifyAcquisition(using: fail)
         XCTAssertEqual(AccessStore.decision(cutoff: nil).state, .free, "A disabled rollout must remain free")
-        XCTAssertEqual(AccessStore.decision(cutoff: cutoff).state, .unknown,
-                       "Missing evidence after rollout must ask to verify existing access, not classify someone as a new payer")
+        XCTAssertEqual(AccessStore.decision(cutoff: cutoff).state, .verificationPending,
+                       "Missing evidence must keep searches available during bounded verification, without starting a paid trial")
 
         _ = await AccessStore.verifyAcquisition { (cutoff, "Production") }
         try AccessStore.update { $0.lifetimeProducts = [AccessConfiguration.thanksLifetimeID] }

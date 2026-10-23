@@ -33,6 +33,18 @@ describe('Popup Script', () => {
     });
     
     describe('Initial state', () => {
+        it('keeps redirects available and exposes recovery instructions during verification', async () => {
+            browser.storage.local.get.mockResolvedValue({ enabled: true });
+            browser.runtime.sendNativeMessage.mockResolvedValue({ userState: 'verificationPending', accessAllowed: true,
+                accessMessage: 'Open Braver Search before November 6 to check your access.' });
+            document.dispatchEvent(new Event('DOMContentLoaded'));
+            await new Promise(resolve => setTimeout(resolve, 0));
+            expect(document.getElementById('redirectToggle').classList.contains('hidden')).toBe(false);
+            expect(toggleButton.checked).toBe(true);
+            expect(document.getElementById('accessCard').classList.contains('hidden')).toBe(false);
+            expect(document.getElementById('accessMessage').textContent).toContain('November 6');
+            expect(document.getElementById('accessLink').textContent).toBe('Open Braver Search');
+        });
         it('explains expired access even when the redirect toggle is on', async () => {
             browser.storage.local.get.mockResolvedValue({ enabled: true });
             browser.runtime.sendNativeMessage.mockResolvedValue({ accessAllowed: false, userState: 'expired' });

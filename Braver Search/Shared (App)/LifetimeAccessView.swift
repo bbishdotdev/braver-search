@@ -11,7 +11,8 @@ private enum AccessPalette {
 struct LifetimeAccessView: View {
     // AppKit owns Mac presentation; iOS sheets use their SwiftUI environment.
     var closeSheet: (() -> Void)? = nil
-    private enum Page { case trial, lifetime, status }
+    var finishSafariSetup: (() -> Void)? = nil
+    private enum Page { case trial, lifetime, status, setup }
     @Environment(\.dismiss) private var dismiss
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -19,12 +20,14 @@ struct LifetimeAccessView: View {
     @ObservedObject private var store = StoreManager.shared
     @State private var selection = Double(MonetizationConfig.suggestedLifetimeIndex)
     @State private var choseLifetime = false
+    @State private var showSetupNext = false
     private var maximumTier: Double { Double(MonetizationConfig.lifetimeOptions.count - 1) }
     private var index: Int { min(Int(maximumTier), max(0, Int(selection.rounded()))) }
     private var option: DonationOption { MonetizationConfig.lifetimeOptions[index] }
     private var access: AccessDecision { monetization.access }
     private var busy: Bool { store.activePurchaseProductID != nil || store.isRestoring }
     private var page: Page {
+        if showSetupNext && access.allowsRedirects { return .setup }
         switch access.state {
         case .eligible: return choseLifetime ? .lifetime : .trial
         case .trial, .expired: return .lifetime
@@ -82,12 +85,11 @@ struct LifetimeAccessView: View {
             }
         }
         .onChange(of: page) { _ in
-            // Activating a trial closes this sheet; it isn't a visit to pricing.
-            if access.state != .trial || choseLifetime { recordPageView() }
+            if page != .setup && (access.state != .trial || choseLifetime) { recordPageView() }
         }
         .onChange(of: access.state) { state in
             // Also handles a trial approved later through Transaction.updates.
-            if state == .trial && !choseLifetime { close() }
+            if state == .trial || state == .lifetime { showSetupNext = true }
         }
         .onChange(of: index) { _ in
             DurableAnalytics.shared.capture("lifetime_tier_selected", properties: ["product_id": option.id])
@@ -99,7 +101,15 @@ struct LifetimeAccessView: View {
             if monetization.showsAccessVerificationNotice {
                 AccessVerificationNotice()
             }
-            if page == .trial {
+            if page == .setup {
+                lion("TipCheers", size: 120)
+                heading("Access is ready", detail: "Now finish Safari setup to start searching.")
+                VStack(alignment: .leading, spacing: 12) {
+                    Label("Enable Braver Search in Safari extensions.", systemImage: "1.circle")
+                    Label("Allow access to search websites.", systemImage: "2.circle")
+                    Label("Test a search in Safari.", systemImage: "3.circle")
+                }.font(.callout).fixedSize(horizontal: false, vertical: true)
+            } else if page == .trial {
                 lion("TipCheers", size: 156)
                 heading("Try it in Safari", detail: "14 days of Safari search redirects.")
                 Label("No automatic charge", systemImage: "checkmark.circle")
@@ -179,11 +189,20 @@ struct LifetimeAccessView: View {
                 Text(message).font(.callout).multilineTextAlignment(.center)
                     .foregroundStyle(AccessPalette.gold).accessibilityIdentifier("purchase-result")
             }
-            if page == .trial {
+            if page == .setup {
+                primaryButton("Finish Safari setup", id: "finish-safari-setup", disabled: false) {
+                    if let finishSafariSetup {
+                        finishSafariSetup()
+                    } else {
+                        close()
+                        NotificationCenter.default.post(name: .finishSafariSetup, object: nil)
+                    }
+                }
+            } else if page == .trial {
                 if store.isAvailable(AccessConfiguration.trialID) {
                     primaryButton("Start free trial", id: "start-free-trial", disabled: false) {
                         await store.purchase(id: AccessConfiguration.trialID)
-                        if monetization.access.state == .trial { close() }
+                        if monetization.access.state == .trial { showSetupNext = true }
                     }
                 } else {
                     catalogRetry(for: AccessConfiguration.trialID)
@@ -213,7 +232,7 @@ struct LifetimeAccessView: View {
                 }
                 Text("One purchase for iPhone, iPad & Mac.")
                     .font(.caption).foregroundStyle(.white.opacity(0.6))
-            } else if access.state == .unknown {
+            } else if access.state == .unknown || access.state == .verificationPending {
                 if let message = store.purchaseMessage {
                     Text(message).font(.callout).foregroundStyle(AccessPalette.gold).multilineTextAlignment(.center)
                 }
@@ -221,7 +240,7 @@ struct LifetimeAccessView: View {
             } else {
                 primaryButton("Done", id: "access-done", disabled: false) { close() }
             }
-            if access.state != .unknown {
+            if access.state != .unknown && access.state != .verificationPending && page != .setup {
                 Divider().overlay(.white.opacity(0.08)).padding(.bottom, 4)
                 Button { Task { await store.restore() } } label: {
                     HStack(spacing: 8) {
@@ -512,6 +531,7 @@ struct AccessSummaryButton: View {
         case .lifetime: return "Lifetime access. Thank you."
         case .expired: return "Trial complete. Choose your lifetime price."
         case .unknown: return "Restore purchases to check your access."
+        case .verificationPending: return monetization.access.message
         default: return "14 free days. Then choose your price."
         }
     }

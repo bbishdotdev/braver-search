@@ -317,6 +317,36 @@ We welcome contributions! Here's how you can help:
 
 ## Deployment
 
+### Access recovery regression checks
+
+The app and Safari extension share `Shared (Access)/AccessStore.swift` and
+`AccessPolicy.swift`. Both can recover legacy first-use evidence; the extension
+also attempts a non-interactive, verified app-acquisition lookup. Missing
+acquisition evidence gets one persisted 14-day verification window. A confirmed
+new acquisition, expired trial, or revoked purchase does not receive that window.
+The window is distinct from the StoreKit trial and does not restart on relaunch.
+Authentication through Restore Purchases remains an explicit user action.
+
+Run JavaScript tests with `npm test -- --runInBand`, policy checks on macOS with
+`bash scripts/test-access.sh`, and native tests with the existing iOS/macOS schemes.
+`AccessStoreTests` covers extension-first migration, verification-window persistence
+and expiry, verified cache repair, StoreKit restoration, and refunds.
+
+On a dedicated iPhone simulator, the `Braver Search Recovery UI (iOS)` scheme
+checks recovery controls and a real local StoreKit trial purchase followed by the
+Safari setup guide. These purchases use Xcode's test store and do not charge an
+Apple account:
+
+```sh
+xcodebuild test -project 'Braver Search/Braver Search.xcodeproj' \
+  -scheme 'Braver Search Recovery UI (iOS)' \
+  -destination "id=$BRAVER_TEST_SIMULATOR" -parallel-testing-enabled NO
+```
+
+Inspect packaged Release apps with `scripts/check-release-access.py` to ensure
+development fixtures are absent. Simulator and fixture tests do not replace an
+App Store upgrade check with the host app closed.
+
 ### Prerequisites
 - Apple Developer Program membership
 - App Store Connect API key

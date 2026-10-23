@@ -38,6 +38,22 @@ describe('Mac home setup access presentation', () => {
         expect(action.textContent).toBe('View access');
         expect(button.classList.contains('access-expired')).toBe(false);
     });
+    it('offers verification recovery while keeping setup available during the grace window', () => {
+        context.updateMonetization({ ...payload('verificationPending', true), accessVerificationMessage: 'Apple is unavailable.' });
+        expect(document.getElementById('access-summary-action').textContent).toBe('Check my access');
+        expect(document.getElementById('access-verification').classList.contains('hidden')).toBe(false);
+        expect(document.getElementById('setup-test-controls').parentElement.id).toBe('setup-test-primary');
+        document.getElementById('retry-access').click();
+        expect(postMessage).toHaveBeenCalledWith({ action: 'retry-access' });
+    });
+    it('takes activated users to visible Safari setup instructions', () => {
+        const help = document.getElementById('setup-help');
+        help.scrollIntoView = jest.fn();
+        context.focusSetupHelp();
+        expect(help.open).toBe(true);
+        expect(help.scrollIntoView).toHaveBeenCalled();
+        expect(document.activeElement.id).toBe('test-setup');
+    });
     it('actually hides the donation section for paying cohorts and keeps review usable', () => {
         const support = document.querySelector('.support-section');
         for (const state of ['eligible', 'trial', 'expired', 'lifetime']) {

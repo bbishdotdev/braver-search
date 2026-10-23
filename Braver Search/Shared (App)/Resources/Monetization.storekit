@@ -24,12 +24,12 @@
       "localizations": [
         {
           "description": "Lifetime Safari search redirects. No subscription.",
-          "displayName": "Lifetime · Thanks!",
+          "displayName": "Lifetime \u00b7 Thanks!",
           "locale": "en_US"
         }
       ],
       "productID": "braversearch.lifetime.thanks",
-      "referenceName": "Lifetime · Thanks!",
+      "referenceName": "Lifetime \u00b7 Thanks!",
       "type": "NonConsumable"
     },
     {
@@ -39,12 +39,12 @@
       "localizations": [
         {
           "description": "Lifetime Safari search redirects. No subscription.",
-          "displayName": "Lifetime · High five!",
+          "displayName": "Lifetime \u00b7 High five!",
           "locale": "en_US"
         }
       ],
       "productID": "braversearch.lifetime.coffee",
-      "referenceName": "Lifetime · High five!",
+      "referenceName": "Lifetime \u00b7 High five!",
       "type": "NonConsumable"
     },
     {
@@ -54,12 +54,12 @@
       "localizations": [
         {
           "description": "Lifetime Safari search redirects. No subscription.",
-          "displayName": "Lifetime · Cheers!",
+          "displayName": "Lifetime \u00b7 Cheers!",
           "locale": "en_US"
         }
       ],
       "productID": "braversearch.lifetime.supporter",
-      "referenceName": "Lifetime · Cheers!",
+      "referenceName": "Lifetime \u00b7 Cheers!",
       "type": "NonConsumable"
     },
     {
@@ -69,12 +69,12 @@
       "localizations": [
         {
           "description": "Lifetime Safari search redirects. No subscription.",
-          "displayName": "Lifetime · You’re a lifesaver!",
+          "displayName": "Lifetime \u00b7 You\u2019re a lifesaver!",
           "locale": "en_US"
         }
       ],
       "productID": "braversearch.lifetime.champion",
-      "referenceName": "Lifetime · You’re a lifesaver!",
+      "referenceName": "Lifetime \u00b7 You\u2019re a lifesaver!",
       "type": "NonConsumable"
     },
     {
@@ -84,12 +84,12 @@
       "localizations": [
         {
           "description": "Lifetime Safari search redirects. No subscription.",
-          "displayName": "Lifetime · Now that’s love!",
+          "displayName": "Lifetime \u00b7 Now that\u2019s love!",
           "locale": "en_US"
         }
       ],
       "productID": "braversearch.lifetime.hero",
-      "referenceName": "Lifetime · Now that’s love!",
+      "referenceName": "Lifetime \u00b7 Now that\u2019s love!",
       "type": "NonConsumable"
     },
     {
@@ -99,13 +99,73 @@
       "localizations": [
         {
           "description": "Lifetime Safari search redirects. No subscription.",
-          "displayName": "Lifetime · Endless thanks!",
+          "displayName": "Lifetime \u00b7 Endless thanks!",
           "locale": "en_US"
         }
       ],
       "productID": "braversearch.lifetime.legend",
-      "referenceName": "Lifetime · Endless thanks!",
+      "referenceName": "Lifetime \u00b7 Endless thanks!",
       "type": "NonConsumable"
+    },
+    {
+      "displayPrice": "1.99",
+      "familyShareable": false,
+      "internalID": "100c6bc9-6878-4524-8dd5-f717c776b4ae",
+      "localizations": [
+        {
+          "description": "Optional support for existing users.",
+          "displayName": "Thanks!",
+          "locale": "en_US"
+        }
+      ],
+      "productID": "braversearch.tip.thanks",
+      "referenceName": "Thanks!",
+      "type": "Consumable"
+    },
+    {
+      "displayPrice": "4.99",
+      "familyShareable": false,
+      "internalID": "0f476ff2-f63b-4865-b907-170a724be0db",
+      "localizations": [
+        {
+          "description": "Optional support for existing users.",
+          "displayName": "Cheers!",
+          "locale": "en_US"
+        }
+      ],
+      "productID": "braversearch.tip.cheers",
+      "referenceName": "Cheers!",
+      "type": "Consumable"
+    },
+    {
+      "displayPrice": "9.99",
+      "familyShareable": false,
+      "internalID": "0dc2374d-ed28-4003-b4a0-d85b978227a8",
+      "localizations": [
+        {
+          "description": "Optional support for existing users.",
+          "displayName": "You are a lifesaver!",
+          "locale": "en_US"
+        }
+      ],
+      "productID": "braversearch.tip.lifesaver",
+      "referenceName": "You are a lifesaver!",
+      "type": "Consumable"
+    },
+    {
+      "displayPrice": "99.99",
+      "familyShareable": false,
+      "internalID": "8fa8453e-e0ec-4c8a-b909-9bf44e567a6e",
+      "localizations": [
+        {
+          "description": "Optional support for existing users.",
+          "displayName": "Thank you!",
+          "locale": "en_US"
+        }
+      ],
+      "productID": "braversearch.tip.max",
+      "referenceName": "Thank you!",
+      "type": "Consumable"
     }
   ],
   "settings": {

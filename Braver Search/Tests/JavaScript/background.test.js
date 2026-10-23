@@ -42,6 +42,28 @@ describe('Background Script', () => {
     }
 
     describe('native redirect entitlement gate', () => {
+        it('shows a recovery reminder and clears it after verification without delaying searches', async () => {
+            const previous = browser.browserAction;
+            const setBadgeText = jest.fn().mockRejectedValue(new Error('badge unavailable'));
+            browser.browserAction = { setBadgeText };
+            try {
+                await loadBackgroundScript();
+                browser.runtime.sendNativeMessage.mockResolvedValue({ allowed: true, state: 'verificationPending' });
+                await navigateToGoogleSearch('first');
+                expect(setBadgeText).toHaveBeenLastCalledWith({ text: '!' });
+                browser.runtime.sendNativeMessage.mockResolvedValue({ allowed: true, state: 'grandfathered' });
+                await navigateToGoogleSearch('second');
+                expect(setBadgeText).toHaveBeenLastCalledWith({ text: '' });
+                expect(browser.tabs.update).toHaveBeenCalledTimes(2);
+            } finally { browser.browserAction = previous; }
+        });
+        it('redirects an ordinary search during native acquisition recovery', async () => {
+            await loadBackgroundScript();
+            browser.runtime.sendNativeMessage.mockResolvedValue({ allowed: true, state: 'verificationPending' });
+            navigationListener({ tabId: 1, frameId: 0, url: 'https://www.google.com/search?q=recovery' });
+            await flushPromises();
+            expect(browser.tabs.update).toHaveBeenCalledWith(1, { url: 'https://search.brave.com/search?q=recovery' });
+        });
         it.each(['expired', 'eligible', 'unknown'])('does not redirect when native access is %s, even with the toggle on', async state => {
             await loadBackgroundScript();
             browser.runtime.sendNativeMessage.mockResolvedValue({ allowed: false, state });

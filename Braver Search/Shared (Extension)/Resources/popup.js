@@ -59,21 +59,27 @@ document.addEventListener('DOMContentLoaded', async function() {
 
     function showAccessState(response) {
         const blocked = response?.accessAllowed === false;
+        const pending = response?.userState === 'verificationPending';
         document.getElementById('patronNote').classList.toggle('hidden',
             response?.userState !== 'lifetime' || response?.accessAllowed !== true);
         document.getElementById('redirectToggle').classList.toggle('hidden', blocked);
-        document.getElementById('accessCard').classList.toggle('hidden', !blocked);
+        document.getElementById('accessCard').classList.toggle('hidden', !blocked && !pending);
         // Preserve the saved switch preference. Access, not a switch change, pauses redirects.
         document.getElementById('redirectTitle').textContent = blocked ? 'Redirects paused' : 'Redirect Search';
         const description = document.getElementById('redirectDescription');
-        if (!blocked) {
+        if (!blocked && !pending) {
             description.textContent = 'Redirect Safari searches to Brave Search.';
             return;
         }
         const title = document.getElementById('accessTitle');
         const message = document.getElementById('accessMessage');
         const link = document.getElementById('accessLink');
-        if (response.userState === 'eligible') {
+        if (pending) {
+            description.textContent = 'Redirects are available while we check your access.';
+            title.textContent = 'Check your access soon';
+            message.textContent = response.accessMessage;
+            link.textContent = 'Open Braver Search';
+        } else if (response.userState === 'eligible') {
             description.textContent = 'Start your free trial to enable Safari search redirects.';
             title.textContent = 'Try it free for 14 days';
             message.textContent = 'No automatic charge. Buy once to continue after your trial.';

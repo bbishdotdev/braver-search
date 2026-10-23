@@ -41,7 +41,7 @@ function updateMonetization(payload) {
     const verification = document.getElementById("access-verification");
     const verifying = payload.isVerifyingAccess === true;
     const verificationMessage = payload.accessVerificationMessage || "";
-    verification.classList.toggle("hidden", payload.accessAllowed === true || (!verifying && !verificationMessage));
+    verification.classList.toggle("hidden", (payload.accessAllowed === true && payload.accessState !== "verificationPending") || (!verifying && !verificationMessage));
     document.getElementById("access-verification-title").textContent = verifying
         ? "Checking App Store access…" : "Check your App Store access";
     document.getElementById("access-verification-message").textContent = verifying
@@ -76,7 +76,7 @@ function updateMonetization(payload) {
             : eligible ? "Try it for 14 days. No automatic charge." : payload.accessMessage;
         document.getElementById("access-summary-action").textContent = eligible ? "Start free trial"
             : expired ? "Unlock lifetime access" : payload.accessState === "trial" ? "See lifetime prices"
-            : payload.accessState === "unknown" ? "Check my access" : "View access";
+            : ["unknown", "verificationPending"].includes(payload.accessState) ? "Check my access" : "View access";
         access.onclick = () => webkit.messageHandlers.controller.postMessage({ action: "open-lifetime" });
     }
     const supportSection = document.querySelector(".support-section");
@@ -133,6 +133,13 @@ function focusSupportSection() {
     }
 
     supportSection.scrollIntoView({ behavior: "smooth", block: "center" });
+}
+
+function focusSetupHelp() {
+    const help = document.getElementById('setup-help');
+    help.open = true;
+    help.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    document.getElementById('test-setup').focus();
 }
 
 document.querySelector("button.open-preferences").addEventListener("click", openPreferences);

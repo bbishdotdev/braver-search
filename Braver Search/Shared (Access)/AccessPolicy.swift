@@ -6,6 +6,9 @@ enum AccessConfiguration {
     // Release only with approved StoreKit products; move this date if approval is delayed.
     static let launchDate: Date? = Date(timeIntervalSince1970: 1_791_086_400)
     static let trialDuration: TimeInterval = 14 * 24 * 60 * 60
+    // One persisted recovery window for missing acquisition evidence, never a new trial.
+    static let verificationGraceDuration: TimeInterval = 14 * 24 * 60 * 60
+    static let appBundleID = "xyz.bsquared.Braver-Search"
     static let trialID = "braversearch.trial.14day"
     static let thanksLifetimeID = "braversearch.lifetime.thanks"
     static let highFiveLifetimeID = "braversearch.lifetime.coffee"
@@ -23,6 +26,7 @@ struct AccessRecord: Codable {
     var originalPurchaseDate: Date?
     var appTransactionEnvironment: String?
     var legacyFirstUse: Date?
+    var verificationStartedAt: Date?
     var trialStart: Date?
     var lifetimeProducts: [String] = []
     var entitlementRevision: Int = 0
@@ -79,8 +83,8 @@ struct LocalAccessTest: Codable {
 #endif
 
 enum AccessState: String, Codable {
-    case free, grandfathered, unknown, eligible, trial, expired, lifetime
-    var allowsRedirects: Bool { [.free, .grandfathered, .trial, .lifetime].contains(self) }
+    case free, grandfathered, verificationPending, unknown, eligible, trial, expired, lifetime
+    var allowsRedirects: Bool { [.free, .grandfathered, .verificationPending, .trial, .lifetime].contains(self) }
     var canTip: Bool { self == .free || self == .grandfathered }
 }
 
@@ -93,6 +97,7 @@ struct AccessDecision: Equatable {
         switch state {
         case .free: return "Free access"
         case .grandfathered: return "Yours to keep"
+        case .verificationPending: return "Keep searching while we check access"
         case .unknown: return "Let’s check your access"
         case .eligible: return "Search your way in Safari"
         case .trial: return "Your free trial is underway"
@@ -104,6 +109,9 @@ struct AccessDecision: Equatable {
         switch state {
         case .free: return "Braver Search is free to use."
         case .grandfathered: return "You were here early. Your Safari search redirects stay free, always."
+        case .verificationPending:
+            let until = expiresAt.map { " until \($0.formatted(date: .abbreviated, time: .omitted))" } ?? " temporarily"
+            return "Safari redirects stay available\(until). Open Braver Search and check your access before then. This does not start a trial or charge you."
         case .unknown: return "Connect to the App Store to check your existing access. Setup help is always available."
         case .eligible: return "Redirect Safari address-bar searches for 14 days."
         case .trial: return "Safari search redirects are on. Unlock once to keep them."
@@ -128,6 +136,11 @@ enum AccessPolicy {
         if let start = record.trialStart {
             let expires = start.addingTimeInterval(AccessConfiguration.trialDuration)
             return result(now >= start && now < expires ? .trial : .expired, expires)
+        }
+        if record.originalPurchaseDate == nil, record.revokedTransactionIDs.isEmpty,
+           let start = record.verificationStartedAt {
+            let expires = start.addingTimeInterval(AccessConfiguration.verificationGraceDuration)
+            if now >= start && now < expires { return result(.verificationPending, expires) }
         }
         return result(record.originalPurchaseDate == nil ? .unknown : .eligible)
     }

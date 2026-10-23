@@ -94,6 +94,9 @@ final class StoreManager: ObservableObject {
                 purchaseMessage = "Waiting for Apple’s approval. Your access will update when it arrives."
                 DurableAnalytics.shared.capture("purchase_pending", properties: ["product_id": id])
             case .userCancelled:
+                purchaseMessage = id == AccessConfiguration.trialID
+                    ? "Your trial hasn’t started. Complete Apple’s free confirmation to enable searches."
+                    : "No purchase was made. You can try again when you’re ready."
                 DurableAnalytics.shared.capture("purchase_cancelled", properties: ["product_id": id])
             @unknown default:
                 purchaseMessage = "The purchase couldn’t finish. Please try again."
@@ -120,7 +123,9 @@ final class StoreManager: ObservableObject {
                 restoreMessage = message
                 return
             }
-            restoreMessage = AccessStore.decision().allowsRedirects ? "Your access is ready." : "No active access found. You can start a trial if eligible or choose a lifetime price."
+            let access = AccessStore.decision()
+            restoreMessage = access.state == .verificationPending ? access.message
+                : access.allowsRedirects ? "Your access is ready." : "No active access found. You can start a trial if eligible or choose a lifetime price."
             DurableAnalytics.shared.capture("purchases_restored")
         } catch { restoreMessage = "Couldn’t connect to the App Store. Your saved access hasn’t changed." }
     }

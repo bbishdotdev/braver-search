@@ -78,6 +78,7 @@ enum MonetizationDefaultsKey {
 extension Notification.Name {
     static let monetizationStateDidChange = Notification.Name("MonetizationStateDidChange")
     static let openSupportFlow = Notification.Name("OpenSupportFlow")
+    static let finishSafariSetup = Notification.Name("FinishSafariSetup")
 }
 
 func sharedMonetizationDefaults() -> UserDefaults {

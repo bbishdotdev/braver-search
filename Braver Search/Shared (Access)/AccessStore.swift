@@ -6,6 +6,7 @@ import StoreKit
 enum AccessStore {
     #if DEBUG
     static var testPersistence: DurableAnalytics?
+    static var testLegacyDefaults: UserDefaults?
     #endif
     private static var persistence: DurableAnalytics {
         #if DEBUG
@@ -20,11 +21,16 @@ enum AccessStore {
         return "access-v1.json"
     }
 
-    static func update(_ change: (inout AccessRecord) -> Void) throws {
+    static func update(repairWithVerifiedEvidence: Bool = false, _ change: (inout AccessRecord) -> Void) throws {
         let recordFilename = filename // Read test configuration before acquiring the record lock.
         try persistence.locked { root in
             let url = root.appendingPathComponent(recordFilename)
-            var record = (try? JSONDecoder().decode(AccessRecord.self, from: Data(contentsOf: url))) ?? AccessRecord()
+            // Corruption is not a fresh installation: never discard ownership or restart recovery.
+            var record = AccessRecord()
+            if FileManager.default.fileExists(atPath: url.path) {
+                do { record = try JSONDecoder().decode(AccessRecord.self, from: Data(contentsOf: url)) }
+                catch { if !repairWithVerifiedEvidence { throw error } }
+            }
             change(&record)
             try JSONEncoder().encode(record).write(to: url, options: .atomic)
         }
@@ -40,11 +46,14 @@ enum AccessStore {
         var decision = AccessDecision(state: cutoff == nil ? .free : .unknown, expiresAt: nil)
         do {
             try update { record in
-                if record.legacyFirstUse == nil {
-                    let timestamp = DurableAnalytics.defaults.double(forKey: "monetization.firstUseDate")
-                    if timestamp > 0 { record.legacyFirstUse = Date(timeIntervalSince1970: timestamp) }
-                }
+                // Runs for the first extension request as well as host launches. An older
+                // valid timestamp must win even if 3.0 already wrote a newer first-use value.
+                let dates = [record.legacyFirstUse, firstUse(in: DurableAnalytics.defaults), firstUse(in: legacyDefaults)]
+                record.legacyFirstUse = dates.compactMap { $0 }.min()
                 let effective = record.advanceClock(now: now, uptime: ProcessInfo.processInfo.systemUptime)
+                if cutoff != nil, record.originalPurchaseDate == nil, record.verificationStartedAt == nil {
+                    record.verificationStartedAt = effective
+                }
                 #if DEBUG
                 if let test {
                     decision = test.decision(record: record, now: effective)
@@ -57,26 +66,48 @@ enum AccessStore {
         return decision
     }
 
-    /// Host only. A forced refresh may authenticate and must be user initiated.
+    private static func firstUse(in defaults: UserDefaults?) -> Date? {
+        let timestamp = defaults?.double(forKey: "monetization.firstUseDate") ?? 0
+        return timestamp > 0 && timestamp.isFinite ? Date(timeIntervalSince1970: timestamp) : nil
+    }
+
+    private static var legacyDefaults: UserDefaults? {
+        #if DEBUG
+        if DurableAnalytics.isUnitTestHost { return testLegacyDefaults }
+        #endif
+        #if os(macOS)
+        return UserDefaults(suiteName: "group.xyz.bsquared.braversearch")
+        #else
+        return nil
+        #endif
+    }
+
+    /// Non-interactive acquisition lookup is shared with the extension. A forced
+    /// refresh can authenticate and is called only by an explicit host-app action.
+    private static func refreshAcquisition(forceRefresh: Bool = false) async -> String? {
+        if #available(iOS 16.0, macOS 13.0, *) {
+            return await verifyAcquisition {
+                let result = forceRefresh ? try await AppTransaction.refresh() : try await AppTransaction.shared
+                switch result {
+                case .verified(let app):
+                    guard app.bundleID == AccessConfiguration.appBundleID else {
+                        throw NSError(domain: "BraverAccess", code: 1)
+                    }
+                    return (app.originalPurchaseDate, app.environment.rawValue)
+                case .unverified(_, let error): throw error
+                }
+            }
+        }
+        return nil
+    }
+
+    /// Host entitlement reconciliation; failures preserve already verified access.
     @discardableResult
     static func refresh(forceRefresh: Bool = false) async -> String? {
         #if DEBUG
         if previewRecord() != nil { return nil }
         #endif
-        if #available(iOS 16.0, macOS 13.0, *) {
-            let failure = await verifyAcquisition {
-                let result: VerificationResult<AppTransaction>
-                if forceRefresh { result = try await AppTransaction.refresh() }
-                else { result = try await AppTransaction.shared }
-                switch result {
-                case .verified(let app): return (app.originalPurchaseDate, app.environment.rawValue)
-                case .unverified(_, let error): throw error
-                }
-            }
-            // Failure is not evidence of a new account or revoked access. Keep cached
-            // entitlements; ordinary trial expiry still uses the local guarded clock.
-            if let failure { return failure }
-        }
+        if let failure = await refreshAcquisition(forceRefresh: forceRefresh) { return failure }
         var revision = 0
         var environment: String?
         try? update { revision = $0.entitlementRevision; environment = $0.appTransactionEnvironment }
@@ -126,7 +157,7 @@ enum AccessStore {
     static func verifyAcquisition(using load: () async throws -> (Date, String)) async -> String? {
         do {
             let (date, environment) = try await load()
-            try update { $0.setVerifiedAcquisition(date: date, environment: environment) }
+            try update(repairWithVerifiedEvidence: true) { $0.setVerifiedAcquisition(date: date, environment: environment) }
             return nil
         } catch {
             let error = error as NSError
@@ -142,6 +173,10 @@ enum AccessStore {
         #if DEBUG
         if previewRecord() != nil { return }
         #endif
+        // An unreadable record also needs verified evidence to repair it.
+        var needsAcquisition = true
+        try? update { needsAcquisition = $0.originalPurchaseDate == nil }
+        if needsAcquisition { _ = await refreshAcquisition() }
         for id in AccessConfiguration.lifetimeIDs + [AccessConfiguration.trialID] {
             guard let result = await Transaction.latest(for: id), case .verified(let transaction) = result else { continue }
             try? accept(transaction)
@@ -149,8 +184,9 @@ enum AccessStore {
     }
 
     static func accept(_ transaction: Transaction) throws {
-        guard transaction.productType == .nonConsumable else { return }
-        try update { record in
+        guard transaction.productType == .nonConsumable,
+              transaction.productID == AccessConfiguration.trialID || AccessConfiguration.lifetimeIDs.contains(transaction.productID) else { return }
+        try update(repairWithVerifiedEvidence: true) { record in
             guard matchesEnvironment(transaction, record.appTransactionEnvironment) else { return }
             record.entitlementRevision += 1
             if transaction.revocationDate != nil && !record.revokedTransactionIDs.contains(transaction.id) {
@@ -218,6 +254,10 @@ enum AccessStore {
         if scenario == "expired" { record.trialStart = Date().addingTimeInterval(-15 * 86400) }
         if scenario == "lifetime" { record.lifetimeProducts = [AccessConfiguration.suggestedLifetimeID] }
         if scenario == "unknown" { record.originalPurchaseDate = nil }
+        if scenario == "verification-pending" {
+            record.originalPurchaseDate = nil
+            record.verificationStartedAt = Date()
+        }
         try? persistence.locked { root in
             try JSONEncoder().encode(record).write(to: root.appendingPathComponent("access-preview.json"), options: .atomic)
         }

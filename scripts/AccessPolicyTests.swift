@@ -20,6 +20,26 @@ import Foundation
         var fresh = AccessRecord(originalPurchaseDate: cutoff)
         expect(fresh, .eligible) // Boundary belongs to the new cohort, never 'paidAppCustomer'.
         expect(AccessRecord(), .unknown)
+        var recovering = AccessRecord(verificationStartedAt: now)
+        expect(recovering, .verificationPending)
+        precondition(AccessPolicy.evaluate(recovering, cutoff: cutoff, now: now).allowsRedirects)
+        expect(recovering, .verificationPending, at: now.addingTimeInterval(14 * 86400 - 1))
+        expect(recovering, .unknown, at: now.addingTimeInterval(14 * 86400))
+        expect(recovering, .unknown, at: now.addingTimeInterval(-1))
+        recovering.revokedTransactionIDs = [1]
+        expect(recovering, .unknown)
+        recovering.revokedTransactionIDs = []
+        recovering.trialStart = now.addingTimeInterval(-15 * 86400)
+        expect(recovering, .expired)
+        recovering.trialStart = nil
+        recovering.originalPurchaseDate = cutoff
+        expect(recovering, .eligible)
+        recovering.originalPurchaseDate = cutoff.addingTimeInterval(-1)
+        expect(recovering, .grandfathered)
+        // Existing v3 JSON has no recovery field; decoding must preserve ownership.
+        let oldJSON = "{\"lifetimeProducts\":[],\"entitlementRevision\":0,\"revokedTransactionIDs\":[]}"
+        let oldRecord = try! JSONDecoder().decode(AccessRecord.self, from: Data(oldJSON.utf8))
+        precondition(oldRecord.verificationStartedAt == nil)
         expect(AccessRecord(originalPurchaseDate: cutoff.addingTimeInterval(-1)), .grandfathered)
         expect(AccessRecord(legacyFirstUse: cutoff.addingTimeInterval(-1)), .grandfathered)
         expect(AccessRecord(legacyFirstUse: cutoff), .unknown)
