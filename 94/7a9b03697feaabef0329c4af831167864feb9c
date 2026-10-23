@@ -1,0 +1,87 @@
+"Braver Search/Shared (App)/MonetizationConfig.swift"
+  s_dc73ce23e77fce::t_db6ef9bfbff7a2 81
+"Braver Search/Shared (App)/Resources/Script.js"
+  s_dc73ce23e77fce::t_6cbfcd597e0c4a 44,79
+  s_dc73ce23e77fce::t_f9dd1ac9b19542 138-144
+README.md
+  s_dc73ce23e77fce::t_d05bceccc9bfed 320-349
+"Braver Search/Shared (App)/Resources/Monetization.storekit"
+  s_dc73ce23e77fce::t_4fb0d54a46c8d0 27,32,42,47,57,62,72,77,87,92,102,107,109-168
+"Braver Search/Tests/JavaScript/home-setup.test.js"
+  s_dc73ce23e77fce::t_6cdb15522cc851 41-56
+"Braver Search/iOS (App)/MainView.swift"
+  s_dc73ce23e77fce::t_d6db9c56be814e 27,119-128
+  s_dc73ce23e77fce::t_db6ef9bfbff7a2 26,90,129,318
+"Braver Search/Shared (Access)/AccessPolicy.swift"
+  s_dc73ce23e77fce::t_a7a74e883ee588 9-11,29,86-87,100,112-114,140-143
+  s_96ebcebc44494c::t_4eb13857a0191e 144
+"Braver Search/Tests/JavaScript/popup.test.js"
+  s_dc73ce23e77fce::t_6cdb15522cc851 36-47
+"Braver Search/Braver Search.xcodeproj/xcshareddata/xcschemes/Braver Search Recovery UI (iOS).xcscheme"
+  s_dc73ce23e77fce::t_2c61356c474d32 1-20
+"Braver Search/Shared (Extension)/Resources/background.js"
+  s_dc73ce23e77fce::t_50fa8354e7a0e3 51-62,423
+"Braver Search/Shared (App)/MonetizationManager.swift"
+  s_dc73ce23e77fce::t_db6ef9bfbff7a2 35
+"Braver Search/Braver Search Recovery UI Tests/RecoveryUITests.swift"
+  s_dc73ce23e77fce::t_2c61356c474d32 21
+  s_dc73ce23e77fce::t_25ac5d564d0082 1-20,22-52
+"Braver Search/Shared (Access)/AccessStore.swift"
+  s_dc73ce23e77fce::t_a7a74e883ee588 9,28,49-52,54-56,69-74,76,78-87,89-90,92-96,101-110,178-179
+  s_dc73ce23e77fce::t_25ac5d564d0082 257-260
+  s_dc73ce23e77fce::t_8b48ca4e0be7c8 176-177,187-188
+  s_dc73ce23e77fce::t_8d6bed8cab2100 24,29-33,160,189
+"Braver Search/Shared (App)/LifetimeAccessView.swift"
+  s_dc73ce23e77fce::t_4a74753add9da4 88
+  s_dc73ce23e77fce::t_6cbfcd597e0c4a 192-193,200-201
+  s_dc73ce23e77fce::t_db6ef9bfbff7a2 15,23,30,92,104-112,205,235,243,534
+  s_dc73ce23e77fce::t_d6db9c56be814e 14,194-199
+"Braver Search/Shared (App)/StoreManager.swift"
+  s_dc73ce23e77fce::t_db6ef9bfbff7a2 97-99,126-128
+"Braver Search/iOS (App)/InstallationGuideView.swift"
+  s_dc73ce23e77fce::t_d6db9c56be814e 88-90
+  s_dc73ce23e77fce::t_29479157899239 42-43,45
+  s_dc73ce23e77fce::t_db6ef9bfbff7a2 25-26,35,41,44,46-54
+"Braver Search/Shared (App)/ViewController.swift"
+  s_dc73ce23e77fce::t_f9dd1ac9b19542 36,79-81,200
+"Braver Search/Shared (Extension)/Resources/manifest.json"
+  s_dc73ce23e77fce::t_41ffd56b2f81ac 7
+scripts/AccessPolicyTests.swift
+  s_dc73ce23e77fce::t_6cdb15522cc851 23-42
+"Braver Search/Shared (Extension)/Resources/popup.js"
+  s_dc73ce23e77fce::t_6cbfcd597e0c4a 62,66,70,77-82
+"Braver Search/Shared (Access)/AccessStoreTests.swift"
+  s_dc73ce23e77fce::t_8d6bed8cab2100 67,77-78
+  s_dc73ce23e77fce::t_6cdb15522cc851 8-66,68-76,79-80,116-117
+"Braver Search/Tests/JavaScript/background.test.js"
+  s_dc73ce23e77fce::t_50fa8354e7a0e3 45-59
+  s_dc73ce23e77fce::t_6cdb15522cc851 60-66
+scripts/check-release-access.py
+  s_dc73ce23e77fce::t_d05bceccc9bfed 18
+"Braver Search/Braver Search.xcodeproj/project.pbxproj"
+  s_dc73ce23e77fce::t_34b1cdbd1d2a34 36-37,83,128-130,341,371,385,542-552,563,600,658,722,756,1130,1190,1280-1309,1376
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "947a9b03697feaabef0329c4af831167864feb9c",
+  "prompts": {},
+  "sessions": {
+    "s_96ebcebc44494c": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "bc3ac606-2a6e-45ff-9270-4c1b4170cb48",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Brenden Bishop <btbishop93@gmail.com>"
+    },
+    "s_dc73ce23e77fce": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a1084b-d071-7252-9b09-97372829af86",
+        "model": "gpt-6-astra"
+      },
+      "human_author": "Brenden Bishop <btbishop93@gmail.com>"
+    }
+  }
+}
