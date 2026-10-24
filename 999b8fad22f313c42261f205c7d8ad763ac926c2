@@ -1,0 +1,48 @@
+"Braver Search/iOS (App)/MainView.swift"
+  s_2e6ea461b03633::t_87d82bec09a36c 87-88,97,112
+  s_2e6ea461b03633::t_e91699bfd8244b 315-330
+  s_2e6ea461b03633::t_3aef96aa87f54c 10-18,21,37,47,70-72,84,86,91-95,98-103,105-109,111,113-121,207-220,274-291
+"Braver Search/Tests/JavaScript/background.test.js"
+  s_2e6ea461b03633::t_8536990dc2ceb0 47-48,55
+  s_2e6ea461b03633::t_4452004a6dda3b 45-46,49-54,56-71
+  s_2e6ea461b03633::t_8eb673bbf837ec 122,125
+"Braver Search/Shared (Extension)/SafariWebExtensionHandler.swift"
+  s_2e6ea461b03633::t_ce230d6ce02387 51-55,340-344
+"Braver Search/Tests/JavaScript/popup.test.js"
+  s_2e6ea461b03633::t_944b32e6e1d268 33-50
+"Braver Search/iOS (App)/SetupVideoView.swift"
+  s_2e6ea461b03633::t_cdd296bae80f79 170-171,173-180,210
+  s_2e6ea461b03633::t_6e5bccf992ec2b 6,8,51,141-165
+  s_2e6ea461b03633::t_596acca73ec856 14,50,52,166-169,172,181-209,211-253
+  s_2e6ea461b03633::t_6a444848f8eaf1 1-5,7,9-13,15-49,53-140,254-324
+"Braver Search/Shared (Extension)/Resources/background.js"
+  s_2e6ea461b03633::t_c300dd76232d9a 6,164-183,393
+"Braver Search/Shared (Extension)/Resources/popup.js"
+  s_2e6ea461b03633::t_1696f7df9b0647 20-33,84-86
+"Braver Search/iOS (App)/InstallationGuideView.swift"
+  s_2e6ea461b03633::t_88f3ac50ab37d5 72
+  s_2e6ea461b03633::t_dbcb696aa6023e 5-6,11-21,28-37,40-49
+README.md
+  s_2e6ea461b03633::t_6be8a03eff9df1 209-221,238-267
+  s_2e6ea461b03633::t_cdf4b04bd81b50 101,106-107,125-127,132-138
+  s_2e6ea461b03633::t_6984ed8db9efdb 108,122,124,202,205
+  s_2e6ea461b03633::t_f41f03df900f8b 102-105,128-131,222-237
+  s_2e6ea461b03633::t_95ddaade434937 141
+  s_2e6ea461b03633::t_502a6d0db32637 159
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.3",
+  "base_commit_sha": "999b8fad22f313c42261f205c7d8ad763ac926c2",
+  "prompts": {},
+  "sessions": {
+    "s_2e6ea461b03633": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019e9a33-55a4-73c2-b687-467a804e0b8a",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Brenden Bishop <btbishop93@gmail.com>"
+    }
+  }
+}

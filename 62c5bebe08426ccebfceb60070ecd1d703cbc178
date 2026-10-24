@@ -1,0 +1,19 @@
+"Braver Search/iOS (App)/MainView.swift"
+  s_2e6ea461b03633::t_fd370fce72b508 80,82-85,87-90,94,99-102,193
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.3",
+  "base_commit_sha": "62c5bebe08426ccebfceb60070ecd1d703cbc178",
+  "prompts": {},
+  "sessions": {
+    "s_2e6ea461b03633": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019e9a33-55a4-73c2-b687-467a804e0b8a",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Brenden Bishop <btbishop93@gmail.com>"
+    }
+  }
+}

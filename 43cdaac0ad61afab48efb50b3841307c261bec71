@@ -1,0 +1,25 @@
+"Braver Search/Shared (App)/MonetizationConfig.swift"
+  9f4df9a458373221 22,29-36
+"Braver Search/Shared (Extension)/SafariWebExtensionHandler.swift"
+  9f4df9a458373221 52-62,72-73,76
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.10",
+  "base_commit_sha": "43cdaac0ad61afab48efb50b3841307c261bec71",
+  "prompts": {
+    "9f4df9a458373221": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019cdeb6-e6e4-7ed0-b07a-4112a2f5a809",
+        "model": "gpt-5.4"
+      },
+      "human_author": "Brenden Bishop <btbishop93@gmail.com>",
+      "messages": [],
+      "total_additions": 31,
+      "total_deletions": 26,
+      "accepted_lines": 25,
+      "overriden_lines": 0
+    }
+  }
+}

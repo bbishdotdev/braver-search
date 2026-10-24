@@ -1,0 +1,25 @@
+"Braver Search/Shared (App)/SupportSheetView.swift"
+  9f4df9a458373221 28
+"Braver Search/iOS (App)/MainView.swift"
+  9f4df9a458373221 172,289,292,294,302-303,306,316,319,321,330,336-338,341,351,354,392
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.10",
+  "base_commit_sha": "38b39c2fb6002dc56c3f3e8658bb3be0060bd962",
+  "prompts": {
+    "9f4df9a458373221": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019cdeb6-e6e4-7ed0-b07a-4112a2f5a809",
+        "model": "gpt-5.4"
+      },
+      "human_author": "Brenden Bishop <btbishop93@gmail.com>",
+      "messages": [],
+      "total_additions": 19,
+      "total_deletions": 18,
+      "accepted_lines": 19,
+      "overriden_lines": 0
+    }
+  }
+}
